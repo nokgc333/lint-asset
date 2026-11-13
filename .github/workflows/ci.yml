@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+
+# Least privilege: these jobs only read the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  public-paths:
+    name: public-paths
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check that every tracked path is allowlisted
+        run: python3 scripts/check-public-paths.py
+
+  commit-messages:
+    name: commit-messages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check every commit in the pull request
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          status=0
+          for sha in $(git rev-list "$BASE_SHA..$HEAD_SHA"); do
+            git log -1 --format=%B "$sha" > "$RUNNER_TEMP/message.txt"
+            if ! python3 scripts/check-commit-message.py "$RUNNER_TEMP/message.txt"; then
+              echo "::error::commit $sha has an invalid message"
+              status=1
+            fi
+          done
+          exit "$status"
+
+  branch-name:
+    name: branch-name
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check the pull request branch name
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: python3 scripts/check-branch-name.py "$BRANCH"
+
+  pr-title-and-body:
+    name: pr-title-and-body
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check the pull request title and body
+        # The title and body are untrusted text: pass them through env, never inline.
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n' "$PR_TITLE" > "$RUNNER_TEMP/title.txt"
+          python3 scripts/check-commit-message.py "$RUNNER_TEMP/title.txt"
+          body=$(printf '%s\n' "$PR_BODY" | tr -d '\r')
+          for heading in "## Purpose" "## Changes" "## Verification"; do
+            if ! printf '%s\n' "$body" | grep -qxF "$heading"; then
+              echo "::error::the pull request body must contain the heading '$heading'"
+              exit 1
+            fi
+          done
+
+  format:
+    name: format
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check C++ formatting
+        # Pinned to the same clang-format version as local development.
+        run: |
+          find core tests \( -name '*.cpp' -o -name '*.hpp' \) -print0 \
+            | xargs -0 pipx run --spec clang-format==23.1.5 clang-format --dry-run -Werror
+
+  native-tests:
+    name: native-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CC: clang-18
+      CXX: clang++-18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Configure
+        run: cmake -S . -B build/native -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build build/native
+      - name: Test (AddressSanitizer and UBSan are on)
+        run: ctest --test-dir build/native --output-on-failure
