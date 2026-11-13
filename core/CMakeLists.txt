@@ -1,7 +1,22 @@
-add_library(lint_core STATIC src/version.cpp)
+include(FetchContent)
+
+# Pinned to the commit of tag v3.1.0.
+FetchContent_Declare(
+  tinygltf
+  GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
+  GIT_TAG 97789b346ed792f413b9520c80bb479f3b63368f
+  SOURCE_SUBDIR lint_asset_download_only)
+FetchContent_MakeAvailable(tinygltf)
+
+add_library(tinygltf_v3 STATIC "${tinygltf_SOURCE_DIR}/tiny_gltf_v3.c")
+set_target_properties(tinygltf_v3 PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+target_include_directories(tinygltf_v3 SYSTEM PUBLIC "${tinygltf_SOURCE_DIR}")
+target_link_libraries(tinygltf_v3 PRIVATE lint_asset_sanitizers)
+
+add_library(lint_core STATIC src/version.cpp src/glb_loader.cpp)
 target_include_directories(lint_core PUBLIC include)
 target_compile_definitions(lint_core PRIVATE LINT_ASSET_VERSION="${PROJECT_VERSION}")
-target_link_libraries(lint_core PRIVATE lint_asset_options)
+target_link_libraries(lint_core PRIVATE lint_asset_options tinygltf_v3)
 
 # The WASM module: the same library, exposed to JavaScript through Embind.
 if(EMSCRIPTEN)
