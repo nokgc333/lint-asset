@@ -1,0 +1,59 @@
+# Allowlist of paths that may be tracked in this repository.
+#
+# Rules (one per line; '#' starts a comment):
+#   dir/        every path under that directory
+#   anything    matched against the full path with fnmatch ('*' also matches '/')
+#
+# A tracked path that no line matches fails scripts/check-public-paths.py,
+# both in the pre-commit hook and in CI. Add a line here (in its own PR)
+# before adding a new kind of file.
+
+# Docs for users
+README.md
+README.ja.md
+LICENSE
+SECURITY.md
+THIRD_PARTY_NOTICES
+.github/assets/
+
+# Contracts for users
+schemas/
+
+# Source
+core/
+web/
+worker/
+shaders/
+
+# Tests and samples
+tests/
+fuzz/
+samples/*.glb
+
+# Static files served as-is
+public/
+
+# Build and tooling config
+CMakeLists.txt
+cmake/
+package.json
+package-lock.json
+tsconfig*.json
+vite.config.ts
+wrangler.jsonc
+commitlint.config.*
+.editorconfig
+.clang-format
+.clang-tidy
+biome.json
+.gitignore
+.gitattributes
+
+# CI and hooks
+.github/workflows/
+.github/dependabot.yml
+.githooks/
+
+# The boundary check itself
+scripts/
+.public-paths

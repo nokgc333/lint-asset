@@ -1,0 +1,8 @@
+node_modules/
+build/
+dist/
+.wrangler/
+.env
+.env.*
+*.wasm
+.DS_Store
