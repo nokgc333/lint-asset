@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/nokgc333/lint-asset/main/schemas/report.schema.json",
+  "title": "lint-asset inspection report",
+  "description": "The result of inspecting one 3D asset. Version 1.x: adding an optional field raises the minor version (1.0 to 1.1); removing or changing a field raises the major version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tool",
+    "generated_at",
+    "asset",
+    "thresholds",
+    "summary",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": {
+      "description": "MAJOR.MINOR version of this report format.",
+      "type": "string",
+      "pattern": "^1\\.[0-9]+$"
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "lint-asset" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+      }
+    },
+    "generated_at": {
+      "description": "When the report was made, in UTC (ISO 8601, ending with Z).",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "format", "size_bytes"],
+      "properties": {
+        "name": {
+          "description": "The file name only, never a path.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[^/\\\\]+$"
+        },
+        "format": { "enum": ["glb", "gltf", "obj"] },
+        "size_bytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "thresholds": {
+      "description": "The limits used for this run, so the same input and settings give the same report.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_triangles", "min_extent_m", "max_extent_m"],
+      "properties": {
+        "max_triangles": { "type": "integer", "minimum": 1 },
+        "min_extent_m": { "type": "number", "exclusiveMinimum": 0 },
+        "max_extent_m": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["meshes", "primitives", "triangles", "issues"],
+      "properties": {
+        "meshes": { "type": "integer", "minimum": 0 },
+        "primitives": { "type": "integer", "minimum": 0 },
+        "triangles": { "type": "integer", "minimum": 0 },
+        "issues": {
+          "description": "Number of issues by severity.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["error", "warning", "info"],
+          "properties": {
+            "error": { "type": "integer", "minimum": 0 },
+            "warning": { "type": "integer", "minimum": 0 },
+            "info": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/issue" }
+    }
+  },
+  "$defs": {
+    "rule": {
+      "description": "The catalog of checks. Adding a rule raises the minor version.",
+      "enum": [
+        "normal.flipped",
+        "normal.missing",
+        "normal.unnormalized",
+        "mesh.nonmanifold_edge",
+        "mesh.boundary_edge",
+        "mesh.degenerate_triangle",
+        "uv.missing",
+        "uv.out_of_range",
+        "uv.overlap",
+        "asset.triangle_count_exceeded",
+        "asset.scale_too_small",
+        "asset.scale_too_large",
+        "asset.external_uri"
+      ]
+    },
+    "issue": {
+      "description": "One finding. `count` is the total number of affected elements; `elements` lists at most 1000 of them, and `truncated` says whether some were left out.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "severity", "message", "element_kind", "count", "elements", "truncated"],
+      "properties": {
+        "rule": { "$ref": "#/$defs/rule" },
+        "severity": { "enum": ["error", "warning", "info"] },
+        "message": {
+          "description": "A short English description.",
+          "type": "string",
+          "minLength": 1
+        },
+        "element_kind": {
+          "description": "What `elements` refers to: triangles of one primitive, or the whole asset.",
+          "enum": ["triangle", "asset"]
+        },
+        "target": {
+          "description": "Which mesh and primitive the triangles belong to.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mesh", "primitive"],
+          "properties": {
+            "mesh": { "type": "integer", "minimum": 0 },
+            "primitive": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "count": { "type": "integer", "minimum": 1 },
+        "elements": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": { "type": "integer", "minimum": 0 }
+        },
+        "truncated": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["element_kind"],
+            "properties": { "element_kind": { "const": "asset" } }
+          },
+          "then": {
+            "properties": {
+              "elements": { "type": "array", "maxItems": 0 },
+              "truncated": { "const": false }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["element_kind"],
+            "properties": { "element_kind": { "const": "triangle" } }
+          },
+          "then": { "required": ["target"], "properties": { "target": { "type": "object" } } }
+        }
+      ]
+    }
+  }
+}
