@@ -19,11 +19,22 @@ cmake --build build/native
 ctest --test-dir build/native --output-on-failure
 ```
 
-WASM のビルド（出力: `build/wasm/core/lint_core.mjs` と `lint_core.wasm`）:
+WASM のビルド（出力: `build/wasm/core/lint_core.mjs` と `lint_core.wasm`。Web アプリ用に
+`web/src/wasm/` へもコピーされます）:
 
 ```sh
 emcmake cmake -S . -B build/wasm -DCMAKE_BUILD_TYPE=Release
 cmake --build build/wasm
+```
+
+Web アプリ（Node.js 22.12 以上と、上の WASM ビルドが必要）:
+
+```sh
+npm ci
+npm run dev        # 開発サーバーを起動
+npm run build      # 本番ビルド（build/web へ出力）
+npm run check      # lint と書式の検査（Biome）
+npm run typecheck  # TypeScript の型検査
 ```
 
 ## 開発

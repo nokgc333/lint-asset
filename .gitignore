@@ -5,4 +5,5 @@ dist/
 .env
 .env.*
 *.wasm
+web/src/wasm/*.mjs
 .DS_Store

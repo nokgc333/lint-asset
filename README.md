@@ -19,11 +19,22 @@ cmake --build build/native
 ctest --test-dir build/native --output-on-failure
 ```
 
-WASM build (output: `build/wasm/core/lint_core.mjs` and `lint_core.wasm`):
+WASM build (output: `build/wasm/core/lint_core.mjs` and `lint_core.wasm`, also copied to
+`web/src/wasm/` for the web app):
 
 ```sh
 emcmake cmake -S . -B build/wasm -DCMAKE_BUILD_TYPE=Release
 cmake --build build/wasm
+```
+
+Web app (requires Node.js 22.12+ and the WASM build above):
+
+```sh
+npm ci
+npm run dev        # start the development server
+npm run build      # production build into build/web
+npm run check      # lint and format check (Biome)
+npm run typecheck  # TypeScript
 ```
 
 ## Development
