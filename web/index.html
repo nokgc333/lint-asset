@@ -31,10 +31,22 @@
         </fieldset>
       </fieldset>
       <p id="status" role="status" aria-live="polite">Preparing the viewer…</p>
+      <p id="error" role="alert"></p>
       <p id="instructions">Drag to rotate. Right-drag or Shift+drag to pan. Scroll to zoom. Focus the viewer for keyboard controls.</p>
-      <div class="viewport">
-        <canvas id="viewer" tabindex="0" role="img" aria-label="3D model viewer. Arrow keys rotate; Shift and arrow keys pan; plus and minus zoom; 0 or Home resets the view." aria-describedby="instructions"></canvas>
+      <div id="drop-zone">
+        <p id="drop-hint">Drop a .glb file here, or use Open a GLB file.</p>
+        <div class="viewport">
+          <canvas id="viewer" tabindex="0" role="img" aria-label="3D model viewer. Arrow keys rotate; Shift and arrow keys pan; plus and minus zoom; 0 or Home resets the view." aria-describedby="instructions"></canvas>
+        </div>
       </div>
+      <dialog id="limit-dialog" aria-labelledby="limit-dialog-title" aria-describedby="limit-dialog-text">
+        <h2 id="limit-dialog-title">This file is large</h2>
+        <p id="limit-dialog-text"></p>
+        <div class="dialog-actions">
+          <button id="limit-continue" type="button">Continue</button>
+          <button id="limit-cancel" type="button" autofocus>Cancel</button>
+        </div>
+      </dialog>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
