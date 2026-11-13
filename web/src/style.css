@@ -112,3 +112,54 @@ canvas {
   border-radius: 0.5rem;
   touch-action: none;
 }
+
+#drop-zone {
+  padding: 1rem;
+  border: 3px solid #9aaec4;
+  border-radius: 0.5rem;
+  background: #101720;
+}
+
+#drop-zone.is-dragging {
+  outline: 4px solid #ffda79;
+  outline-offset: 2px;
+  background: #293b51;
+}
+
+#drop-hint {
+  margin-top: 0;
+  color: #f0f4fa;
+}
+
+#error {
+  overflow-wrap: anywhere;
+}
+
+#error:not(:empty) {
+  padding: 0.8rem;
+  border: 2px solid #ffb4ab;
+  border-radius: 0.25rem;
+  color: #ffe1dc;
+  background: #3b2020;
+}
+
+#limit-dialog {
+  max-width: min(36rem, calc(100% - 2rem));
+  padding: 1.5rem;
+  border: 2px solid #9aaec4;
+  border-radius: 0.5rem;
+  color: #f0f4fa;
+  background: #18212d;
+  overflow-wrap: anywhere;
+}
+
+#limit-dialog::backdrop {
+  background: rgb(0 0 0 / 70%);
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}

@@ -1,6 +1,6 @@
 import "./style.css";
-import { describeCounts } from "./counts";
-import { MAX_FILE_BYTES, MAX_TRIANGLES } from "./limits";
+import { createFileLoader } from "./file-loader";
+import { pickSingleFile } from "./intake";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
 import { createModuleWorker } from "./trusted-worker";
 import { ORBIT_STEP, PAN_STEP, ZOOM_FACTOR } from "./viewer/controls";
@@ -18,18 +18,28 @@ const status = required<HTMLParagraphElement>("#status");
 const canvas = required<HTMLCanvasElement>("#viewer");
 const input = required<HTMLInputElement>("#file");
 const controls = required<HTMLFieldSetElement>("#controls");
+const error = required<HTMLParagraphElement>("#error");
+const dropZone = required<HTMLDivElement>("#drop-zone");
 const wireframe = required<HTMLInputElement>("#wireframe");
 const normals = required<HTMLInputElement>("#normals");
 const worker = createModuleWorker(workerUrl);
 const VERSION_REQUEST_ID = 1;
-let nextId = VERSION_REQUEST_ID;
-let activeLoad: { id: number; name: string } | null = null;
 let viewer: Viewer | null = null;
 let workerAvailable = true;
 
 function post(request: WorkerRequest, transfer: Transferable[] = []): void {
   worker.postMessage(request, transfer);
 }
+
+const loader = createFileLoader({
+  status,
+  error,
+  post: (request) => post(request, [request.bytes]),
+  showGeometry: (result) => viewer?.setGeometry(result),
+  isReady: () => viewer !== null && workerAvailable,
+  firstRequestId: VERSION_REQUEST_ID,
+});
+const { openFile } = loader;
 
 worker.addEventListener("message", (event: MessageEvent<WorkerResponse>) => {
   const response = event.data;
@@ -42,50 +52,48 @@ worker.addEventListener("message", (event: MessageEvent<WorkerResponse>) => {
           : "Unavailable";
     return;
   }
-  if (!activeLoad || response.id !== activeLoad.id) return;
-  if (response.type === "error") {
-    status.textContent = `E-LOAD-002: ${response.message}`;
-  } else if (response.type === "loaded") {
-    const result = response.result;
-    if (!result.ok) {
-      status.textContent = `${result.code}: ${result.message}`;
-      return;
-    }
-    viewer?.setGeometry(result);
-    status.textContent = `${activeLoad.name}: ${describeCounts(result)}`;
-  }
+  void loader.handleResponse(response);
 });
 
 worker.addEventListener("error", () => {
   workerAvailable = false;
   output.textContent = "Unavailable";
-  status.textContent = "E-LOAD-002: The geometry worker is unavailable.";
+  loader.failWorker();
   controls.disabled = true;
 });
 
 post({ id: VERSION_REQUEST_ID, type: "version" });
 
-input.addEventListener("change", async () => {
-  const file = input.files?.[0];
-  if (!file || !viewer) return;
-  const id = ++nextId;
-  activeLoad = { id, name: file.name };
-  status.textContent = `Loading ${file.name}…`;
-  try {
-    if (file.size > MAX_FILE_BYTES) {
-      status.textContent = "E-LOAD-003: The file exceeds the 100 MiB limit.";
-      return;
-    }
-    const bytes = await file.arrayBuffer();
-    if (activeLoad.id !== id) return;
-    post({ id, type: "load", bytes, maxFileBytes: MAX_FILE_BYTES, maxTriangles: MAX_TRIANGLES }, [
-      bytes,
-    ]);
-  } catch (error) {
-    if (activeLoad.id !== id) return;
-    status.textContent = `E-LOAD-002: ${error instanceof Error ? error.message : String(error)}`;
+input.addEventListener("change", () => {
+  const selection = pickSingleFile(input.files);
+  input.value = "";
+  if (selection.kind === "file") void openFile(selection.file);
+});
+
+for (const type of ["dragenter", "dragover"] as const) {
+  dropZone.addEventListener(type, (event) => {
+    if (!event.dataTransfer?.types.includes("Files")) return;
+    event.preventDefault();
+    dropZone.classList.add("is-dragging");
+  });
+}
+dropZone.addEventListener("dragleave", (event) => {
+  if (event.relatedTarget instanceof Node && dropZone.contains(event.relatedTarget)) return;
+  dropZone.classList.remove("is-dragging");
+});
+dropZone.addEventListener("drop", (event) => {
+  event.preventDefault();
+  dropZone.classList.remove("is-dragging");
+  const selection = pickSingleFile(event.dataTransfer?.files);
+  if (selection.kind === "many") {
+    error.textContent = "Error: Drop one file at a time.";
+  } else if (selection.kind === "file") {
+    void openFile(selection.file);
   }
 });
+for (const type of ["dragover", "drop"] as const) {
+  window.addEventListener(type, (event) => event.preventDefault());
+}
 
 const actions: Record<string, () => void> = {
   "rotate-left": () => viewer?.orbitBy(-ORBIT_STEP, 0),
