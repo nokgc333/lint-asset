@@ -6,7 +6,15 @@
     <title>lint-asset</title>
   </head>
   <body>
-    <main>
+    <div aria-live="polite">
+      <section id="unsupported" hidden aria-labelledby="unsupported-title">
+        <h2 id="unsupported-title">This browser or window is not supported</h2>
+        <p>To use the geometry inspector, address the following problems:</p>
+        <ul id="unsupported-list"></ul>
+        <p>Supported: the latest two versions of Chrome, Edge, Firefox, or Safari on a desktop computer, in a window at least 1024 px wide. Phones and tablets are not supported yet.</p>
+      </section>
+    </div>
+    <main id="app" hidden>
       <h1>GLB geometry inspector</h1>
       <p>Engine version: <output id="engine-version">loading…</output></p>
       <fieldset id="controls" disabled>
