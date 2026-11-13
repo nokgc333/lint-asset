@@ -128,3 +128,64 @@ jobs:
         run: npx --no-install biome ci .
       - name: Type check
         run: npm run typecheck
+
+  wasm-build:
+    name: wasm-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      # The official Emscripten image, pinned by digest so every run uses the same toolchain.
+      image: emscripten/emsdk:7.0.0@sha256:6bd7aef93408b10bf7b36642cb7c91119b302f720b9ec2d20439f73cf07fe894
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build the WASM module
+        run: |
+          emcmake cmake -S . -B build/wasm -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/wasm
+      - name: Check the compressed size
+        run: python3 scripts/check-wasm-size.py web/src/wasm/lint_core.wasm
+      - name: Run the module in Node.js
+        run: |
+          emcmake cmake -S . -B build/wasm-node -DCMAKE_BUILD_TYPE=Release \
+            -DLINT_ASSET_WASM_NODE=ON -DLINT_ASSET_WASM_DEST="$PWD/build/wasm-node/dist"
+          cmake --build build/wasm-node
+          cd build/wasm-node/dist
+          node --input-type=module -e "
+            import createLintCore from './lint_core.mjs';
+            const core = await createLintCore();
+            console.log('version:', core.version());
+            if (core.version() !== '0.0.0') process.exit(1);"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wasm-module
+          path: |
+            web/src/wasm/lint_core.mjs
+            web/src/wasm/lint_core.wasm
+          if-no-files-found: error
+          retention-days: 7
+
+  web-build:
+    name: web-build
+    needs: wasm-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: wasm-module
+          path: web/src/wasm
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies exactly as locked
+        run: npm ci --ignore-scripts
+      - name: Build the web app
+        run: npx --no-install vite build
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-dist
+          path: build/web
+          if-no-files-found: error
+          retention-days: 7
