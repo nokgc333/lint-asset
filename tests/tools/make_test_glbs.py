@@ -17,11 +17,17 @@ def build_glb(json_obj, bin_bytes, version=2):
     return build_container(encoded, bin_bytes, version)
 
 
-def add_accessor(document, data, values, component_type, accessor_type):
-    formats = {5123: "H", 5125: "I", 5126: "f"}
+def add_accessor(document, data, values, component_type, accessor_type, byte_stride=None, normalized=False):
+    formats = {5120: "b", 5121: "B", 5122: "h", 5123: "H", 5125: "I", 5126: "f"}
     widths = {"SCALAR": 1, "VEC3": 3}
     data.extend(b"\0" * (-len(data) % 4))
     packed = struct.pack("<" + formats[component_type] * len(values), *values)
+    if byte_stride is not None:
+        element_size = struct.calcsize(formats[component_type]) * widths[accessor_type]
+        packed = b"".join(
+            packed[offset:offset + element_size] + b"\0" * (byte_stride - element_size)
+            for offset in range(0, len(packed), element_size)
+        )
     views = document.setdefault("bufferViews", [])
     accessors = document.setdefault("accessors", [])
     accessor = {
@@ -34,6 +40,10 @@ def add_accessor(document, data, values, component_type, accessor_type):
         accessor["min"] = [min(values[axis::3]) for axis in range(3)]
         accessor["max"] = [max(values[axis::3]) for axis in range(3)]
     views.append({"buffer": 0, "byteOffset": len(data), "byteLength": len(packed)})
+    if byte_stride is not None:
+        views[-1]["byteStride"] = byte_stride
+    if normalized:
+        accessor["normalized"] = True
     accessors.append(accessor)
     data.extend(packed)
     document["buffers"] = [{"byteLength": len(data)}]
@@ -184,12 +194,85 @@ def required_unknown_extension():
     return extension_cube("VENDOR_unknown", required=True)
 
 
+def triangle_document():
+    document = {"asset": {"version": "2.0"}}
+    data = bytearray()
+    position = add_accessor(document, data, [0, 0, 0, 1, 0, 0, 0, 1, 0], 5126, "VEC3")
+    index = add_accessor(document, data, [0, 1, 2], 5123, "SCALAR")
+    document["meshes"] = [{"primitives": [{"attributes": {"POSITION": position},
+                                            "indices": index, "mode": 4}]}]
+    document["nodes"] = [{"mesh": 0}]
+    document["scenes"] = [{"nodes": [0]}]
+    document["scene"] = 0
+    return document, data
+
+
+def node_transforms():
+    document, data = triangle_document()
+    document["nodes"] = [{"translation": [10, 0, 0], "children": [1]},
+                         {"mesh": 0, "scale": [2, 2, 2]},
+                         {"mesh": 0, "matrix": [1, 0, 0, 0, 0, 1, 0, 0,
+                                                 0, 0, 1, 0, 0, 5, 0, 1]}]
+    document["scenes"] = [{"nodes": [0, 2]}]
+    return build_glb(document, data)
+
+
+def quantized_strided():
+    document = {"asset": {"version": "2.0"}}
+    data = bytearray()
+    position = add_accessor(document, data, [0, 0, 0, 100, 0, 0, 0, 200, 0],
+                            5122, "VEC3", byte_stride=8)
+    normal = add_accessor(document, data, [127, 0, 0, -128, 0, 0, 0, 0, 127],
+                          5120, "VEC3", byte_stride=4, normalized=True)
+    document["meshes"] = [{"primitives": [{"attributes": {"POSITION": position,
+                                                                "NORMAL": normal}, "mode": 4}]}]
+    document["nodes"] = [{"mesh": 0}]
+    document["scenes"] = [{"nodes": [0]}]
+    document["scene"] = 0
+    return build_glb(document, data)
+
+
+def index_out_of_vertex_range():
+    document, data = cube_document()
+    data = bytearray(data)
+    accessor = document["accessors"][document["meshes"][0]["primitives"][0]["indices"]]
+    offset = document["bufferViews"][accessor["bufferView"]]["byteOffset"]
+    struct.pack_into("<H", data, offset, 99)
+    return build_glb(document, data)
+
+
+def sparse_accessor():
+    document, data = triangle_document()
+    index = add_accessor(document, data, [0], 5123, "SCALAR")
+    value = add_accessor(document, data, [0, 0, 0], 5126, "VEC3")
+    document["accessors"][0]["sparse"] = {
+        "count": 1,
+        "indices": {"bufferView": document["accessors"][index]["bufferView"], "componentType": 5123},
+        "values": {"bufferView": document["accessors"][value]["bufferView"]},
+    }
+    return build_glb(document, data)
+
+
+def node_cycle():
+    document, data = cube_document()
+    document["nodes"] = [{"mesh": 0, "children": [0]}]
+    return build_glb(document, data)
+
+
+def node_instance_explosion():
+    document, data = triangle_document()
+    document["nodes"] = [{"children": [i + 1, i + 1]} for i in range(20)] + [{"mesh": 0}]
+    return build_glb(document, data)
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit("Usage: python3 make_test_glbs.py <out_dir>")
     output = Path(sys.argv[1])
     output.mkdir(parents=True, exist_ok=True)
     builders = [
+        node_transforms, quantized_strided, index_out_of_vertex_range, sparse_accessor,
+        node_cycle, node_instance_explosion,
         cube, cube_flipped_normals, cube_open_top, primitive_modes, external_image_uri,
         unknown_extension_used, required_supported_extension, bad_version_1,
         external_buffer_uri, truncated_cube, length_mismatch, invalid_json, missing_asset,

@@ -1,0 +1,65 @@
+#pragma once
+
+#include <array>
+#include <cstdint>
+#include <span>
+#include <string>
+#include <vector>
+
+#include "lint_asset/glb_loader.hpp"
+
+namespace lint_asset {
+
+// The triangles of one primitive, in the primitive's own (local) space.
+//
+// A triangle is addressed everywhere (reports, colouring) by three numbers: the mesh index, the
+// primitive index, and the triangle's position in `triangles` (triangle t uses vertex indices
+// triangles[3t], triangles[3t + 1], triangles[3t + 2]).
+struct PrimitiveGeometry {
+    std::uint32_t mesh = 0;        // index into the glTF "meshes" array
+    std::uint32_t primitive = 0;   // index into that mesh's "primitives" array
+    std::vector<float> positions;  // x, y, z per vertex
+    std::vector<float> normals;    // x, y, z per vertex; empty when the primitive has no NORMAL
+    // Three vertex indices per triangle. Strips and fans are expanded to plain triangles, with the
+    // winding of every other strip triangle swapped so that all triangles face the same way.
+    std::vector<std::uint32_t> triangles;
+};
+
+// One placement of a mesh in the scene, from the node hierarchy.
+struct MeshInstance {
+    std::uint32_t mesh = 0;
+    std::array<float, 16> world{};  // column-major 4x4 matrix, as in glTF
+};
+
+struct Geometry {
+    // Only primitives that draw triangles. Points and lines are left out. Ordered by mesh, then
+    // primitive.
+    std::vector<PrimitiveGeometry> primitives;
+    // In depth-first order from the scene's root nodes. A mesh can appear more than once.
+    std::vector<MeshInstance> instances;
+};
+
+struct GeometryResult {
+    LoadError error = LoadError::none;
+    std::string message;
+    LoadStats stats;  // the same counts load_glb() reports
+    Geometry geometry;
+
+    bool ok() const noexcept { return error == LoadError::none; }
+};
+
+// Parses a GLB and extracts what is needed to draw and inspect it.
+//
+// Everything load_glb() promises also holds here (limits, no external reads, no throwing on bad
+// input). In addition, every read of vertex data is range-checked against its buffer, and a vertex
+// index that points past the vertex count is E-LOAD-002.
+//
+// Supported accessor layouts: byte stride, and the normalized and plain integer component types
+// used by quantized meshes (decoded to float). Sparse accessors are not supported yet and fail with
+// E-LOAD-001. The node hierarchy is limited in depth and in the number of instances so that a
+// crafted file cannot make the traversal run away; exceeding either is E-LOAD-003 (too many
+// instances) or E-LOAD-002 (a cycle).
+GeometryResult load_glb_geometry(std::span<const std::uint8_t> bytes,
+                                 const LoadLimits &limits = {});
+
+}  // namespace lint_asset

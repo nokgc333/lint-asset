@@ -13,13 +13,15 @@ set_target_properties(tinygltf_v3 PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED O
 target_include_directories(tinygltf_v3 SYSTEM PUBLIC "${tinygltf_SOURCE_DIR}")
 target_link_libraries(tinygltf_v3 PRIVATE lint_asset_sanitizers)
 
-add_library(lint_core STATIC src/version.cpp src/glb_loader.cpp)
+add_library(lint_core STATIC src/version.cpp src/glb_loader.cpp src/glb_geometry.cpp src/glb_parse.cpp)
 target_include_directories(lint_core PUBLIC include)
 target_compile_definitions(lint_core PRIVATE LINT_ASSET_VERSION="${PROJECT_VERSION}")
 target_link_libraries(lint_core PRIVATE lint_asset_options tinygltf_v3)
 
 # The WASM module: the same library, exposed to JavaScript through Embind.
 if(EMSCRIPTEN)
+  target_compile_options(lint_core PRIVATE -fexceptions)
+  target_link_options(lint_core INTERFACE -fexceptions)
   # The browser build needs only web and worker. Node.js support adds code the browser never
   # uses (and a bundler warning), so it is opt-in, for running the module in tests.
   option(LINT_ASSET_WASM_NODE "Also build the WASM module so it can run in Node.js" OFF)
@@ -36,7 +38,11 @@ if(EMSCRIPTEN)
     -sMODULARIZE=1
     -sEXPORT_ES6=1
     -sEXPORT_NAME=createLintCore
-    -sENVIRONMENT=${LINT_ASSET_WASM_ENVIRONMENT})
+    -sENVIRONMENT=${LINT_ASSET_WASM_ENVIRONMENT}
+    # The default memory is fixed at 16 MB, which a large GLB (up to 100 MB) cannot fit in. Let it
+    # grow, up to 2 GB, the largest size every supported browser can reach.
+    -sALLOW_MEMORY_GROWTH=1
+    -sMAXIMUM_MEMORY=2GB)
   set_target_properties(lint_core_wasm PROPERTIES OUTPUT_NAME lint_core SUFFIX ".mjs")
 
   # Copy the built module next to the web app sources, where worker.ts imports it from.
