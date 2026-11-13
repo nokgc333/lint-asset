@@ -87,4 +87,220 @@ const failed = core.loadGlb(
 );
 expect("a failure carries a reason", failed.message.length > 0, true);
 
+function geometry(
+  bytes,
+  maxFileBytes = DEFAULT_MAX_FILE_BYTES,
+  maxTriangles = DEFAULT_MAX_TRIANGLES,
+) {
+  return core.loadGlbGeometry(bytes, maxFileBytes, maxTriangles);
+}
+
+const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+const extractedCube = geometry(cube);
+expect("geometry cube succeeds", extractedCube.ok, true);
+expect(
+  "geometry cube counts",
+  [extractedCube.meshes, extractedCube.primitives, extractedCube.triangles],
+  [1, 1, 12],
+);
+expect("geometry cube parts", extractedCube.parts.length, 1);
+const part = extractedCube.parts[0];
+expect("geometry cube identifiers", [part.mesh, part.primitive], [0, 0]);
+expect("geometry cube vertices", part.positions.length, 8 * 3);
+expect("geometry cube normals", part.normals.length, 8 * 3);
+expect("geometry cube triangles", part.triangles.length, 12 * 3);
+expect("geometry cube first triangle", Array.from(part.triangles.slice(0, 3)), [0, 2, 1]);
+expect("geometry cube instances", extractedCube.instances.length, 1);
+expect("geometry cube instance mesh", extractedCube.instances[0].mesh, 0);
+expect("geometry cube identity", Array.from(extractedCube.instances[0].world), identity);
+expect(
+  "geometry array types",
+  [
+    part.positions instanceof Float32Array,
+    part.normals instanceof Float32Array,
+    part.triangles instanceof Uint32Array,
+    extractedCube.instances[0].world instanceof Float32Array,
+  ],
+  [true, true, true, true],
+);
+
+const snapshots = [
+  Array.from(part.positions),
+  Array.from(part.normals),
+  Array.from(part.triangles),
+  Array.from(extractedCube.instances[0].world),
+];
+const modes = geometry(await fixture("primitive_modes.glb"));
+expect("geometry primitive count remains a count", modes.primitives, 4);
+expect(
+  "geometry modes identifiers",
+  modes.parts.map(({ mesh, primitive }) => [mesh, primitive]),
+  [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+  ],
+);
+expect(
+  "geometry modes triangles",
+  modes.parts.map((item) => Array.from(item.triangles)),
+  [
+    [0, 1, 2],
+    [0, 1, 2, 2, 1, 3],
+    [0, 1, 2, 0, 2, 3, 0, 3, 4],
+  ],
+);
+expect(
+  "geometry absent normals",
+  modes.parts.map((item) => item.normals.length),
+  [0, 0, 0],
+);
+const transforms = geometry(await fixture("node_transforms.glb"));
+expect("geometry shared mesh stored once", transforms.parts.length, 1);
+expect(
+  "geometry transformed instances",
+  transforms.instances.map(({ world }) => Array.from(world)),
+  [
+    [2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 10, 0, 0, 1],
+    [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 5, 0, 1],
+  ],
+);
+const quantized = geometry(await fixture("quantized_strided.glb"));
+expect(
+  "geometry quantized positions",
+  Array.from(quantized.parts[0].positions),
+  [0, 0, 0, 100, 0, 0, 0, 200, 0],
+);
+expect(
+  "geometry quantized normals",
+  Array.from(quantized.parts[0].normals),
+  [1, 0, 0, -1, 0, 0, 0, 0, 1],
+);
+
+function geometryFailure(label, result, code) {
+  expect(
+    label,
+    {
+      ok: result.ok,
+      code: result.code,
+      meshes: result.meshes,
+      primitives: result.primitives,
+      triangles: result.triangles,
+      parts: result.parts,
+      instances: result.instances,
+    },
+    { ...failure(code), parts: [], instances: [] },
+  );
+  expect(`${label} reason`, result.message.length > 0, true);
+}
+for (const [name, code] of [
+  ["index_out_of_vertex_range", "E-LOAD-002"],
+  ["sparse_accessor", "E-LOAD-001"],
+  ["node_cycle", "E-LOAD-002"],
+  ["node_instance_explosion", "E-LOAD-003"],
+  ["truncated_cube", "E-LOAD-002"],
+  ["required_draco", "E-LOAD-004"],
+]) {
+  geometryFailure(`geometry ${name}`, geometry(await fixture(`${name}.glb`)), code);
+}
+geometryFailure(
+  "geometry text glTF",
+  geometry(new TextEncoder().encode('{"asset":{"version":"2.0"}}')),
+  "E-LOAD-001",
+);
+geometryFailure("geometry byte limit", geometry(cube, cube.length - 1), "E-LOAD-003");
+geometryFailure(
+  "geometry triangle limit",
+  geometry(cube, DEFAULT_MAX_FILE_BYTES, 11),
+  "E-LOAD-003",
+);
+geometryFailure("geometry negative limit", geometry(cube, -1), "E-LOAD-003");
+geometryFailure(
+  "geometry NaN limit",
+  geometry(cube, DEFAULT_MAX_FILE_BYTES, Number.NaN),
+  "E-LOAD-003",
+);
+
+const secondCube = geometry(cube);
+expect(
+  "geometry copies survive subsequent calls",
+  [
+    Array.from(part.positions),
+    Array.from(part.normals),
+    Array.from(part.triangles),
+    Array.from(extractedCube.instances[0].world),
+  ],
+  snapshots,
+);
+const firstArrays = [
+  part.positions,
+  part.normals,
+  part.triangles,
+  extractedCube.instances[0].world,
+];
+const secondArrays = [
+  secondCube.parts[0].positions,
+  secondCube.parts[0].normals,
+  secondCube.parts[0].triangles,
+  secondCube.instances[0].world,
+];
+expect(
+  "geometry calls own separate buffers",
+  firstArrays.every((array, index) => array.buffer !== secondArrays[index].buffer),
+  true,
+);
+for (const array of firstArrays) {
+  array.fill(42);
+}
+expect(
+  "geometry copies are independently mutable",
+  secondArrays.map((array) => Array.from(array)),
+  snapshots,
+);
+const thirdCube = geometry(cube);
+expect(
+  "geometry mutations leave later loads unchanged",
+  [
+    Array.from(thirdCube.parts[0].positions),
+    Array.from(thirdCube.parts[0].normals),
+    Array.from(thirdCube.parts[0].triangles),
+    Array.from(thirdCube.instances[0].world),
+  ],
+  snapshots,
+);
+
+// Regression: the module starts with 16 MB of memory. A larger GLB must still load, so the memory
+// has to be allowed to grow. The cube's binary chunk is padded with zeros to make a 40 MB file.
+function padBinaryChunk(glb, extraBytes) {
+  const view = new DataView(glb.buffer, glb.byteOffset, glb.byteLength);
+  const jsonLength = view.getUint32(12, true);
+  const binStart = 20 + jsonLength; // the BIN chunk header follows the JSON chunk
+  const binLength = view.getUint32(binStart, true);
+  const document = JSON.parse(new TextDecoder().decode(glb.subarray(20, 20 + jsonLength)));
+  document.buffers[0].byteLength = binLength + extraBytes;
+  const encoded = new TextEncoder().encode(JSON.stringify(document));
+  const jsonPadded = encoded.length + ((4 - (encoded.length % 4)) % 4);
+  const binPadded = binLength + extraBytes; // extraBytes is a multiple of 4
+  const out = new Uint8Array(12 + 8 + jsonPadded + 8 + binPadded).fill(0x20, 20, 20 + jsonPadded);
+  const header = new DataView(out.buffer);
+  out.set(glb.subarray(0, 4)); // magic
+  header.setUint32(4, 2, true);
+  header.setUint32(8, out.length, true);
+  header.setUint32(12, jsonPadded, true);
+  header.setUint32(16, 0x4e4f534a, true); // JSON
+  out.set(encoded, 20);
+  const binHeader = 20 + jsonPadded;
+  header.setUint32(binHeader, binPadded, true);
+  header.setUint32(binHeader + 4, 0x004e4942, true); // BIN
+  out.set(glb.subarray(binStart + 8, binStart + 8 + binLength), binHeader + 8);
+  return out;
+}
+
+const MIB_40 = 40 * MIB;
+const large = padBinaryChunk(cube, MIB_40);
+expect("a 40 MB file is larger than the initial memory", large.length > 16 * MIB, true);
+expect("a 40 MB GLB loads", load(large), counts(1, 1, 12));
+const largeGeometry = geometry(large);
+expect("a 40 MB GLB gives its geometry", [largeGeometry.ok, largeGeometry.parts.length], [true, 1]);
+
 process.exit(failures === 0 ? 0 : 1);

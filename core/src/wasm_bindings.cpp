@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "lint_asset/glb_geometry.hpp"
 #include "lint_asset/glb_loader.hpp"
 #include "lint_asset/version.hpp"
 
@@ -58,9 +59,51 @@ emscripten::val load_glb_js(const emscripten::val &bytes, double max_file_bytes,
     return out;
 }
 
+template <typename Container>
+emscripten::val copy_array(const char *type, const Container &values) {
+    return emscripten::val::global(type).new_(
+        emscripten::val(emscripten::typed_memory_view(values.size(), values.data())));
+}
+
+emscripten::val load_glb_geometry_js(const emscripten::val &bytes, double max_file_bytes,
+                                     double max_triangles) {
+    const lint_asset::LoadLimits limits{limit_from_js(max_file_bytes),
+                                        limit_from_js(max_triangles)};
+    const auto data = bytes_from_js(bytes);
+    const auto result = lint_asset::load_glb_geometry(data, limits);
+    auto out = emscripten::val::object();
+    out.set("ok", result.ok());
+    out.set("code", std::string(lint_asset::load_error_code(result.error)));
+    out.set("message", result.message);
+    out.set("meshes", result.stats.meshes);
+    out.set("primitives", result.stats.primitives);
+    out.set("triangles", static_cast<double>(result.stats.triangles));
+    auto parts = emscripten::val::array();
+    for (const auto &part : result.geometry.primitives) {
+        auto item = emscripten::val::object();
+        item.set("mesh", part.mesh);
+        item.set("primitive", part.primitive);
+        item.set("positions", copy_array("Float32Array", part.positions));
+        item.set("normals", copy_array("Float32Array", part.normals));
+        item.set("triangles", copy_array("Uint32Array", part.triangles));
+        parts.call<void>("push", item);
+    }
+    auto instances = emscripten::val::array();
+    for (const auto &instance : result.geometry.instances) {
+        auto item = emscripten::val::object();
+        item.set("mesh", instance.mesh);
+        item.set("world", copy_array("Float32Array", instance.world));
+        instances.call<void>("push", item);
+    }
+    out.set("parts", parts);
+    out.set("instances", instances);
+    return out;
+}
+
 }  // namespace
 
 EMSCRIPTEN_BINDINGS(lint_core) {
     emscripten::function("version", &version_string);
     emscripten::function("loadGlb", &load_glb_js);
+    emscripten::function("loadGlbGeometry", &load_glb_geometry_js);
 }

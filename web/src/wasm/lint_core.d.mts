@@ -31,6 +31,24 @@ export interface LoadFailure extends LoadCounts {
 
 export type LoadResult = LoadSuccess | LoadFailure;
 
+export interface PrimitiveGeometry {
+  mesh: number;
+  primitive: number;
+  positions: Float32Array;
+  normals: Float32Array;
+  triangles: Uint32Array;
+}
+
+export interface MeshInstance {
+  mesh: number;
+  world: Float32Array;
+}
+
+export type GeometryResult = LoadResult & {
+  parts: PrimitiveGeometry[];
+  instances: MeshInstance[];
+};
+
 export interface LintCore {
   version(): string;
   /**
@@ -39,6 +57,7 @@ export interface LintCore {
    * The limits default to 100 MiB and 2,000,000 triangles in the requirements (§4.8).
    */
   loadGlb(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): LoadResult;
+  loadGlbGeometry(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): GeometryResult;
 }
 
 export default function createLintCore(): Promise<LintCore>;
