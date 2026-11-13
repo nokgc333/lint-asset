@@ -11,5 +11,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["web/src/main.ts", "web/src/protocol.ts"]
+  "include": ["web/src/**/*.ts"],
+  "exclude": ["web/src/worker.ts"]
 }

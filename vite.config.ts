@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   root: "web",
@@ -7,5 +7,6 @@ export default defineConfig({
     emptyOutDir: true,
     target: "es2022",
   },
+  test: { include: ["src/**/*.test.ts"], environment: "node" },
   worker: { format: "es" },
 });

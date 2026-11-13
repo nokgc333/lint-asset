@@ -41,6 +41,9 @@ if(EMSCRIPTEN)
     -sENVIRONMENT=${LINT_ASSET_WASM_ENVIRONMENT}
     # The default memory is fixed at 16 MB, which a large GLB (up to 100 MB) cannot fit in. Let it
     # grow, up to 2 GB, the largest size every supported browser can reach.
+    # The production CSP forbids eval and new Function. Without this, Embind builds its call
+    # wrappers with new Function and the module cannot start in the browser.
+    -sDYNAMIC_EXECUTION=0
     -sALLOW_MEMORY_GROWTH=1
     -sMAXIMUM_MEMORY=2GB)
   set_target_properties(lint_core_wasm PROPERTIES OUTPUT_NAME lint_core SUFFIX ".mjs")

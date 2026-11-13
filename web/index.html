@@ -6,8 +6,36 @@
     <title>lint-asset</title>
   </head>
   <body>
-    <h1>lint-asset</h1>
-    <p>Engine version: <output id="engine-version">loading…</output></p>
+    <main>
+      <h1>GLB geometry inspector</h1>
+      <p>Engine version: <output id="engine-version">loading…</output></p>
+      <fieldset id="controls" disabled>
+        <legend>Model controls</legend>
+        <label class="file-control" for="file">Open a GLB file</label>
+        <input id="file" type="file" accept=".glb" />
+        <fieldset class="toolbar">
+          <legend>View controls</legend>
+          <button type="button" data-action="rotate-left">Rotate left</button>
+          <button type="button" data-action="rotate-right">Rotate right</button>
+          <button type="button" data-action="rotate-up">Rotate up</button>
+          <button type="button" data-action="rotate-down">Rotate down</button>
+          <button type="button" data-action="zoom-in">Zoom in</button>
+          <button type="button" data-action="zoom-out">Zoom out</button>
+          <button type="button" data-action="pan-left">Pan left</button>
+          <button type="button" data-action="pan-right">Pan right</button>
+          <button type="button" data-action="pan-up">Pan up</button>
+          <button type="button" data-action="pan-down">Pan down</button>
+          <button type="button" data-action="reset">Reset view</button>
+          <label class="toggle"><input id="wireframe" type="checkbox" />Wireframe</label>
+          <label class="toggle"><input id="normals" type="checkbox" />Show normals</label>
+        </fieldset>
+      </fieldset>
+      <p id="status" role="status" aria-live="polite">Preparing the viewer…</p>
+      <p id="instructions">Drag to rotate. Right-drag or Shift+drag to pan. Scroll to zoom. Focus the viewer for keyboard controls.</p>
+      <div class="viewport">
+        <canvas id="viewer" tabindex="0" role="img" aria-label="3D model viewer. Arrow keys rotate; Shift and arrow keys pan; plus and minus zoom; 0 or Home resets the view." aria-describedby="instructions"></canvas>
+      </div>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
