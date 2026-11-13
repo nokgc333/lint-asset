@@ -128,6 +128,8 @@ jobs:
         run: npx --no-install biome ci .
       - name: Type check
         run: npm run typecheck
+      - name: Validate the report schema
+        run: npm run test:schema
 
   wasm-build:
     name: wasm-build

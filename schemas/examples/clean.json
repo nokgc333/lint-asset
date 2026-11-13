@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "tool": { "name": "lint-asset", "version": "0.0.0" },
+  "generated_at": "2026-12-01T09:30:00Z",
+  "asset": { "name": "crate.glb", "format": "glb", "size_bytes": 20480 },
+  "thresholds": { "max_triangles": 100000, "min_extent_m": 0.01, "max_extent_m": 1000 },
+  "summary": {
+    "meshes": 1,
+    "primitives": 1,
+    "triangles": 12,
+    "issues": { "error": 0, "warning": 0, "info": 0 }
+  },
+  "issues": []
+}

@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "tool": { "name": "lint-asset", "version": "0.0.0" },
+  "generated_at": "2026-12-01T09:30:00Z",
+  "asset": { "name": "crate.glb", "format": "glb", "size_bytes": 20480 },
+  "thresholds": { "max_triangles": 100000, "min_extent_m": 0.01, "max_extent_m": 1000 },
+  "summary": {
+    "meshes": 1,
+    "primitives": 1,
+    "triangles": 12,
+    "issues": { "error": 1, "warning": 0, "info": 0 }
+  },
+  "issues": [
+    {
+      "rule": "normal.flipped",
+      "severity": "error",
+      "message": "Vertex normals point opposite to the face winding.",
+      "element_kind": "triangle",
+      "target": { "mesh": 0, "primitive": 0 },
+      "count": 3,
+      "elements": [4, 5, 9],
+      "truncated": false
+    }
+  ]
+}
