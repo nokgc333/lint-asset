@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "tool": { "name": "lint-asset", "version": "0.0.0" },
+  "generated_at": "2026-12-01T09:45:12.250Z",
+  "asset": { "name": "terrain.gltf", "format": "gltf", "size_bytes": 5242880 },
+  "thresholds": { "max_triangles": 100000, "min_extent_m": 0.01, "max_extent_m": 1000 },
+  "summary": {
+    "meshes": 1,
+    "primitives": 2,
+    "triangles": 48000,
+    "issues": { "error": 0, "warning": 2, "info": 0 }
+  },
+  "issues": [
+    {
+      "rule": "asset.scale_too_large",
+      "severity": "warning",
+      "message": "The longest side of the bounding box is 1500 m (limit 1000 m).",
+      "element_kind": "asset",
+      "count": 1,
+      "elements": [],
+      "truncated": false
+    },
+    {
+      "rule": "mesh.boundary_edge",
+      "severity": "warning",
+      "message": "Triangles next to an open edge (a hole in the surface).",
+      "element_kind": "triangle",
+      "target": { "mesh": 0, "primitive": 1 },
+      "count": 2500,
+      "elements": [10, 11, 12],
+      "truncated": true
+    }
+  ]
+}
