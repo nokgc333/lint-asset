@@ -3,6 +3,7 @@ import { describeLimitRequest } from "./limit-text";
 import type { Limits } from "./load-plan";
 
 export type LimitRequest =
+  | { reason: "pixels"; fileName: string; width: number; height: number; maxPixels: number }
   | { reason: "size"; fileName: string; fileBytes: number; limits: Limits }
   | { reason: "triangles"; fileName: string; limits: Limits };
 
