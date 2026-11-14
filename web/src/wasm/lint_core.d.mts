@@ -49,16 +49,29 @@ export type GeometryResult = LoadResult & {
   instances: MeshInstance[];
 };
 
-export interface Issue {
-  rule: "normal.flipped" | "normal.missing" | "normal.unnormalized";
+interface IssueBase {
+  rule: string;
   severity: "error" | "warning" | "info";
   message: string;
-  element_kind: "triangle";
-  target: { mesh: number; primitive: number };
-  count: number;
-  elements: number[];
-  truncated: boolean;
 }
+
+export type Issue = IssueBase &
+  (
+    | {
+        element_kind: "triangle";
+        target: { mesh: number; primitive: number };
+        count: number;
+        elements: number[];
+        truncated: boolean;
+      }
+    | {
+        element_kind: "asset";
+        target?: never;
+        count: 1;
+        elements: [];
+        truncated: false;
+      }
+  );
 
 export type InspectResult = LoadResult & {
   issues: Issue[];
