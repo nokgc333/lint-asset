@@ -161,12 +161,56 @@ for (const locale of ["en", "ja"]) {
   );
   await wait(500);
   await runAxe(`[${locale}] sample loaded, problems hidden`, page);
-  await page.click("#issues-toggle");
+  await page.evaluate(() => {
+    const toggle = document.querySelector("#issues-toggle");
+    if (toggle.getAttribute("aria-expanded") !== "true") toggle.click();
+  });
   await wait(300);
   await runAxe(`[${locale}] problems shown`, page);
   await page.evaluate(() => document.querySelectorAll("#issues-list button")[2]?.click());
   await wait(500);
-  await runAxe(`[${locale}] a problem selected`, page);
+  await page.waitForFunction(() => !document.querySelector("#issue-detail-content").hidden);
+  for (const width of [1400, 1100, 320]) {
+    await page.setViewport({ width, height: 900 });
+    await page.evaluate(() => {
+      for (const guide of document.querySelectorAll("#issue-detail details")) guide.open = false;
+    });
+    await runAxe(`[${locale}] ${width} px, a problem selected with details`, page);
+    const layout = await page.evaluate(() => {
+      const list = document.querySelector("#issues-panel").getBoundingClientRect();
+      const detail = document.querySelector("#issue-detail").getBoundingClientRect();
+      return {
+        right: detail.left >= list.right,
+        below: detail.top >= list.bottom && Math.abs(detail.left - list.left) <= 1,
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+    if (width === 1400)
+      report(layout.right, `[${locale}] details are in the third column at 1400 px`);
+    if (width === 1100) report(layout.below, `[${locale}] details are under the list at 1100 px`);
+    report(
+      layout.overflow <= 0,
+      `[${locale}] selected details at ${width} px without sideways scrolling`,
+      `${layout.overflow} px too wide`,
+    );
+    const guideOpened = await page.evaluate(() => {
+      const guide = document.querySelector("#issue-detail details");
+      if (!guide) return false;
+      guide.open = true;
+      return true;
+    });
+    report(guideOpened, `[${locale}] ${width} px, a tool guide is available`);
+    await runAxe(`[${locale}] ${width} px, selected details with a tool guide open`, page);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    report(
+      overflow <= 0,
+      `[${locale}] open tool guide at ${width} px without sideways scrolling`,
+      `${overflow} px too wide`,
+    );
+  }
+  await page.setViewport({ width: 1400, height: 900 });
 
   await page.click("#about-open");
   await wait(300);
