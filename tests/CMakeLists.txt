@@ -13,6 +13,7 @@ set(LINT_ASSET_TEST_GLB_DIR "${CMAKE_CURRENT_BINARY_DIR}/glb")
 set(LINT_ASSET_TEST_GLB_NAMES
   node_transforms quantized_strided index_out_of_vertex_range sparse_accessor
   node_cycle node_instance_explosion
+  cube_small cube_huge cube_cm_export cube_with_degenerate
   cube cube_flipped_normals cube_open_top cube_faces_flipped cube_unnormalized primitive_modes three_pages external_image_uri
   unknown_extension_used required_supported_extension bad_version_1 external_buffer_uri
   truncated_cube length_mismatch invalid_json missing_asset accessor_out_of_range
@@ -29,7 +30,7 @@ add_custom_command(
   VERBATIM)
 add_custom_target(lint_test_glbs DEPENDS ${LINT_ASSET_TEST_GLB_FILES})
 
-add_executable(lint_core_tests main.cpp version_test.cpp glb_loader_test.cpp glb_geometry_test.cpp normal_inspection_test.cpp normal_golden_test.cpp edge_inspection_test.cpp inspection_test.cpp)
+add_executable(lint_core_tests main.cpp version_test.cpp glb_loader_test.cpp glb_geometry_test.cpp normal_inspection_test.cpp normal_golden_test.cpp edge_inspection_test.cpp inspection_test.cpp size_inspection_test.cpp)
 add_dependencies(lint_core_tests lint_test_glbs)
 target_compile_definitions(lint_core_tests PRIVATE
   LINT_ASSET_TEST_GLB_DIR="${LINT_ASSET_TEST_GLB_DIR}")

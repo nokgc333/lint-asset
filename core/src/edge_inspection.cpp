@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "lint_asset/size_inspection.hpp"
+
 namespace lint_asset {
 namespace {
 
@@ -39,6 +41,26 @@ bool triangle_edges(const PrimitiveGeometry &part, const std::vector<std::uint32
         }
     }
     if (ids[0] == ids[1] || ids[1] == ids[2] || ids[2] == ids[0]) {
+        return false;
+    }
+    std::array<double, 3> a{}, b{};
+    for (std::size_t axis = 0; axis < 3; ++axis) {
+        const double origin =
+            part.positions[3 * static_cast<std::size_t>(part.triangles[triangle * 3]) + axis];
+        a[axis] =
+            static_cast<double>(
+                part.positions[3 * static_cast<std::size_t>(part.triangles[triangle * 3 + 1]) +
+                               axis]) -
+            origin;
+        b[axis] =
+            static_cast<double>(
+                part.positions[3 * static_cast<std::size_t>(part.triangles[triangle * 3 + 2]) +
+                               axis]) -
+            origin;
+    }
+    const double area = 0.5 * std::hypot(a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
+                                         a[0] * b[1] - a[1] * b[0]);
+    if (area < DEGENERATE_TRIANGLE_AREA) {
         return false;
     }
     edges = {edge_key(ids[0], ids[1]), edge_key(ids[1], ids[2]), edge_key(ids[2], ids[0])};

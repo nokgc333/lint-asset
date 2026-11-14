@@ -23,11 +23,14 @@ std::vector<lint_asset::Issue> inspect_fixture(const std::string &name) {
 
 }  // namespace
 
-// tests/golden/*.json are the source of truth; these inline expectations mirror them.
-
 TEST_CASE("inspection golden: cube") {
     const std::vector<lint_asset::Issue> expected = {};
     CHECK(inspect_fixture("cube") == expected);
+}
+
+TEST_CASE("inspection golden: cube_cm_export") {
+    const std::vector<lint_asset::Issue> expected = {};
+    CHECK(inspect_fixture("cube_cm_export") == expected);
 }
 
 TEST_CASE("inspection golden: cube_faces_flipped") {
@@ -39,7 +42,8 @@ TEST_CASE("inspection golden: cube_faces_flipped") {
          0,
          4,
          {2, 3, 8, 9},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
     };
     CHECK(inspect_fixture("cube_faces_flipped") == expected);
 }
@@ -53,9 +57,25 @@ TEST_CASE("inspection golden: cube_flipped_normals") {
          0,
          12,
          {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
     };
     CHECK(inspect_fixture("cube_flipped_normals") == expected);
+}
+
+TEST_CASE("inspection golden: cube_huge") {
+    const std::vector<lint_asset::Issue> expected = {
+        {lint_asset::RuleId::asset_scale_too_large,
+         lint_asset::Severity::warning,
+         "The longest side of the bounding box is 1500 m (limit 1000 m).",
+         0,
+         0,
+         1,
+         {},
+         false,
+         lint_asset::ElementKind::asset},
+    };
+    CHECK(inspect_fixture("cube_huge") == expected);
 }
 
 TEST_CASE("inspection golden: cube_open_top") {
@@ -67,9 +87,25 @@ TEST_CASE("inspection golden: cube_open_top") {
          0,
          4,
          {1, 3, 6, 9},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
     };
     CHECK(inspect_fixture("cube_open_top") == expected);
+}
+
+TEST_CASE("inspection golden: cube_small") {
+    const std::vector<lint_asset::Issue> expected = {
+        {lint_asset::RuleId::asset_scale_too_small,
+         lint_asset::Severity::warning,
+         "The longest side of the bounding box is 0.005 m (minimum 0.01 m).",
+         0,
+         0,
+         1,
+         {},
+         false,
+         lint_asset::ElementKind::asset},
+    };
+    CHECK(inspect_fixture("cube_small") == expected);
 }
 
 TEST_CASE("inspection golden: cube_unnormalized") {
@@ -81,9 +117,25 @@ TEST_CASE("inspection golden: cube_unnormalized") {
          0,
          6,
          {0, 1, 4, 5, 8, 9},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
     };
     CHECK(inspect_fixture("cube_unnormalized") == expected);
+}
+
+TEST_CASE("inspection golden: cube_with_degenerate") {
+    const std::vector<lint_asset::Issue> expected = {
+        {lint_asset::RuleId::mesh_degenerate_triangle,
+         lint_asset::Severity::error,
+         "Triangles with an area below 1e-10, or with a position that is not a finite number.",
+         0,
+         0,
+         1,
+         {12},
+         false,
+         lint_asset::ElementKind::triangle},
+    };
+    CHECK(inspect_fixture("cube_with_degenerate") == expected);
 }
 
 TEST_CASE("inspection golden: primitive_modes") {
@@ -95,7 +147,8 @@ TEST_CASE("inspection golden: primitive_modes") {
          0,
          1,
          {0},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
         {lint_asset::RuleId::mesh_nonmanifold_edge,
          lint_asset::Severity::error,
          "1 edge is shared by three or more triangles.",
@@ -103,7 +156,8 @@ TEST_CASE("inspection golden: primitive_modes") {
          0,
          1,
          {0},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
         {lint_asset::RuleId::normal_missing,
          lint_asset::Severity::warning,
          "The primitive has no vertex normals.",
@@ -111,7 +165,8 @@ TEST_CASE("inspection golden: primitive_modes") {
          1,
          2,
          {0, 1},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
         {lint_asset::RuleId::mesh_nonmanifold_edge,
          lint_asset::Severity::error,
          "1 edge is shared by three or more triangles.",
@@ -119,7 +174,8 @@ TEST_CASE("inspection golden: primitive_modes") {
          1,
          2,
          {0, 1},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
         {lint_asset::RuleId::mesh_boundary_edge,
          lint_asset::Severity::warning,
          "2 boundary edges are each used by only one triangle.",
@@ -127,7 +183,8 @@ TEST_CASE("inspection golden: primitive_modes") {
          1,
          1,
          {1},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
         {lint_asset::RuleId::normal_missing,
          lint_asset::Severity::warning,
          "The primitive has no vertex normals.",
@@ -135,7 +192,8 @@ TEST_CASE("inspection golden: primitive_modes") {
          0,
          3,
          {0, 1, 2},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
         {lint_asset::RuleId::mesh_boundary_edge,
          lint_asset::Severity::warning,
          "5 boundary edges are each used by only one triangle.",
@@ -143,7 +201,8 @@ TEST_CASE("inspection golden: primitive_modes") {
          0,
          3,
          {0, 1, 2},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
     };
     CHECK(inspect_fixture("primitive_modes") == expected);
 }
@@ -157,7 +216,8 @@ TEST_CASE("inspection golden: three_pages") {
          0,
          3,
          {0, 1, 2},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
         {lint_asset::RuleId::mesh_nonmanifold_edge,
          lint_asset::Severity::error,
          "1 edge is shared by three or more triangles.",
@@ -165,7 +225,8 @@ TEST_CASE("inspection golden: three_pages") {
          0,
          3,
          {0, 1, 2},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
         {lint_asset::RuleId::mesh_boundary_edge,
          lint_asset::Severity::warning,
          "6 boundary edges are each used by only one triangle.",
@@ -173,7 +234,8 @@ TEST_CASE("inspection golden: three_pages") {
          0,
          3,
          {0, 1, 2},
-         false},
+         false,
+         lint_asset::ElementKind::triangle},
     };
     CHECK(inspect_fixture("three_pages") == expected);
 }

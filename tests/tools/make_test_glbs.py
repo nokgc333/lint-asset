@@ -50,7 +50,7 @@ def add_accessor(document, data, values, component_type, accessor_type, byte_str
     return len(accessors) - 1
 
 
-def cube_document(flipped=False, open_top=False):
+def cube_document(flipped=False, open_top=False, position_scale=1, degenerate=False):
     positions = [
         0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0,
         0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1,
@@ -67,6 +67,11 @@ def cube_document(flipped=False, open_top=False):
         del indices[24:30]
     direction = -1 if flipped else 1
     normals = [(value * 2 - 1) * direction * 3 ** -0.5 for value in positions]
+    positions = [value * position_scale for value in positions]
+    if degenerate:
+        positions.extend([0.1, 0.1, 0.1, 0.5, 0.5, 0.5, 0.9, 0.9, 0.9])
+        normals.extend([0, 0, 1] * 3)
+        indices.extend([8, 9, 10])
     document = {"asset": {"version": "2.0"}}
     data = bytearray()
     position = add_accessor(document, data, positions, 5126, "VEC3")
@@ -85,6 +90,28 @@ def cube_document(flipped=False, open_top=False):
 
 def cube():
     return build_glb(*cube_document())
+
+
+def cube_small():
+    document, data = cube_document()
+    document["nodes"][0]["scale"] = [0.005, 0.005, 0.005]
+    return build_glb(document, data)
+
+
+def cube_huge():
+    document, data = cube_document()
+    document["nodes"][0]["scale"] = [1500, 1500, 1500]
+    return build_glb(document, data)
+
+
+def cube_cm_export():
+    document, data = cube_document(position_scale=100)
+    document["nodes"] = [{"scale": [0.01, 0.01, 0.01], "children": [1]}, {"mesh": 0}]
+    return build_glb(document, data)
+
+
+def cube_with_degenerate():
+    return build_glb(*cube_document(degenerate=True))
 
 
 def cube_flipped_normals():
@@ -333,6 +360,7 @@ def main():
     builders = [
         node_transforms, quantized_strided, index_out_of_vertex_range, sparse_accessor,
         node_cycle, node_instance_explosion,
+        cube_small, cube_huge, cube_cm_export, cube_with_degenerate,
         cube, cube_flipped_normals, cube_open_top, cube_faces_flipped, cube_unnormalized,
         primitive_modes, three_pages, external_image_uri,
         unknown_extension_used, required_supported_extension, bad_version_1,

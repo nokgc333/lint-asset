@@ -255,6 +255,16 @@ TEST_CASE("a triangle with two vertices at one position adds no edges") {
     CHECK(lint_asset::inspect_edges(geometry_of({part})).empty());
 }
 
+TEST_CASE("a triangle with three different points on a line adds no edges") {
+    // A closed tetrahedron plus a flat triangle whose corners are tetrahedron corners and
+    // midpoints: its edges would look open, but it has no area, so it is left out.
+    PrimitiveGeometry part;
+    part.positions = {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25f, 0, 0, 0.5f, 0, 0, 0.75f, 0, 0};
+    part.triangles = {0, 2, 1, 0, 1, 3, 1, 2, 3, 0, 3, 2, 4, 5, 6};
+
+    CHECK(lint_asset::inspect_edges(geometry_of({part})).empty());
+}
+
 TEST_CASE("a triangle with a non-finite position adds no edges") {
     const float nan = std::numeric_limits<float>::quiet_NaN();
     const Triangle broken = {{{nan, 0, 0}, {1, 0, 0}, {0, 1, 0}}};
