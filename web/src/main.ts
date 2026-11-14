@@ -5,6 +5,8 @@ import { applyDocument, applyStaticTranslations } from "./i18n/apply";
 import { LOCALES } from "./i18n/locale";
 import { createLocaleController, type StorageLike } from "./i18n/locale-controller";
 import { createTranslator } from "./i18n/translate";
+import { setupSettingsDialog } from "./settings/settings-dialog";
+import { loadThresholds } from "./settings/thresholds";
 
 function required(id: string): HTMLElement {
   const element = document.getElementById(id);
@@ -20,10 +22,22 @@ const controller = createLocaleController({
   storage,
   languages: navigator.languages?.length ? navigator.languages : [navigator.language],
 });
+let thresholds = loadThresholds(storage);
+let rerunInspection = () => {};
+const settings = setupSettingsDialog({
+  doc: document,
+  getThresholds: () => thresholds,
+  getLocale: () => controller.locale,
+  onSave: (value) => {
+    thresholds = value;
+    rerunInspection();
+  },
+});
 function translatePage(): void {
   const translator = createTranslator(controller.locale);
   applyDocument(document, translator);
   applyStaticTranslations(document, translator);
+  settings.refresh();
   for (const locale of LOCALES)
     required(`language-${locale}`).setAttribute(
       "aria-pressed",
@@ -59,7 +73,7 @@ async function update(): Promise<void> {
     const { startApp } = await import("./app");
     if (findProblems(capabilities, window.innerWidth).length > 0) return;
     started = true;
-    startApp(controller);
+    rerunInspection = startApp(controller, () => thresholds);
   } finally {
     starting = false;
   }

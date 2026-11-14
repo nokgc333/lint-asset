@@ -22,6 +22,8 @@ does the normal map conversion in one screen, without uploading anything.
 
 ## Features
 
+- Change inspection thresholds in Settings; values are remembered in this browser.
+
 - **Inspect a GLB.** Normals (flipped, missing, not unit length), non-manifold edges and open
   edges (holes), degenerate triangles, UVs (missing, outside 0-1, overlapping), the number of
   drawn triangles, the scale, and image references stored outside the file.
@@ -99,7 +101,7 @@ Inspection:
 - UVs: only the first UV set, and only the 0-1 square (tiling is not examined). Overlaps are
   found by drawing the triangles on a 1024 x 1024 grid, one primitive at a time, so a triangle
   too small to contain a pixel center is not drawn.
-- The thresholds (100,000 triangles, 0.01 m to 1000 m) are fixed for now.
+- The thresholds (100,000 triangles, 0.01 m to 1000 m by default) can be changed in Settings and are remembered in this browser.
 - The JSON report is always in English. The Markdown report follows the language of the page.
 
 Textures:
@@ -117,7 +119,7 @@ Environment:
   Workers. Phones and tablets are not supported yet.
 - So far it has been checked in a Chromium-based browser. Firefox and Safari are not checked yet.
 
-Planned, not implemented: settings for the thresholds, ORM packing, split glTF and OBJ input,
+Planned, not implemented: ORM packing, split glTF and OBJ input,
 a command-line version, fix hints for each problem, and filtering and sorting the list.
 
 ## How it works

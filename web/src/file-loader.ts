@@ -7,13 +7,14 @@ import { cancelLimit, confirmLimit } from "./limit-dialog";
 import { type Limits, planAfterLimitError, planIntake, RAISED_LIMITS } from "./load-plan";
 import { formatLoadError } from "./messages";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
-import type { AnalyzeResult } from "./wasm/lint_core.mjs";
+import type { AnalyzeResult, Thresholds } from "./wasm/lint_core.mjs";
 
 type LoadRequest = Extract<WorkerRequest, { type: "load" }>;
 interface Load {
   id: number;
   file: File;
   limits: Limits;
+  rerun: boolean;
   phase: "confirming" | "reading" | "loading" | "done";
 }
 interface LoaderOptions {
@@ -23,12 +24,14 @@ interface LoaderOptions {
   showGeometry: (result: AnalyzeResult, file: { name: string; size: number }) => void;
   isReady: () => boolean;
   firstRequestId: number;
+  getThresholds: () => Thresholds;
   getLocale?: () => Locale;
 }
 
 export function createFileLoader(options: LoaderOptions) {
   let nextId = options.firstRequestId;
   let active: Load | null = null;
+  let displayed: { file: File; limits: Limits } | null = null;
 
   function showError(code: string, detail: string | Text): void {
     const message: Text = (locale) =>
@@ -54,7 +57,13 @@ export function createFileLoader(options: LoaderOptions) {
       const bytes = await load.file.arrayBuffer();
       if (active !== load) return;
       load.phase = "loading";
-      options.post({ id: load.id, type: "load", bytes, ...load.limits });
+      options.post({
+        id: load.id,
+        type: "load",
+        bytes,
+        ...load.limits,
+        thresholds: options.getThresholds(),
+      });
     } catch (error) {
       if (active !== load) return;
       load.phase = "done";
@@ -78,7 +87,7 @@ export function createFileLoader(options: LoaderOptions) {
       );
       return;
     }
-    const load: Load = { id, file, limits: plan.limits, phase: "confirming" };
+    const load: Load = { id, file, limits: plan.limits, rerun: false, phase: "confirming" };
     active = load;
     if (plan.kind === "confirm") {
       const accepted = await confirmLimit(
@@ -110,6 +119,7 @@ export function createFileLoader(options: LoaderOptions) {
       const result = response.result;
       load.phase = "done";
       if (result.ok) {
+        displayed = { file: load.file, limits: load.limits };
         options.showGeometry(result, { name: load.file.name, size: load.file.size });
         options.error.set(null);
         options.status.set((locale) =>
@@ -121,7 +131,7 @@ export function createFileLoader(options: LoaderOptions) {
         return;
       }
       showError(result.code, result.message);
-      if (result.code !== "E-LOAD-003") return;
+      if (load.rerun || result.code !== "E-LOAD-003") return;
       const plan = planAfterLimitError(load.limits);
       if (plan.kind === "final") return;
       load.phase = "confirming";
@@ -145,5 +155,15 @@ export function createFileLoader(options: LoaderOptions) {
     }
   }
 
-  return { openFile, handleResponse, failWorker };
+  function rerun(): void {
+    if (!displayed || !options.isReady()) return;
+    active = null;
+    cancelLimit();
+    options.error.set(null);
+    const load: Load = { id: ++nextId, ...displayed, rerun: true, phase: "reading" };
+    active = load;
+    void send(load);
+  }
+
+  return { openFile, handleResponse, failWorker, rerun };
 }

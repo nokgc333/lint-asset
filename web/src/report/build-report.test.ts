@@ -4,6 +4,8 @@ import Ajv2020 from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
 import type { Issue } from "../wasm/lint_core.mjs";
 import { buildReport, safeFileName } from "./build-report";
+import { reportToJson } from "./to-json";
+import { reportToMarkdown } from "./to-markdown";
 
 const THRESHOLDS = { max_triangles: 100000, min_extent_m: 0.01, max_extent_m: 1000 };
 const NOW = new Date(Date.UTC(2026, 11, 1, 9, 30, 0, 123));
@@ -243,4 +245,14 @@ describe("a built report is valid against the published schema (TC-009)", () => 
     expect(text).not.toContain("someone");
     expect(text).not.toContain("/Users");
   });
+});
+
+it("exports the custom thresholds used by analyze in JSON and Markdown", () => {
+  const thresholds = { max_triangles: 54321, min_extent_m: 0.125, max_extent_m: 321 };
+  const source = input();
+  source.result.thresholds = thresholds;
+  const report = buildReport(source);
+  expect(JSON.parse(reportToJson(report)).thresholds).toEqual(thresholds);
+  const markdown = reportToMarkdown(report, "en");
+  for (const value of ["54321", "0.125", "321"]) expect(markdown).toContain(value);
 });

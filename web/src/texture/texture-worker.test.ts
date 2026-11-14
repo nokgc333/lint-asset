@@ -48,3 +48,23 @@ it("reports an error from the core as an error response", async () => {
   await handle({ id: 7, type: "version" });
   expect(reply).toHaveBeenCalledWith({ id: 7, type: "error", message: "boom" });
 });
+
+it("passes inspection thresholds to analyze and transfers the geometry", async () => {
+  const thresholds = { max_triangles: 5, min_extent_m: 0.1, max_extent_m: 20 };
+  const positions = new Float32Array([1, 2, 3]);
+  const result = {
+    parts: [{ positions, normals: positions, triangles: new Uint32Array([0]) }],
+    instances: [],
+    thresholds,
+  };
+  const analyze = vi.fn().mockReturnValue(result);
+  const reply = vi.fn();
+  const handle = createRequestHandler(Promise.resolve({ analyze } as unknown as LintCore), reply);
+  const bytes = new ArrayBuffer(4);
+  await handle({ id: 2, type: "load", bytes, maxFileBytes: 100, maxTriangles: 20, thresholds });
+  expect(analyze).toHaveBeenCalledWith(new Uint8Array(bytes), 100, 20, thresholds);
+  expect(reply).toHaveBeenCalledWith({ id: 2, type: "loaded", result }, [
+    positions.buffer,
+    result.parts[0]?.triangles.buffer,
+  ]);
+});

@@ -169,20 +169,43 @@ emscripten::val load_glb_geometry_js(const emscripten::val &bytes, double max_fi
     return out;
 }
 
+lint_asset::InspectionThresholds thresholds_from_js(const emscripten::val &value) {
+    if (value.isNull() || value.typeOf().as<std::string>() != "object") {
+        return {};
+    }
+    const auto triangles = value["max_triangles"];
+    const auto minimum = value["min_extent_m"];
+    const auto maximum = value["max_extent_m"];
+    for (const auto &field : {triangles, minimum, maximum}) {
+        if (field.typeOf().as<std::string>() != "number") {
+            return {};
+        }
+    }
+    const auto count = triangles.as<double>();
+    const auto low = minimum.as<double>();
+    const auto high = maximum.as<double>();
+    constexpr double MAX_EXACT = 9007199254740992.0;
+    if (!std::isfinite(count) || count < 0 || count > MAX_EXACT || std::floor(count) != count ||
+        !std::isfinite(low) || !std::isfinite(high) || low <= 0 || high <= low) {
+        return {};
+    }
+    return {static_cast<std::uint64_t>(count), low, high};
+}
+
 emscripten::val inspect_js(const emscripten::val &bytes, double max_file_bytes,
-                           double max_triangles) {
+                           double max_triangles, const emscripten::val &settings) {
     const auto result = geometry_from_js(bytes, max_file_bytes, max_triangles);
     auto out = load_result_to_js(result);
-    add_issues(out, result);
+    add_issues(out, result, thresholds_from_js(settings));
     return out;
 }
 
 emscripten::val analyze_js(const emscripten::val &bytes, double max_file_bytes,
-                           double max_triangles) {
+                           double max_triangles, const emscripten::val &settings) {
     const auto result = geometry_from_js(bytes, max_file_bytes, max_triangles);
     auto out = load_result_to_js(result);
     add_geometry(out, result);
-    const lint_asset::InspectionThresholds thresholds;
+    const auto thresholds = thresholds_from_js(settings);
     auto limits = emscripten::val::object();
     limits.set("max_triangles", static_cast<double>(thresholds.max_triangles));
     limits.set("min_extent_m", thresholds.min_extent_m);
@@ -200,5 +223,15 @@ EMSCRIPTEN_BINDINGS(lint_core) {
     emscripten::function("loadGlb", &load_glb_js);
     emscripten::function("loadGlbGeometry", &load_glb_geometry_js);
     emscripten::function("inspect", &inspect_js);
+    emscripten::function(
+        "inspect", emscripten::optional_override([](const emscripten::val &bytes,
+                                                    double max_file_bytes, double max_triangles) {
+            return inspect_js(bytes, max_file_bytes, max_triangles, emscripten::val::undefined());
+        }));
     emscripten::function("analyze", &analyze_js);
+    emscripten::function(
+        "analyze", emscripten::optional_override([](const emscripten::val &bytes,
+                                                    double max_file_bytes, double max_triangles) {
+            return analyze_js(bytes, max_file_bytes, max_triangles, emscripten::val::undefined());
+        }));
 }

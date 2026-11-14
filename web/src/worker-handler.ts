@@ -29,6 +29,7 @@ export function createRequestHandler(corePromise: Promise<LintCore>, reply: Repl
         new Uint8Array(request.bytes),
         request.maxFileBytes,
         request.maxTriangles,
+        request.thresholds,
       );
       const buffers = new Set<ArrayBuffer>();
       for (const part of result.parts) {

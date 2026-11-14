@@ -4,10 +4,14 @@ import { createTextSlot } from "./i18n/text-slot";
 import { cancelLimit, confirmLimit } from "./limit-dialog";
 import { DEFAULT_LIMITS, RAISED_LIMITS } from "./load-plan";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
+import { DEFAULT_THRESHOLDS } from "./settings/thresholds";
 
 vi.mock("./limit-dialog", () => ({ confirmLimit: vi.fn(), cancelLimit: vi.fn() }));
 
-function setup(getLocale: () => "en" | "ja" = () => "en") {
+function setup(
+  getLocale: () => "en" | "ja" = () => "en",
+  getThresholds = () => DEFAULT_THRESHOLDS,
+) {
   const status = { textContent: "" };
   const error = { textContent: "" };
   const post = vi.fn<(request: Extract<WorkerRequest, { type: "load" }>) => void>();
@@ -22,6 +26,7 @@ function setup(getLocale: () => "en" | "ja" = () => "en") {
     status: statusSlot,
     error: errorSlot,
     getLocale,
+    getThresholds,
     post,
     showGeometry,
     isReady: () => true,
@@ -206,4 +211,62 @@ describe("file loading", () => {
     await loader.handleResponse(failure(loader.post.mock.calls.at(-1)?.[0].id ?? 0, "E-LOAD-004"));
     expect(loader.showGeometry).toHaveBeenCalledTimes(1);
   });
+});
+
+function success(id: number): WorkerResponse {
+  return {
+    id,
+    type: "loaded",
+    result: {
+      ok: true,
+      code: "",
+      message: "",
+      meshes: 1,
+      primitives: 1,
+      triangles: 12,
+      parts: [],
+      instances: [],
+      issues: [],
+      thresholds: DEFAULT_THRESHOLDS,
+    },
+  };
+}
+
+it("reruns the displayed file with current thresholds and the same raised limits without confirmation", async () => {
+  let thresholds = DEFAULT_THRESHOLDS;
+  const loader = setup(
+    () => "en",
+    () => thresholds,
+  );
+  loader.rerun();
+  expect(loader.post).not.toHaveBeenCalled();
+  vi.mocked(confirmLimit).mockResolvedValue(true);
+  await loader.openFile(fileOfSize(DEFAULT_LIMITS.maxFileBytes + 1).file);
+  await loader.handleResponse(success(loader.post.mock.calls[0]?.[0].id ?? 0));
+  thresholds = { max_triangles: 50, min_extent_m: 0.1, max_extent_m: 20 };
+  loader.rerun();
+  expect(loader.status.textContent).toContain("Loading");
+  await vi.waitFor(() => expect(loader.post).toHaveBeenCalledTimes(2));
+  const request = loader.post.mock.calls[1]?.[0];
+  expect(request).toMatchObject({ ...RAISED_LIMITS, thresholds });
+  expect(confirmLimit).toHaveBeenCalledTimes(1);
+  await loader.handleResponse(success(request?.id ?? 0));
+  expect(loader.showGeometry).toHaveBeenCalledTimes(2);
+  expect(loader.status.textContent).toContain("12 triangles");
+});
+
+it("ignores stale reruns and reports rerun failure without offering raised limits", async () => {
+  const loader = setup();
+  await loader.openFile(fileOfSize(1).file);
+  await loader.handleResponse(success(loader.post.mock.calls[0]?.[0].id ?? 0));
+  loader.rerun();
+  await vi.waitFor(() => expect(loader.post).toHaveBeenCalledTimes(2));
+  const stale = loader.post.mock.calls[1]?.[0].id ?? 0;
+  loader.rerun();
+  await vi.waitFor(() => expect(loader.post).toHaveBeenCalledTimes(3));
+  await loader.handleResponse(success(stale));
+  expect(loader.showGeometry).toHaveBeenCalledTimes(1);
+  await loader.handleResponse(failure(loader.post.mock.calls[2]?.[0].id ?? 0));
+  expect(loader.error.textContent).toContain("E-LOAD-003");
+  expect(confirmLimit).not.toHaveBeenCalled();
 });

@@ -2,6 +2,25 @@ import type { Locale } from "./locale";
 
 export const catalogs: Record<Locale, Record<string, string>> = {
   en: {
+    "settings.open": "Settings",
+    "settings.title": "Settings",
+    "settings.description":
+      "These limits decide when the triangle-count and scale warnings appear. A change is applied to the open file at once and is remembered in this browser.",
+    "settings.maxTriangles": "Triangle limit (drawn triangles)",
+    "settings.minExtent": "Smallest size (m)",
+    "settings.maxExtent": "Largest size (m)",
+    "settings.hint.triangles": "Default: {default}. Allowed: {min} to {max}.",
+    "settings.hint.extent":
+      "The longest side of the model's bounding box, in metres. Default: {default} m. Allowed: {min} to {max}.",
+    "settings.save": "Save",
+    "settings.reset": "Reset to defaults",
+    "settings.cancel": "Cancel",
+    "settings.error.required": "Enter a value.",
+    "settings.error.notNumber": "Enter a number, for example 0.5.",
+    "settings.error.notInteger": "Enter a whole number.",
+    "settings.error.tooSmall": "Enter {min} or more.",
+    "settings.error.tooLarge": "Enter {max} or less.",
+    "settings.error.notAboveMin": "The largest size must be above the smallest size.",
     "footer.github": "GitHub",
     "footer.about": "About",
     "footer.donate": "Support the project",
@@ -238,6 +257,25 @@ export const catalogs: Record<Locale, Record<string, string>> = {
       "The longest side of the bounding box is {extent} m (limit {limit} m).",
   },
   ja: {
+    "settings.open": "設定",
+    "settings.title": "設定",
+    "settings.description":
+      "三角形数とスケールの警告を表示する基準を設定します。変更は開いているファイルにすぐに適用され、このブラウザに保存されます。",
+    "settings.maxTriangles": "三角形の上限（描かれる三角形）",
+    "settings.minExtent": "最小サイズ（m）",
+    "settings.maxExtent": "最大サイズ（m）",
+    "settings.hint.triangles": "初期値: {default}。設定範囲: {min}〜{max}。",
+    "settings.hint.extent":
+      "モデルのバウンディングボックスの最長辺（メートル単位）です。初期値: {default} m。設定範囲: {min}〜{max}。",
+    "settings.save": "保存",
+    "settings.reset": "初期値に戻す",
+    "settings.cancel": "キャンセル",
+    "settings.error.required": "値を入力してください。",
+    "settings.error.notNumber": "0.5 のような数値を入力してください。",
+    "settings.error.notInteger": "整数を入力してください。",
+    "settings.error.tooSmall": "{min} 以上の値を入力してください。",
+    "settings.error.tooLarge": "{max} 以下の値を入力してください。",
+    "settings.error.notAboveMin": "最大サイズは最小サイズより大きい値にしてください。",
     "footer.github": "GitHub リポジトリ",
     "footer.about": "このツールについて",
     "footer.donate": "開発を支援する",

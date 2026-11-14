@@ -150,6 +150,7 @@ canvas {
 }
 
 #limit-dialog,
+#settings-dialog,
 #about-dialog {
   max-width: min(36rem, calc(100% - 2rem));
   padding: 1.5rem;
@@ -160,6 +161,7 @@ canvas {
   overflow-wrap: anywhere;
 }
 
+#settings-dialog::backdrop,
 #limit-dialog::backdrop,
 #about-dialog::backdrop {
   background: rgb(0 0 0 / 70%);
@@ -481,4 +483,42 @@ canvas {
 
 #about-dialog li + li {
   margin-top: 0.5rem;
+}
+
+#settings-open {
+  border-width: 3px;
+  border-style: double;
+}
+
+#settings-dialog {
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  line-height: 1.6;
+}
+
+.settings-field {
+  margin-block: 1rem;
+}
+
+.settings-field label,
+.settings-field input {
+  display: block;
+  width: 100%;
+}
+
+.settings-field input {
+  padding: 0.5rem;
+  color: var(--text);
+  background: var(--panel-background);
+  border: 1px solid #9aaec4;
+  border-radius: 0.25rem;
+}
+
+.settings-field p {
+  margin-block: 0.5rem;
+}
+
+.settings-error:not(:empty) {
+  color: var(--severity-error);
+  font-weight: 700;
 }
