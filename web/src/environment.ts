@@ -1,3 +1,5 @@
+import type { Locale } from "./i18n/locale";
+import { createTranslator } from "./i18n/translate";
 export const MIN_VIEWPORT_WIDTH = 1024;
 
 export interface Capabilities {
@@ -53,27 +55,13 @@ export function isPermanent(problem: Problem): boolean {
   return problem !== "narrow";
 }
 
-const descriptions: Record<Problem, { cause: string; action: string }> = {
-  webgl2: {
-    cause: "WebGL2 is not available in this browser.",
-    action:
-      "Use the latest Chrome, Edge, Firefox, or Safari on a desktop computer, and turn on hardware acceleration in the browser settings.",
-  },
-  webassembly: {
-    cause: "WebAssembly is not available in this browser.",
-    action: "Use the latest Chrome, Edge, Firefox, or Safari on a desktop computer.",
-  },
-  worker: {
-    cause: "Web Workers are not available in this browser.",
-    action: "Use the latest Chrome, Edge, Firefox, or Safari on a desktop computer.",
-  },
-  narrow: {
-    cause: `The window is narrower than ${MIN_VIEWPORT_WIDTH} px.`,
-    action:
-      "Make the window wider, or open this page on a desktop computer. Phones and tablets are not supported yet.",
-  },
-};
-
-export function describeProblem(problem: Problem): { cause: string; action: string } {
-  return descriptions[problem];
+export function describeProblem(
+  problem: Problem,
+  locale: Locale = "en",
+): { cause: string; action: string } {
+  const { t } = createTranslator(locale);
+  return {
+    cause: t(`environment.${problem}.cause`, { width: MIN_VIEWPORT_WIDTH }),
+    action: t(`environment.${problem}.action`),
+  };
 }
