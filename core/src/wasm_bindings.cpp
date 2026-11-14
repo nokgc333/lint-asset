@@ -121,11 +121,14 @@ emscripten::val inspect_js(const emscripten::val &bytes, double max_file_bytes,
             item.set("rule", std::string(lint_asset::rule_name(issue.rule)));
             item.set("severity", std::string(lint_asset::severity_name(issue.severity)));
             item.set("message", issue.message);
-            item.set("element_kind", std::string("triangle"));
-            auto target = emscripten::val::object();
-            target.set("mesh", issue.mesh);
-            target.set("primitive", issue.primitive);
-            item.set("target", target);
+            item.set("element_kind",
+                     std::string(lint_asset::element_kind_name(issue.element_kind)));
+            if (issue.element_kind == lint_asset::ElementKind::triangle) {
+                auto target = emscripten::val::object();
+                target.set("mesh", issue.mesh);
+                target.set("primitive", issue.primitive);
+                item.set("target", target);
+            }
             item.set("count", static_cast<double>(issue.count));
             auto elements = emscripten::val::array();
             for (const auto element : issue.elements) {

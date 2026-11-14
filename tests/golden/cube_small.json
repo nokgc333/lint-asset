@@ -1,0 +1,11 @@
+[
+  {
+    "rule": "asset.scale_too_small",
+    "severity": "warning",
+    "message": "The longest side of the bounding box is 0.005 m (minimum 0.01 m).",
+    "element_kind": "asset",
+    "count": 1,
+    "elements": [],
+    "truncated": false
+  }
+]

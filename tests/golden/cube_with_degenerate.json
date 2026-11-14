@@ -1,0 +1,15 @@
+[
+  {
+    "rule": "mesh.degenerate_triangle",
+    "severity": "error",
+    "message": "Triangles with an area below 1e-10, or with a position that is not a finite number.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 0
+    },
+    "count": 1,
+    "elements": [12],
+    "truncated": false
+  }
+]

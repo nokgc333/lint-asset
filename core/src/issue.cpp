@@ -14,6 +14,24 @@ std::string_view rule_name(RuleId rule) noexcept {
         return "mesh.nonmanifold_edge";
     case RuleId::mesh_boundary_edge:
         return "mesh.boundary_edge";
+    case RuleId::mesh_degenerate_triangle:
+        return "mesh.degenerate_triangle";
+    case RuleId::asset_triangle_count_exceeded:
+        return "asset.triangle_count_exceeded";
+    case RuleId::asset_scale_too_small:
+        return "asset.scale_too_small";
+    case RuleId::asset_scale_too_large:
+        return "asset.scale_too_large";
+    }
+    return {};
+}
+
+std::string_view element_kind_name(ElementKind kind) noexcept {
+    switch (kind) {
+    case ElementKind::triangle:
+        return "triangle";
+    case ElementKind::asset:
+        return "asset";
     }
     return {};
 }

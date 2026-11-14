@@ -70,3 +70,49 @@ TEST_CASE("the combined list holds exactly what the single checks find") {
                             lint_asset::inspect_edges(geometry).size());
     CHECK(all == lint_asset::inspect_geometry(geometry));
 }
+
+TEST_CASE("whole-asset issues come first, then the triangle issues") {
+    Geometry geometry;
+    geometry.primitives.push_back(triangle(DOWN, 0, 0));  // flipped, and an open triangle
+    lint_asset::MeshInstance instance;
+    instance.mesh = 0;
+    instance.world = {1500, 0, 0, 0, 0, 1500, 0, 0, 0, 0, 1500, 0, 0, 0, 0, 1};
+    geometry.instances.push_back(instance);  // 1500 m across, and one drawn triangle
+
+    const auto issues = lint_asset::inspect_geometry(geometry, {.max_triangles = 0});
+
+    REQUIRE(issues.size() == 4);
+    CHECK(issues[0].rule == RuleId::asset_triangle_count_exceeded);
+    CHECK(issues[1].rule == RuleId::asset_scale_too_large);
+    CHECK(issues[2].rule == RuleId::normal_flipped);
+    CHECK(issues[3].rule == RuleId::mesh_boundary_edge);
+}
+
+TEST_CASE("a degenerate triangle is reported once, and the other checks leave it alone") {
+    Geometry geometry;
+    PrimitiveGeometry part;
+    part.positions = {0, 0, 0, 1, 0, 0, 2, 0, 0};  // three points on a line
+    part.normals = {0, 0, -1, 0, 0, -1, 0, 0, -1};
+    part.triangles = {0, 1, 2};
+    geometry.primitives.push_back(part);
+    const auto issues = lint_asset::inspect_geometry(geometry);
+
+    REQUIRE(issues.size() == 1);
+    CHECK(issues[0].rule == RuleId::mesh_degenerate_triangle);
+}
+
+TEST_CASE("the thresholds reach the size checks") {
+    Geometry geometry;
+    geometry.primitives.push_back(triangle(UP, 0, 0));
+    lint_asset::MeshInstance instance;
+    instance.mesh = 0;
+    instance.world = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+    geometry.instances.push_back(instance);
+
+    const auto with_defaults = lint_asset::inspect_geometry(geometry);
+    const auto strict = lint_asset::inspect_geometry(geometry, {.min_extent_m = 5.0});
+
+    CHECK(with_defaults.size() == 1);  // only the open triangle
+    REQUIRE(strict.size() == 2);
+    CHECK(strict[0].rule == RuleId::asset_scale_too_small);
+}
