@@ -254,6 +254,22 @@ npm run audit:a11y
 
 CI でも、ビルドしたアプリに同じ監査を `accessibility` ジョブとして実行します。
 
+ローダー（GLB・glTF・OBJ）とテクスチャ変換を libFuzzer でファジングするには、libFuzzer の実行時
+ライブラリを持つ clang（Apple の clang には無い）でターゲットをビルドし、元になる入力を書いて、
+対象ごとに一定時間実行します。
+
+```sh
+CC=clang-18 CXX=clang++-18 cmake -S . -B build/fuzz -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLINT_ASSET_FUZZ=ON
+cmake --build build/fuzz --target fuzz_glb fuzz_gltf fuzz_obj fuzz_texture
+python3 tests/tools/make_test_glbs.py build/fuzz-fixtures
+python3 fuzz/make_seeds.py build/fuzz-fixtures samples build/fuzz-corpus
+python3 fuzz/run_fuzz.py build/fuzz build/fuzz-corpus 60
+```
+
+CI は、プルリクエストごとに対象あたり 60 秒（`fuzz-smoke`）、毎週約 30 分、これを実行します。
+クラッシュした入力は、直るまでツールを攻撃する手がかりになるので、表示も保存もしません。ログに
+残るのは、サニタイザーの報告・シード値・入力のサイズと SHA-256 だけで、シード値で再現できます。
+
 ## サンプル
 
 `samples/` の2ファイルは `tests/tools/make_samples.py` で生成し、CC0 1.0 により
