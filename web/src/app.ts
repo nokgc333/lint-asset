@@ -1,5 +1,6 @@
 import { createFileLoader } from "./file-loader";
 import { pickSingleFile } from "./intake";
+import { createIssuePanel } from "./issues/panel";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
 import { createModuleWorker } from "./trusted-worker";
 import { ORBIT_STEP, PAN_STEP, ZOOM_FACTOR } from "./viewer/controls";
@@ -26,6 +27,7 @@ export function startApp(): void {
   const VERSION_REQUEST_ID = 1;
   let viewer: Viewer | null = null;
   let workerAvailable = true;
+  const panel = createIssuePanel({ onSelect: (issue) => viewer?.selectIssue(issue) });
 
   function post(request: WorkerRequest, transfer: Transferable[] = []): void {
     worker.postMessage(request, transfer);
@@ -35,7 +37,10 @@ export function startApp(): void {
     status,
     error,
     post: (request) => post(request, [request.bytes]),
-    showGeometry: (result) => viewer?.setGeometry(result),
+    showGeometry: (result) => {
+      viewer?.setGeometry(result);
+      panel.setIssues(result.issues);
+    },
     isReady: () => viewer !== null && workerAvailable,
     firstRequestId: VERSION_REQUEST_ID,
   });

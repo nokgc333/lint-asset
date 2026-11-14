@@ -1,12 +1,23 @@
 import * as THREE from "three";
-import type { GeometryResult } from "../wasm/lint_core.mjs";
+import { SEVERITIES, type Severity } from "../issues/describe";
+import { issueBounds, triangleSeverities } from "../issues/geometry";
+import { buildOverlay } from "../issues/overlay";
+import {
+  hexToRgb,
+  MODEL_COLOR,
+  MODEL_COLOR_WITH_ISSUES,
+  PANEL_BACKGROUND,
+  SEVERITY_COLORS,
+} from "../issues/palette";
+import type { AnalyzeResult, Issue } from "../wasm/lint_core.mjs";
 import { sceneBounds } from "./bounds";
-import { cameraPosition, fitToBounds, orbit, pan, zoom } from "./camera";
+import { cameraPosition, fitToBounds, focusOnBounds, orbit, pan, zoom } from "./camera";
 import { ORBIT_STEP, PAN_STEP, POINTER_ORBIT_STEP, WHEEL_ZOOM_STEP, ZOOM_FACTOR } from "./controls";
 import { normalLines } from "./normals";
 
 export interface Viewer {
-  setGeometry(result: GeometryResult): void;
+  setGeometry(result: AnalyzeResult): void;
+  selectIssue(issue: Issue | null): void;
   setWireframe(on: boolean): void;
   setNormals(on: boolean): void;
   orbitBy(dYaw: number, dPitch: number): void;
@@ -24,13 +35,15 @@ export function createViewer(canvas: HTMLCanvasElement): Viewer {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x18212d);
+  scene.background = new THREE.Color(PANEL_BACKGROUND);
   const camera = new THREE.PerspectiveCamera(CAMERA_FOV);
   const light = new THREE.DirectionalLight(0xffffff, 3);
   scene.add(new THREE.HemisphereLight(0xe4efff, 0x393345, 2), light);
   const model = new THREE.Group();
   const normalGroup = new THREE.Group();
-  scene.add(model, normalGroup);
+  const overlayGroup = new THREE.Group();
+  const selectionGroup = new THREE.Group();
+  scene.add(model, normalGroup, overlayGroup, selectionGroup);
   let initial = fitToBounds(EMPTY_BOUNDS, CAMERA_FOV);
   let state = initial;
   let frame: number | null = null;
@@ -39,6 +52,86 @@ export function createViewer(canvas: HTMLCanvasElement): Viewer {
   const geometries: THREE.BufferGeometry[] = [];
   const materials: THREE.Material[] = [];
   const meshMaterials: THREE.MeshStandardMaterial[] = [];
+  const selectionGeometries: THREE.BufferGeometry[] = [];
+  let currentResult: AnalyzeResult | null = null;
+  let overlayMaterial: THREE.ShaderMaterial | null = null;
+  let selectionMaterial: THREE.ShaderMaterial | null = null;
+
+  function createOverlayMaterial(opacity: number, brighten: number): THREE.ShaderMaterial {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uPalette: {
+          value: SEVERITIES.map(
+            (severity) => new THREE.Vector3(...hexToRgb(SEVERITY_COLORS[severity])),
+          ),
+        },
+        uOpacity: { value: opacity },
+        uBrighten: { value: brighten },
+      },
+      vertexShader: `
+        attribute float aSeverity;
+        varying float vSeverity;
+        void main() {
+          vSeverity = aSeverity;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uPalette[3];
+        uniform float uOpacity;
+        uniform float uBrighten;
+        varying float vSeverity;
+        void main() {
+          vec3 color = uPalette[int(floor(vSeverity + 0.5))];
+          gl_FragColor = vec4(mix(color, vec3(1.0), uBrighten), uOpacity);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+      side: THREE.FrontSide,
+    });
+  }
+
+  function addOverlay(
+    flagged: ReadonlyMap<string, ReadonlyMap<number, Severity>>,
+    group: THREE.Group,
+    material: THREE.ShaderMaterial,
+    ownedGeometries: THREE.BufferGeometry[],
+    renderOrder: number,
+  ): void {
+    if (!currentResult) return;
+    for (const part of currentResult.parts) {
+      const triangles = flagged.get(`${part.mesh}:${part.primitive}`);
+      if (!triangles) continue;
+      const overlay = buildOverlay(part, triangles);
+      if (overlay.triangleCount === 0) continue;
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.BufferAttribute(overlay.positions, 3));
+      geometry.setAttribute("aSeverity", new THREE.BufferAttribute(overlay.severities, 1));
+      ownedGeometries.push(geometry);
+      for (const instance of currentResult.instances) {
+        if (instance.mesh !== part.mesh) continue;
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.matrixAutoUpdate = false;
+        mesh.matrix.fromArray(instance.world);
+        mesh.renderOrder = renderOrder;
+        group.add(mesh);
+      }
+    }
+  }
+
+  function clearSelection(): void {
+    selectionGroup.clear();
+    for (const geometry of selectionGeometries) geometry.dispose();
+    selectionGeometries.length = 0;
+    selectionMaterial?.dispose();
+    selectionMaterial = null;
+    const opacity = overlayMaterial?.uniforms.uOpacity;
+    if (opacity) opacity.value = 0.8;
+  }
 
   function requestRender(): void {
     if (disposed || frame !== null) return;
@@ -65,6 +158,10 @@ export function createViewer(canvas: HTMLCanvasElement): Viewer {
   }
 
   function clearGeometry(): void {
+    clearSelection();
+    overlayGroup.clear();
+    overlayMaterial = null;
+    currentResult = null;
     model.clear();
     normalGroup.clear();
     for (const geometry of geometries) geometry.dispose();
@@ -78,6 +175,7 @@ export function createViewer(canvas: HTMLCanvasElement): Viewer {
     setGeometry(result) {
       if (!result.ok || disposed) return;
       clearGeometry();
+      currentResult = result;
       initial = fitToBounds(
         sceneBounds(result.parts, result.instances) ?? EMPTY_BOUNDS,
         CAMERA_FOV,
@@ -92,9 +190,10 @@ export function createViewer(canvas: HTMLCanvasElement): Viewer {
           geometry.setAttribute("normal", new THREE.BufferAttribute(part.normals, 3));
         geometry.setIndex(new THREE.BufferAttribute(part.triangles, 1));
         const material = new THREE.MeshStandardMaterial({
-          color: 0x92a8bf,
+          color: result.issues.some((issue) => issue.element_kind === "triangle")
+            ? MODEL_COLOR_WITH_ISSUES
+            : MODEL_COLOR,
           flatShading: part.normals.length === 0,
-          // Back faces stay invisible so a flipped face shows as a hole.
           side: THREE.FrontSide,
           wireframe,
         });
@@ -122,6 +221,36 @@ export function createViewer(canvas: HTMLCanvasElement): Viewer {
           lines.matrixAutoUpdate = false;
           lines.matrix.fromArray(instance.world);
           normalGroup.add(lines);
+        }
+      }
+      const flagged = triangleSeverities(result.issues);
+      if (flagged.size > 0) {
+        overlayMaterial = createOverlayMaterial(0.8, 0);
+        materials.push(overlayMaterial);
+        addOverlay(flagged, overlayGroup, overlayMaterial, geometries, 1);
+      }
+      requestRender();
+    },
+    selectIssue(issue) {
+      if (disposed) return;
+      clearSelection();
+      if (issue && currentResult) {
+        if (issue.element_kind === "triangle") {
+          selectionMaterial = createOverlayMaterial(1, 0.25);
+          addOverlay(
+            triangleSeverities([issue]),
+            selectionGroup,
+            selectionMaterial,
+            selectionGeometries,
+            2,
+          );
+          const opacity = overlayMaterial?.uniforms.uOpacity;
+          if (opacity) opacity.value = 0.35;
+        }
+        const bounds = issueBounds(issue, currentResult.parts, currentResult.instances);
+        if (bounds) {
+          // Instant focus also respects prefers-reduced-motion.
+          state = focusOnBounds(state, bounds, CAMERA_FOV);
         }
       }
       requestRender();
