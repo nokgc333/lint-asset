@@ -20,6 +20,7 @@ enum class RuleId : std::uint8_t {
     mesh_degenerate_triangle,       // "mesh.degenerate_triangle"
     uv_missing,                     // "uv.missing"
     uv_out_of_range,                // "uv.out_of_range"
+    uv_overlap,                     // "uv.overlap"
     asset_triangle_count_exceeded,  // "asset.triangle_count_exceeded"
     asset_scale_too_small,          // "asset.scale_too_small"
     asset_scale_too_large,          // "asset.scale_too_large"

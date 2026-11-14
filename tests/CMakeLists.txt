@@ -12,6 +12,7 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(LINT_ASSET_TEST_GLB_DIR "${CMAKE_CURRENT_BINARY_DIR}/glb")
 set(LINT_ASSET_TEST_GLB_NAMES
   node_transforms quantized_strided index_out_of_vertex_range sparse_accessor
+  cube_uv_overlap_same cube_uv_overlap_mirrored
   cube_flat cube_uv_out_of_range uv_ushort_normalized uv_count_mismatch uv_wrong_type
   node_cycle node_instance_explosion
   cube_small cube_huge cube_cm_export cube_with_degenerate

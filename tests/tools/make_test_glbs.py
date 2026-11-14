@@ -122,7 +122,7 @@ def cube_open_top():
     return build_glb(*cube_document(open_top=True))
 
 
-def flat_cube(normal_scales, uv_offset_face=None):
+def flat_cube(normal_scales, uv_offset_face=None, uv_overlap=None):
     faces = [
         ((0, 0, -1), [(0, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 0)]),
         ((0, 0, 1), [(0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)]),
@@ -141,12 +141,16 @@ def flat_cube(normal_scales, uv_offset_face=None):
                      a[2] * b[0] - a[0] * b[2],
                      a[0] * b[1] - a[1] * b[0]]
             assert cross == list(outward)
-        col, row = face % 3, face // 3
+        atlas_face = 0 if face == 1 and uv_overlap is not None else face
+        col, row = atlas_face % 3, atlas_face // 3
         u0, u1 = col / 3 + 0.01, (col + 1) / 3 - 0.01
         v0, v1 = row / 2 + 0.01, (row + 1) / 2 - 0.01
         offset = 2.0 if face == uv_offset_face else 0.0
-        uvs.extend([u0 + offset, v0, u1 + offset, v0,
-                    u1 + offset, v1, u0 + offset, v1])
+        face_uvs = [u0 + offset, v0, u1 + offset, v0,
+                    u1 + offset, v1, u0 + offset, v1]
+        if face == 1 and uv_overlap == "mirrored":
+            face_uvs[::2] = [(u0 + u1) - u for u in face_uvs[::2]]
+        uvs.extend(face_uvs)
         positions.extend(value for vertex in vertices for value in vertex)
         normals.extend(value * normal_scales[face] for _ in vertices for value in outward)
         indices.extend(face * len(vertices) + index for index in (0, 1, 2, 0, 2, 3))
@@ -168,6 +172,14 @@ def flat_cube(normal_scales, uv_offset_face=None):
 
 def cube_flat():
     return flat_cube([1] * 6)
+
+
+def cube_uv_overlap_same():
+    return flat_cube([1] * 6, uv_overlap="same")
+
+
+def cube_uv_overlap_mirrored():
+    return flat_cube([1] * 6, uv_overlap="mirrored")
 
 
 def cube_uv_out_of_range():
@@ -395,6 +407,7 @@ def main():
     output = Path(sys.argv[1])
     output.mkdir(parents=True, exist_ok=True)
     builders = [
+        cube_uv_overlap_same, cube_uv_overlap_mirrored,
         cube_flat, cube_uv_out_of_range, uv_ushort_normalized, uv_count_mismatch, uv_wrong_type,
         node_transforms, quantized_strided, index_out_of_vertex_range, sparse_accessor,
         node_cycle, node_instance_explosion,

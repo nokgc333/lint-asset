@@ -199,6 +199,37 @@ TEST_CASE("inspection golden: cube_uv_out_of_range") {
     CHECK(inspect_fixture("cube_uv_out_of_range") == expected);
 }
 
+TEST_CASE("inspection golden: cube_uv_overlap_same") {
+    const std::vector<lint_asset::Issue> expected = {
+        {lint_asset::RuleId::uv_overlap,
+         lint_asset::Severity::error,
+         "Triangles overlap in UV space.",
+         0,
+         0,
+         4,
+         {0, 1, 2, 3},
+         false,
+         lint_asset::ElementKind::triangle},
+    };
+    CHECK(inspect_fixture("cube_uv_overlap_same") == expected);
+}
+
+TEST_CASE("inspection golden: cube_uv_overlap_mirrored") {
+    const std::vector<lint_asset::Issue> expected = {
+        {lint_asset::RuleId::uv_overlap,
+         lint_asset::Severity::warning,
+         "Triangles overlap in UV space in a mirrored layout (for example, left and right halves "
+         "that share one area).",
+         0,
+         0,
+         4,
+         {0, 1, 2, 3},
+         false,
+         lint_asset::ElementKind::triangle},
+    };
+    CHECK(inspect_fixture("cube_uv_overlap_mirrored") == expected);
+}
+
 TEST_CASE("inspection golden: cube_with_degenerate") {
     const std::vector<lint_asset::Issue> expected = {
         {lint_asset::RuleId::mesh_degenerate_triangle,
