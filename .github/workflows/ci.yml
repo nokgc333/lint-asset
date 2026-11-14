@@ -93,7 +93,7 @@ jobs:
       - name: Check C++ formatting
         # Pinned to the same clang-format version as local development.
         run: |
-          find core tests \( -name '*.cpp' -o -name '*.hpp' \) -print0 \
+          find core tests fuzz \( -name '*.cpp' -o -name '*.hpp' \) -print0 \
             | xargs -0 pipx run --spec clang-format==23.1.5 clang-format --dry-run -Werror
 
   native-tests:
@@ -227,3 +227,26 @@ jobs:
         env:
           CHROME_PATH: /usr/bin/google-chrome
         run: node scripts/audit-accessibility.mjs build/web
+
+  fuzz-smoke:
+    name: fuzz-smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CC: clang-18
+      CXX: clang++-18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install the libFuzzer runtime
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libclang-rt-18-dev
+      - name: Configure
+        run: cmake -S . -B build/fuzz -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLINT_ASSET_FUZZ=ON
+      - name: Build the fuzz targets
+        run: cmake --build build/fuzz --target fuzz_glb fuzz_gltf fuzz_obj fuzz_texture
+      - name: Write the seed inputs
+        run: |
+          python3 tests/tools/make_test_glbs.py build/fuzz-fixtures
+          python3 fuzz/make_seeds.py build/fuzz-fixtures samples build/fuzz-corpus
+      - name: Fuzz each target for 60 seconds
+        # A failing input is not printed or uploaded: see fuzz/run_fuzz.py.
+        run: python3 fuzz/run_fuzz.py build/fuzz build/fuzz-corpus 60

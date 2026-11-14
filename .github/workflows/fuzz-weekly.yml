@@ -1,0 +1,44 @@
+name: Fuzz weekly
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+# Least privilege: this job only reads the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-weekly
+  cancel-in-progress: false
+
+jobs:
+  fuzz-long:
+    name: fuzz-long
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CC: clang-18
+      CXX: clang++-18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install the libFuzzer runtime
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libclang-rt-18-dev
+      - name: Restore the inputs found in earlier runs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/fuzz/fuzz-work
+          key: fuzz-work-${{ github.run_id }}
+          restore-keys: fuzz-work-
+      - name: Configure
+        run: cmake -S . -B build/fuzz -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLINT_ASSET_FUZZ=ON
+      - name: Build the fuzz targets
+        run: cmake --build build/fuzz --target fuzz_glb fuzz_gltf fuzz_obj fuzz_texture
+      - name: Write the seed inputs
+        run: |
+          python3 tests/tools/make_test_glbs.py build/fuzz-fixtures
+          python3 fuzz/make_seeds.py build/fuzz-fixtures samples build/fuzz-corpus
+      - name: Fuzz each target for 7 minutes (about 30 minutes in all)
+        # A failing input is not printed or uploaded: see fuzz/run_fuzz.py.
+        run: python3 fuzz/run_fuzz.py build/fuzz build/fuzz-corpus 420
