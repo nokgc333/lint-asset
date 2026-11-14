@@ -17,10 +17,13 @@ import { createTextureBrowser } from "./texture/texture-browser";
 import { createModuleWorker } from "./trusted-worker";
 import { ORBIT_STEP, PAN_STEP, ZOOM_FACTOR } from "./viewer/controls";
 import type { Viewer } from "./viewer/viewer";
-import type { AnalyzeResult } from "./wasm/lint_core.mjs";
+import type { AnalyzeResult, Thresholds } from "./wasm/lint_core.mjs";
 import workerUrl from "./worker.ts?worker&url";
 
-export function startApp(controller: LocaleController): void {
+export function startApp(
+  controller: LocaleController,
+  getThresholds: () => Thresholds,
+): () => void {
   function required<T extends Element>(selector: string): T {
     const element = document.querySelector<T>(selector);
     if (!element) throw new Error(`Missing element: ${selector}`);
@@ -80,6 +83,7 @@ export function startApp(controller: LocaleController): void {
   }
 
   const loader = createFileLoader({
+    getThresholds,
     status,
     error,
     getLocale,
@@ -209,4 +213,5 @@ export function startApp(controller: LocaleController): void {
     }
   }
   void initialize();
+  return loader.rerun;
 }

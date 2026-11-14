@@ -20,6 +20,7 @@ vi.mock("./worker.ts?worker&url", () => ({ default: "/worker.js" }));
 
 import { startApp } from "./app";
 import { createLocaleController } from "./i18n/locale-controller";
+import { DEFAULT_THRESHOLDS } from "./settings/thresholds";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -68,7 +69,7 @@ it("exports the displayed model with the engine version and retains it after a f
     return 1;
   });
   const controller = createLocaleController({ storage: null, languages: ["en"] });
-  startApp(controller);
+  startApp(controller, () => DEFAULT_THRESHOLDS);
   await vi.dynamicImportSettled();
   const receive = (response: WorkerResponse) => {
     const listener = worker.addEventListener.mock.calls.find(([type]) => type === "message")?.[1];

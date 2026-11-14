@@ -27,12 +27,42 @@ function setup(width: number, capabilities = { webgl2: true, webassembly: true, 
     "language-en": languageEn,
     "language-ja": languageJa,
   };
+  const settingsElements = new Map(
+    [
+      "open",
+      "dialog",
+      "save",
+      "reset",
+      "cancel",
+      "max-triangles",
+      "min-extent",
+      "max-extent",
+      "max-triangles-hint",
+      "min-extent-hint",
+      "max-extent-hint",
+      "max-triangles-error",
+      "min-extent-error",
+      "max-extent-error",
+    ].map((id) => [
+      `settings-${id}`,
+      Object.assign(new EventTarget(), {
+        value: "",
+        textContent: "",
+        open: false,
+        focus: vi.fn(),
+        setAttribute: vi.fn(),
+        removeAttribute: vi.fn(),
+        showModal: vi.fn(),
+        close: vi.fn(),
+      }),
+    ]),
+  );
   const document = {
     dispatchEvent: vi.fn(),
     documentElement: { lang: "en" },
     title: "",
     querySelectorAll: () => [heading],
-    getElementById: (id: keyof typeof elements) => elements[id],
+    getElementById: (id: keyof typeof elements) => elements[id] ?? settingsElements.get(id),
     createElement: (tag: string) =>
       tag === "canvas"
         ? { getContext: () => (capabilities.webgl2 ? {} : null) }
@@ -76,6 +106,7 @@ function setup(width: number, capabilities = { webgl2: true, webassembly: true, 
     window,
     heading,
     elements,
+    settingsElements,
   };
 }
 
@@ -179,4 +210,26 @@ it("switches screens while retaining state and requests a viewer resize on retur
     expect.objectContaining({ type: "screen-inspect-shown" }),
   );
   expect(startApp).toHaveBeenCalledOnce();
+});
+
+it("shares saved thresholds with the app and reruns after settings save on the texture screen", async () => {
+  const page = setup(1280);
+  const rerun = vi.fn();
+  startApp.mockReturnValue(rerun);
+  await import("./main");
+  await vi.dynamicImportSettled();
+  const getThresholds = startApp.mock.calls[0]?.[1];
+  expect(getThresholds()).toEqual({
+    max_triangles: 100000,
+    min_extent_m: 0.01,
+    max_extent_m: 1000,
+  });
+  page.elements["screen-texture-button"].dispatchEvent(new Event("click"));
+  page.settingsElements.get("settings-open")?.dispatchEvent(new Event("click"));
+  const input = page.settingsElements.get("settings-max-triangles");
+  if (input) input.value = "42";
+  page.settingsElements.get("settings-save")?.dispatchEvent(new Event("click"));
+  expect(getThresholds().max_triangles).toBe(42);
+  expect(rerun).toHaveBeenCalledOnce();
+  expect(page.elements["screen-texture"].hidden).toBe(false);
 });

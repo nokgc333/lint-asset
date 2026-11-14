@@ -24,6 +24,7 @@
           <button id="language-en" type="button" lang="en" aria-pressed="true">English</button>
           <button id="language-ja" type="button" lang="ja" aria-pressed="false">日本語</button>
         </div>
+        <button id="settings-open" type="button" data-i18n="settings.open">Settings</button>
         <nav class="screen-switch" aria-label="Screens" data-i18n-attr="aria-label:nav.label">
           <button id="screen-inspect-button" type="button" aria-current="page" aria-controls="screen-inspect" data-i18n="nav.inspect">Inspect</button>
           <button id="screen-texture-button" type="button" aria-controls="screen-texture" data-i18n="nav.texture">Texture</button>
@@ -127,7 +128,34 @@
         <!-- biome-ignore lint/a11y/useValidAnchor: links.ts sets the URL only after donation is enabled; otherwise this stays hidden. -->
         <a data-link="donate" hidden data-i18n="footer.donate">Support the project</a>
       </footer>
-      <dialog id="about-dialog" aria-labelledby="about-title">
+      <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <h2 id="settings-title" data-i18n="settings.title">Settings</h2>
+      <p data-i18n="settings.description">These limits decide when the triangle-count and scale warnings appear. A change is applied to the open file at once and is remembered in this browser.</p>
+      <div class="settings-field">
+        <label for="settings-max-triangles" data-i18n="settings.maxTriangles">Triangle limit (drawn triangles)</label>
+        <input id="settings-max-triangles" type="text" inputmode="decimal" autocomplete="off" aria-describedby="settings-max-triangles-hint settings-max-triangles-error" />
+        <p id="settings-max-triangles-hint" data-i18n="settings.hint.triangles"></p>
+        <p id="settings-max-triangles-error" class="settings-error" role="alert"></p>
+      </div>
+      <div class="settings-field">
+        <label for="settings-min-extent" data-i18n="settings.minExtent">Smallest size (m)</label>
+        <input id="settings-min-extent" type="text" inputmode="decimal" autocomplete="off" aria-describedby="settings-min-extent-hint settings-min-extent-error" />
+        <p id="settings-min-extent-hint" data-i18n="settings.hint.extent"></p>
+        <p id="settings-min-extent-error" class="settings-error" role="alert"></p>
+      </div>
+      <div class="settings-field">
+        <label for="settings-max-extent" data-i18n="settings.maxExtent">Largest size (m)</label>
+        <input id="settings-max-extent" type="text" inputmode="decimal" autocomplete="off" aria-describedby="settings-max-extent-hint settings-max-extent-error" />
+        <p id="settings-max-extent-hint" data-i18n="settings.hint.extent"></p>
+        <p id="settings-max-extent-error" class="settings-error" role="alert"></p>
+      </div>
+      <div class="dialog-actions">
+        <button id="settings-save" type="button" data-i18n="settings.save">Save</button>
+        <button id="settings-reset" type="button" data-i18n="settings.reset">Reset to defaults</button>
+        <button id="settings-cancel" type="button" data-i18n="settings.cancel">Cancel</button>
+      </div>
+    </dialog>
+    <dialog id="about-dialog" aria-labelledby="about-title">
         <h2 id="about-title" data-i18n="about.title">About this tool</h2>
         <p data-i18n="about.description">Inspect GLB geometry and convert normal maps in your browser.</p>
         <section aria-labelledby="about-heading">

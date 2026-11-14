@@ -1,4 +1,4 @@
-import type { AnalyzeResult, NormalMapResult } from "./wasm/lint_core.mjs";
+import type { AnalyzeResult, NormalMapResult, Thresholds } from "./wasm/lint_core.mjs";
 
 export type WorkerRequest =
   | { readonly id: number; readonly type: "version" }
@@ -14,6 +14,7 @@ export type WorkerRequest =
       readonly id: number;
       readonly type: "load";
       readonly bytes: ArrayBuffer;
+      readonly thresholds: Thresholds;
       readonly maxFileBytes: number;
       readonly maxTriangles: number;
     };
