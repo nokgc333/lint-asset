@@ -85,6 +85,29 @@ export interface Thresholds {
 
 export type AnalyzeResult = GeometryResult & { issues: Issue[]; thresholds: Thresholds };
 
+/** The reason a texture operation failed (§5.12). */
+export type TextureErrorCode =
+  | "E-TEX-001" // the pixel buffer does not match the width and height
+  | "E-TEX-003"; // more pixels than the limit
+
+export interface NormalMapSuccess {
+  ok: true;
+  code: "";
+  message: "";
+  /** Pixels with alpha below 255. A browser may already have changed their color when it decoded the image. */
+  translucent_pixels: number;
+}
+
+export interface NormalMapFailure {
+  ok: false;
+  code: TextureErrorCode;
+  /** An English reason. Show the user a translated text chosen by `code`, not this string. */
+  message: string;
+  translucent_pixels: 0;
+}
+
+export type NormalMapResult = NormalMapSuccess | NormalMapFailure;
+
 export interface LintCore {
   version(): string;
   /**
@@ -96,6 +119,19 @@ export interface LintCore {
   loadGlbGeometry(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): GeometryResult;
   analyze(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): AnalyzeResult;
   inspect(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): InspectResult;
+  /**
+   * Converts a normal map between DirectX and OpenGL (FR-008), in place: g' = 255 - g.
+   * `rgba` holds width * height pixels of 4 bytes (R, G, B, A), straight alpha, row by row.
+   * Both directions are the same operation, and applying it twice restores every byte.
+   * On success `rgba` is changed; on failure it is left as it was. Never throws on bad input.
+   * `maxPixels` is 8192 * 8192 by default in the requirements (§4.8).
+   */
+  flipNormalMapGreen(
+    rgba: Uint8Array | Uint8ClampedArray,
+    width: number,
+    height: number,
+    maxPixels: number,
+  ): NormalMapResult;
 }
 
 export default function createLintCore(): Promise<LintCore>;

@@ -32,7 +32,7 @@ add_custom_command(
   VERBATIM)
 add_custom_target(lint_test_glbs DEPENDS ${LINT_ASSET_TEST_GLB_FILES})
 
-add_executable(lint_core_tests main.cpp version_test.cpp glb_loader_test.cpp glb_geometry_test.cpp normal_inspection_test.cpp uv_inspection_test.cpp normal_golden_test.cpp edge_inspection_test.cpp inspection_test.cpp size_inspection_test.cpp)
+add_executable(lint_core_tests main.cpp version_test.cpp glb_loader_test.cpp glb_geometry_test.cpp normal_inspection_test.cpp uv_inspection_test.cpp normal_golden_test.cpp edge_inspection_test.cpp inspection_test.cpp size_inspection_test.cpp normal_map_test.cpp)
 add_dependencies(lint_core_tests lint_test_glbs)
 target_compile_definitions(lint_core_tests PRIVATE
   LINT_ASSET_TEST_GLB_DIR="${LINT_ASSET_TEST_GLB_DIR}")

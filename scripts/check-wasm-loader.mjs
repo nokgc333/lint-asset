@@ -370,4 +370,96 @@ expect("a 40 MB GLB loads", load(large), counts(1, 1, 12));
 const largeGeometry = geometry(large);
 expect("a 40 MB GLB gives its geometry", [largeGeometry.ok, largeGeometry.parts.length], [true, 1]);
 
+// TC-007: the normal map conversion (FR-008) gives the same results as the native tests.
+const MAX_TEXTURE_PIXELS = 8192 * 8192;
+const flipped = Uint8Array.from([10, 0, 30, 255, 40, 255, 60, 255, 70, 128, 90, 200, 1, 127, 3, 0]);
+const flipResult = core.flipNormalMapGreen(flipped, 2, 2, MAX_TEXTURE_PIXELS);
+expect("a flip reports success and the translucent count", flipResult, {
+  ok: true,
+  code: "",
+  message: "",
+  translucent_pixels: 2,
+});
+expect(
+  "a flip inverts only the green bytes",
+  [...flipped],
+  [10, 255, 30, 255, 40, 0, 60, 255, 70, 127, 90, 200, 1, 128, 3, 0],
+);
+
+// A deterministic pseudo-random image (xorshift), so a failure can be reproduced.
+function pseudoRandomPixels(width, height, seed) {
+  const pixels = new Uint8Array(width * height * 4);
+  let state = seed >>> 0;
+  for (let i = 0; i < pixels.length; i += 1) {
+    state ^= state << 13;
+    state >>>= 0;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    state >>>= 0;
+    pixels[i] = state & 255;
+  }
+  return pixels;
+}
+
+const original = pseudoRandomPixels(257, 129, 2463534242);
+const roundTrip = original.slice();
+core.flipNormalMapGreen(roundTrip, 257, 129, MAX_TEXTURE_PIXELS);
+expect(
+  "a flip changes the image",
+  roundTrip.some((byte, i) => byte !== original[i]),
+  true,
+);
+core.flipNormalMapGreen(roundTrip, 257, 129, MAX_TEXTURE_PIXELS);
+expect(
+  "a round trip restores every byte",
+  roundTrip.every((byte, i) => byte === original[i]),
+  true,
+);
+
+// getImageData returns a Uint8ClampedArray, so the binding must accept it too.
+const clamped = new Uint8ClampedArray([1, 2, 3, 4]);
+core.flipNormalMapGreen(clamped, 1, 1, MAX_TEXTURE_PIXELS);
+expect("a clamped array is flipped in place", [...clamped], [1, 253, 3, 4]);
+
+const untouched = Uint8Array.from([1, 2, 3, 4, 5]);
+expect(
+  "a wrong buffer length is E-TEX-001",
+  core.flipNormalMapGreen(untouched, 1, 1, MAX_TEXTURE_PIXELS),
+  {
+    ok: false,
+    code: "E-TEX-001",
+    message: core.flipNormalMapGreen(untouched, 1, 1, MAX_TEXTURE_PIXELS).message,
+    translucent_pixels: 0,
+  },
+);
+expect("a failed flip leaves the array as it was", [...untouched], [1, 2, 3, 4, 5]);
+expect(
+  "over the pixel limit is E-TEX-003",
+  core.flipNormalMapGreen(new Uint8Array(16), 2, 2, 3).code,
+  "E-TEX-003",
+);
+expect(
+  "a size above 32 bits is over the limit, not wrapped to zero",
+  core.flipNormalMapGreen(new Uint8Array(16), 2 ** 32, 2 ** 32, MAX_TEXTURE_PIXELS).code,
+  "E-TEX-003",
+);
+expect(
+  "a negative or NaN size is E-TEX-001",
+  [-1, Number.NaN, 0.5].map(
+    (bad) => core.flipNormalMapGreen(new Uint8Array(4), bad, 1, MAX_TEXTURE_PIXELS).code,
+  ),
+  ["E-TEX-001", "E-TEX-001", "E-TEX-001"],
+);
+
+// 8192 x 8192 is the largest texture the default limit accepts: 256 MiB of pixels.
+const big = new Uint8Array(8192 * 8192 * 4);
+for (let i = 1; i < big.length; i += 4096) big[i] = i & 255;
+const bigBefore = big.slice(0, 1 << 20);
+const started = performance.now();
+const bigResult = core.flipNormalMapGreen(big, 8192, 8192, MAX_TEXTURE_PIXELS);
+const elapsed = performance.now() - started;
+console.log(`info a flip of 8192 x 8192 took ${elapsed.toFixed(0)} ms`);
+expect("an 8192 x 8192 texture is flipped", bigResult.ok, true);
+expect("the big texture's green bytes are inverted", big[1] === 255 - bigBefore[1], true);
+
 process.exit(failures === 0 ? 0 : 1);
