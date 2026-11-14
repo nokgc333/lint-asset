@@ -12,6 +12,8 @@ std::string_view texture_error_code(TextureError error) noexcept {
         return {};
     case TextureError::invalid_pixels:
         return "E-TEX-001";
+    case TextureError::size_mismatch:
+        return "E-TEX-002";
     case TextureError::over_limit:
         return "E-TEX-003";
     }

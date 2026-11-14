@@ -559,4 +559,128 @@ expect("the big texture's green bytes are inverted", big[1] === 255 - bigBefore[
   );
 }
 
+// TC-008: ORM packing and unpacking (FR-009) give the same results as the native tests.
+{
+  const LIMIT = 8192 * 8192;
+  const gray = (values) => Uint8ClampedArray.from(values.flatMap((v) => [v, v, v, 255]));
+  const packed = core.packOrm(2, 1, gray([10, 20]), gray([30, 40]), gray([50, 60]), LIMIT);
+  expect(
+    "packing puts occlusion in red, roughness in green, and metallic in blue",
+    [packed.ok, [...packed.pixels]],
+    [true, [10, 30, 50, 255, 20, 40, 60, 255]],
+  );
+  expect(
+    "packing reports no non-gray and no translucent pixels for gray opaque inputs",
+    [packed.non_gray_pixels, packed.translucent_pixels],
+    [[0, 0, 0], 0],
+  );
+
+  const partial = core.packOrm(1, 1, undefined, gray([77]), null, LIMIT);
+  expect(
+    "a missing texture is filled with its default",
+    [partial.ok, [...partial.pixels]],
+    [true, [255, 77, 0, 255]],
+  );
+  expect(
+    "a Uint8Array input works too",
+    [...core.packOrm(1, 1, new Uint8Array([5, 5, 5, 255]), null, null, LIMIT).pixels],
+    [5, 255, 0, 255],
+  );
+
+  const coloured = Uint8ClampedArray.from([5, 6, 5, 128, 5, 5, 5, 255]);
+  const warned = core.packOrm(2, 1, coloured, null, null, LIMIT);
+  expect(
+    "non-gray and translucent pixels are counted",
+    [warned.non_gray_pixels, warned.translucent_pixels],
+    [[1, 0, 0], 1],
+  );
+
+  const none = core.packOrm(2, 2, null, undefined, null, LIMIT);
+  expect("packing with no texture is E-TEX-001", [none.ok, none.code], [false, "E-TEX-001"]);
+  const mismatch = core.packOrm(4, 4, gray(new Array(16).fill(1)), gray([1, 2, 3, 4]), null, LIMIT);
+  expect(
+    "textures of different sizes are E-TEX-002",
+    [mismatch.ok, mismatch.code, mismatch.pixels.length],
+    [false, "E-TEX-002", 0],
+  );
+  expect(
+    "packing over the limit is E-TEX-003",
+    core.packOrm(2, 2, gray([1, 1, 1, 1]), null, null, 3).code,
+    "E-TEX-003",
+  );
+  expect(
+    "a size above 32 bits is over the limit",
+    core.packOrm(2 ** 32, 2 ** 32, gray([1]), null, null, LIMIT).code,
+    "E-TEX-003",
+  );
+  expect(
+    "a bad size is E-TEX-001",
+    [-1, Number.NaN, 0.5, 0].map((bad) => core.packOrm(bad, 1, gray([1]), null, null, LIMIT).code),
+    ["E-TEX-001", "E-TEX-001", "E-TEX-001", "E-TEX-001"],
+  );
+
+  const split = core.unpackOrm(
+    Uint8ClampedArray.from([10, 30, 50, 255, 20, 40, 60, 128]),
+    2,
+    1,
+    LIMIT,
+  );
+  expect(
+    "unpacking gives three gray opaque images",
+    [
+      split.ok,
+      [...split.occlusion],
+      [...split.roughness],
+      [...split.metallic],
+      split.translucent_pixels,
+    ],
+    [
+      true,
+      [10, 10, 10, 255, 20, 20, 20, 255],
+      [30, 30, 30, 255, 40, 40, 40, 255],
+      [50, 50, 50, 255, 60, 60, 60, 255],
+      1,
+    ],
+  );
+  expect(
+    "unpacking a wrong length is E-TEX-001",
+    core.unpackOrm(new Uint8Array(15), 2, 2, LIMIT).code,
+    "E-TEX-001",
+  );
+  expect(
+    "unpacking over the limit is E-TEX-003",
+    core.unpackOrm(new Uint8Array(16), 2, 2, 3).code,
+    "E-TEX-003",
+  );
+
+  // A round trip with a pseudo-random image (xorshift): pack(unpack(x)) restores red, green, blue.
+  let state = 88172645;
+  const original = new Uint8ClampedArray(131 * 77 * 4);
+  for (let i = 0; i < original.length; i += 1) {
+    state ^= state << 13;
+    state >>>= 0;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    state >>>= 0;
+    original[i] = state & 255;
+  }
+  const unpacked = core.unpackOrm(original, 131, 77, LIMIT);
+  const repacked = core.packOrm(
+    131,
+    77,
+    unpacked.occlusion,
+    unpacked.roughness,
+    unpacked.metallic,
+    LIMIT,
+  );
+  let same = repacked.ok;
+  for (let i = 0; i < original.length && same; i += 4)
+    same =
+      repacked.pixels[i] === original[i] &&
+      repacked.pixels[i + 1] === original[i + 1] &&
+      repacked.pixels[i + 2] === original[i + 2] &&
+      repacked.pixels[i + 3] === 255;
+  expect("a round trip restores red, green, and blue exactly", same, true);
+}
+
 process.exit(failures === 0 ? 0 : 1);
