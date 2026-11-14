@@ -128,7 +128,10 @@ describe("the native components agree with the build", () => {
 
   it("is listed in THIRD_PARTY_NOTICES, for the parts it covers", () => {
     const notices = read("THIRD_PARTY_NOTICES");
-    for (const name of ["tinygltf", "fast_float", "Dragonbox"]) expect(notices).toContain(name);
+    for (const name of ["tinygltf", "fast_float", "Dragonbox", "Emscripten"]) {
+      expect(notices).toContain(name);
+    }
+    expect(notices).toContain(`Emscripten ${byName("emscripten").version}`);
   });
 
   it("gives every component a bom-ref, a name, and a license", () => {

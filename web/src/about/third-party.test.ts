@@ -31,6 +31,12 @@ describe("THIRD_PARTY_COMPONENTS", () => {
     expect(three?.version).toBe(packageJson.dependencies.three);
   });
 
+  it("states the same Emscripten version as THIRD_PARTY_NOTICES", () => {
+    const emscripten = THIRD_PARTY_COMPONENTS.find((component) => component.name === "Emscripten");
+    expect(emscripten?.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(notices).toContain(`Emscripten ${emscripten?.version}`);
+  });
+
   it("states the same tinygltf version as THIRD_PARTY_NOTICES", () => {
     const tinygltf = THIRD_PARTY_COMPONENTS.find((component) => component.name === "tinygltf");
     expect(notices).toContain(`tinygltf v${tinygltf?.version}`);
