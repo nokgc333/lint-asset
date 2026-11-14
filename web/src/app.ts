@@ -2,9 +2,15 @@ import { createFileLoader } from "./file-loader";
 import { pickSingleFile } from "./intake";
 import { createIssuePanel } from "./issues/panel";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
+import { buildReport } from "./report/build-report";
+import { downloadText } from "./report/download";
+import { exportFileName } from "./report/export-name";
+import { reportToJson } from "./report/to-json";
+import { reportToMarkdown } from "./report/to-markdown";
 import { createModuleWorker } from "./trusted-worker";
 import { ORBIT_STEP, PAN_STEP, ZOOM_FACTOR } from "./viewer/controls";
 import type { Viewer } from "./viewer/viewer";
+import type { AnalyzeResult } from "./wasm/lint_core.mjs";
 import workerUrl from "./worker.ts?worker&url";
 
 export function startApp(): void {
@@ -23,6 +29,25 @@ export function startApp(): void {
   const dropZone = required<HTMLDivElement>("#drop-zone");
   const wireframe = required<HTMLInputElement>("#wireframe");
   const normals = required<HTMLInputElement>("#normals");
+  const jsonButton = required<HTMLButtonElement>("#export-json");
+  const markdownButton = required<HTMLButtonElement>("#export-markdown");
+  let engineVersion = "";
+  let displayed: { name: string; size: number; result: AnalyzeResult } | null = null;
+  function exportReport(kind: "json" | "md"): void {
+    if (!displayed) return;
+    const report = buildReport({
+      fileName: displayed.name,
+      fileSize: displayed.size,
+      toolVersion: engineVersion,
+      generatedAt: new Date(),
+      result: displayed.result,
+    });
+    const text = kind === "json" ? reportToJson(report) : reportToMarkdown(report);
+    const mime = kind === "json" ? "application/json" : "text/markdown";
+    downloadText(exportFileName(report.asset.name, kind), `${mime};charset=utf-8`, text);
+  }
+  jsonButton.addEventListener("click", () => exportReport("json"));
+  markdownButton.addEventListener("click", () => exportReport("md"));
   const worker = createModuleWorker(workerUrl);
   const VERSION_REQUEST_ID = 1;
   let viewer: Viewer | null = null;
@@ -37,9 +62,12 @@ export function startApp(): void {
     status,
     error,
     post: (request) => post(request, [request.bytes]),
-    showGeometry: (result) => {
+    showGeometry: (result, file) => {
       viewer?.setGeometry(result);
       panel.setIssues(result.issues);
+      displayed = { ...file, result };
+      jsonButton.disabled = false;
+      markdownButton.disabled = false;
     },
     isReady: () => viewer !== null && workerAvailable,
     firstRequestId: VERSION_REQUEST_ID,
@@ -49,6 +77,7 @@ export function startApp(): void {
   worker.addEventListener("message", (event: MessageEvent<WorkerResponse>) => {
     const response = event.data;
     if (response.id === VERSION_REQUEST_ID) {
+      if (response.type === "version") engineVersion = response.version;
       output.textContent =
         response.type === "version"
           ? response.version

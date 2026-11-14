@@ -18,6 +18,7 @@ if (!moduleDir || !fixtureDir) {
 const MIB = 1024 * 1024;
 const DEFAULT_MAX_FILE_BYTES = 100 * MIB;
 const DEFAULT_MAX_TRIANGLES = 2_000_000;
+const INSPECTION_THRESHOLDS = { max_triangles: 100000, min_extent_m: 0.01, max_extent_m: 1000 };
 
 const { default: createLintCore } = await import(
   pathToFileURL(resolve(moduleDir, "lint_core.mjs")).href
@@ -109,6 +110,7 @@ for (const name of ["cube.glb", "cube_open_top.glb", "primitive_modes.glb"]) {
   const analyzed = core.analyze(bytes, DEFAULT_MAX_FILE_BYTES, DEFAULT_MAX_TRIANGLES);
   const extracted = geometry(bytes);
   expect(`analysis ${name} succeeds`, analyzed.ok, true);
+  expect(`analysis ${name} thresholds`, analyzed.thresholds, INSPECTION_THRESHOLDS);
   expect(`analysis ${name} issues`, analyzed.issues, inspect(bytes).issues);
   expect(`analysis ${name} part count`, analyzed.parts.length, extracted.parts.length);
   expect(`analysis ${name} instance count`, analyzed.instances.length, extracted.instances.length);
@@ -142,6 +144,7 @@ const truncatedAnalysis = core.analyze(
   DEFAULT_MAX_TRIANGLES,
 );
 expect("analysis truncated file", truncatedAnalysis.ok, false);
+expect("analysis failure thresholds", truncatedAnalysis.thresholds, INSPECTION_THRESHOLDS);
 expect("analysis failure has no parts", truncatedAnalysis.parts, []);
 expect("analysis failure has no instances", truncatedAnalysis.instances, []);
 expect("analysis failure has no issues", truncatedAnalysis.issues, []);

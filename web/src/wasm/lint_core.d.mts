@@ -77,7 +77,13 @@ export type InspectResult = LoadResult & {
   issues: Issue[];
 };
 
-export type AnalyzeResult = GeometryResult & { issues: Issue[] };
+export interface Thresholds {
+  max_triangles: number;
+  min_extent_m: number;
+  max_extent_m: number;
+}
+
+export type AnalyzeResult = GeometryResult & { issues: Issue[]; thresholds: Thresholds };
 
 export interface LintCore {
   version(): string;

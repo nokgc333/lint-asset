@@ -293,3 +293,25 @@ canvas {
     grid-template-columns: minmax(0, 1fr) 22rem;
   }
 }
+
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.export-actions button {
+  min-width: 24px;
+  min-height: 24px;
+  color: var(--text);
+  background: var(--panel-background);
+}
+
+.export-actions button:disabled,
+#export-note {
+  color: var(--text-muted);
+}
+
+#export-note {
+  font-size: 0.875rem;
+}
