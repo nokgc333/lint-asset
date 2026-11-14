@@ -245,6 +245,8 @@ npm run build
 npm run audit:a11y
 ```
 
+CI でも、ビルドしたアプリに同じ監査を `accessibility` ジョブとして実行します。
+
 ## サンプル
 
 `samples/` の2ファイルは `tests/tools/make_samples.py` で生成し、CC0 1.0 により

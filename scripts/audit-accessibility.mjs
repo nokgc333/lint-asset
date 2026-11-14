@@ -59,7 +59,9 @@ const base = `http://127.0.0.1:${server.address().port}/`;
 const browser = await puppeteer.launch({
   executablePath: chrome,
   headless: true,
-  args: ["--no-sandbox"],
+  // --no-sandbox is needed in a container (CI). --enable-unsafe-swiftshader lets headless Chrome draw
+  // WebGL2 in software on a machine without a GPU, which the 3D view needs.
+  args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
 });
 const wait = (ms) => new Promise((done) => setTimeout(done, ms));
 let failures = 0;
