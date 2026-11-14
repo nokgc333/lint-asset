@@ -12,9 +12,11 @@ enum class Severity : std::uint8_t { error, warning, info };
 
 // The checks that exist so far. Each value maps to one rule id in the report schema.
 enum class RuleId : std::uint8_t {
-    normal_flipped,       // "normal.flipped"
-    normal_missing,       // "normal.missing"
-    normal_unnormalized,  // "normal.unnormalized"
+    normal_flipped,         // "normal.flipped"
+    normal_missing,         // "normal.missing"
+    normal_unnormalized,    // "normal.unnormalized"
+    mesh_nonmanifold_edge,  // "mesh.nonmanifold_edge"
+    mesh_boundary_edge,     // "mesh.boundary_edge"
 };
 
 // The rule id as written in the report, for example "normal.flipped".
