@@ -15,7 +15,7 @@ interface Load {
   id: number;
   file: File;
   companions: readonly IntakeEntry[];
-  format: "glb" | "gltf";
+  format: "glb" | "gltf" | "obj";
   size: number;
   limits: Limits;
   rerun: boolean;
@@ -27,7 +27,7 @@ interface LoaderOptions {
   post: (request: LoadRequest) => void;
   showGeometry: (
     result: AnalyzeResult,
-    file: { name: string; size: number; format: "glb" | "gltf" },
+    file: { name: string; size: number; format: "glb" | "gltf" | "obj" },
   ) => void;
   isReady: () => boolean;
   firstRequestId: number;
@@ -79,6 +79,7 @@ export function createFileLoader(options: LoaderOptions) {
         type: "load",
         bytes,
         ...(files === undefined ? {} : { files }),
+        ...(load.format === "obj" ? { format: "obj" } : {}),
         ...load.limits,
         thresholds: options.getThresholds(),
       });
@@ -95,7 +96,11 @@ export function createFileLoader(options: LoaderOptions) {
 
   async function openModel(model: IntakeEntry, entries: readonly IntakeEntry[]): Promise<void> {
     const file = model.file;
-    const format = /\.gltf$/i.test(model.path) ? "gltf" : "glb";
+    const format = /\.obj$/i.test(model.path)
+      ? "obj"
+      : /\.gltf$/i.test(model.path)
+        ? "gltf"
+        : "glb";
     const companions = format === "gltf" ? entries.filter((entry) => !isImageName(entry.path)) : [];
     const size = companions.reduce((total, entry) => total + entry.file.size, file.size);
     if (!options.isReady()) return;

@@ -208,7 +208,7 @@ it("exports the displayed model with the engine version and retains it after a f
   );
   controller.set("ja");
   expect(detail.refresh).toHaveBeenCalledOnce();
-  expect(element("status").textContent).toContain("GLB");
+  expect(element("status").textContent).toContain("モデルファイル");
   expect(element("error").textContent).toContain("壊れている");
   element("export-markdown").dispatchEvent(new Event("click"));
   expect(downloadText.mock.calls.at(-1)?.[2]).toContain("レポート");
@@ -246,11 +246,11 @@ it("exports the displayed model with the engine version and retains it after a f
   input.files = [new File(["bin"], "only.bin")];
   input.dispatchEvent(new Event("change"));
   expect(element("error").textContent).toBe(
-    "Select one GLB or glTF model together with its files.",
+    "Select one GLB, glTF or OBJ model together with its files.",
   );
   input.files = [new File(["{}"], "a.gltf"), new File(["data"], "b.glb")];
   input.dispatchEvent(new Event("change"));
-  expect(element("error").textContent).toBe("Select exactly one GLB or glTF model.");
+  expect(element("error").textContent).toBe("Select exactly one GLB, glTF or OBJ model.");
   expect(worker.postMessage).toHaveBeenCalledTimes(previousRequests);
   const image = new File(["image"], "a.png");
   const readImage = vi.spyOn(image, "arrayBuffer");

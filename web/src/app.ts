@@ -50,7 +50,7 @@ export function startApp(
   let displayed: {
     name: string;
     size: number;
-    format: "glb" | "gltf";
+    format: "glb" | "gltf" | "obj";
     result: AnalyzeResult;
   } | null = null;
   function exportReport(kind: "json" | "md"): void {

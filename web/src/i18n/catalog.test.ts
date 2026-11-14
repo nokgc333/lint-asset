@@ -12,6 +12,23 @@ describe("the message catalogs", () => {
   const en = catalogs.en;
   const ja = catalogs.ja;
 
+  it("offers all three model formats in both languages", () => {
+    for (const locale of ["en", "ja"] as const) {
+      for (const key of [
+        "status.ready",
+        "controls.open",
+        "viewer.dropHint",
+        "panel.empty",
+        "load.noModel",
+        "load.manyModels",
+      ]) {
+        for (const format of ["GLB", "glTF", "OBJ"]) {
+          expect(catalogs[locale][key], `${locale}:${key}`).toContain(format);
+        }
+      }
+    }
+  });
+
   it("have the same messages in English and in Japanese", () => {
     const bases = (catalog: Record<string, string>) =>
       [...new Set(Object.keys(catalog).map(baseOf))].sort();
