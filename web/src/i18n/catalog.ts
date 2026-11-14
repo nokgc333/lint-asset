@@ -62,6 +62,8 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "texture.warning.icc": "This image has an embedded color profile. It is ignored.",
 
     "app.name": "lint-asset",
+    "app.description":
+      "Inspect GLB geometry and convert normal maps in your browser. Your files never leave your browser.",
     "load.E-LOAD-001.cause":
       "This file is not a GLB (binary glTF 2.x), or it depends on files that are not included.",
     "load.E-LOAD-001.action": "Export the model as a single .glb file and open that file.",
@@ -299,6 +301,8 @@ export const catalogs: Record<Locale, Record<string, string>> = {
       "この画像には ICC カラープロファイルが埋め込まれています。プロファイルは無視されます。",
 
     "app.name": "lint-asset",
+    "app.description":
+      "ブラウザで GLB のジオメトリを検査し、法線マップを変換できます。ファイルがブラウザの外へ出ることはありません。",
     "load.E-LOAD-001.cause":
       "このファイルは GLB（バイナリ glTF 2.x）ではないか、含まれていない別ファイルに依存しています。",
     "load.E-LOAD-001.action":

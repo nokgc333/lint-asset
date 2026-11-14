@@ -32,6 +32,7 @@ interface LinkElement {
   getAttribute(name: string): string | null;
   setAttribute(name: string, value: string): void;
   removeAttribute?(name: string): void;
+  remove?(): void;
 }
 
 export function applyAboutLinks(
@@ -46,6 +47,8 @@ export function applyAboutLinks(
     element.hidden = href === null;
     if (href === null) {
       element.removeAttribute?.("href");
+      // A link without an address is left out of the page, so a crawler never sees it.
+      element.remove?.();
       continue;
     }
     element.setAttribute("href", href);

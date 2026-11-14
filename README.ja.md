@@ -159,7 +159,8 @@ flowchart LR
 選んだ理由:
 
 - C++ と WebAssembly: 検査はジオメトリの計算が中心で、同じコードを、ネイティブでテストし、
-  ブラウザへ配れるからです。作者の環境では、約 100 万三角形のモデルを、およそ半秒で検査します。
+  ブラウザへ配れるからです。作者の環境では、100 万三角形のモデルを約 3 分の 1 秒で、10 万三角形のモデルを
+  約 30 ミリ秒で検査します。
 - tinygltf: 小さく、単一ソースで、取り込みやすいローダーだからです。
 - フレームワークなしの TypeScript と Vite: サーバー側がなく、ページが小さいからです。
 - 描画は three.js、問題の重ね描きは自作のシェーダー、画像は画像ライブラリでなくブラウザ標準の
@@ -206,6 +207,15 @@ git config core.hooksPath .githooks
 
 フックは、ブランチ名とコミットメッセージを検査し、許可リスト（`.public-paths`）にあるパスだけが
 コミットされることを確かめます。
+
+検査にかかる時間を測るには、大きなテスト用モデルを生成し、Node.js 用にビルドした WASM
+モジュール（`-DLINT_ASSET_WASM_NODE=ON`）で時間を測ります。`--enforce` を付けると、予算を超えた
+ときに失敗します。
+
+```sh
+python3 tests/tools/make_perf_models.py build/perf
+node scripts/measure-inspection.mjs build/wasm-node/dist build/perf --enforce
+```
 
 ## サンプル
 
