@@ -7,12 +7,14 @@ export interface OrbitState {
   readonly pitch: number;
   readonly distance: number;
   readonly radius: number;
+  readonly minDistance?: number;
 }
 
 export const MAX_PITCH = (89 * Math.PI) / 180;
 export const MIN_DISTANCE_FACTOR = 0.1;
 export const MAX_DISTANCE_FACTOR = 50;
 export const FIT_MARGIN = 1.2;
+export const FOCUS_MIN_RADIUS_FACTOR = 0.005;
 export const INITIAL_YAW = 0.6;
 export const INITIAL_PITCH = 0.4;
 
@@ -37,7 +39,7 @@ export function zoom(state: OrbitState, factor: number): OrbitState {
   return {
     ...state,
     distance: Math.max(
-      state.radius * MIN_DISTANCE_FACTOR,
+      state.minDistance ?? state.radius * MIN_DISTANCE_FACTOR,
       Math.min(state.radius * MAX_DISTANCE_FACTOR, state.distance * factor),
     ),
   };
@@ -67,4 +69,18 @@ export function fitToBounds(bounds: Bounds, fovDegrees: number): OrbitState {
     },
     1,
   );
+}
+
+export function focusOnBounds(state: OrbitState, bounds: Bounds, fovDegrees: number): OrbitState {
+  const focusRadius = Math.max(boundsRadius(bounds), state.radius * FOCUS_MIN_RADIUS_FACTOR);
+  const distance = Math.min(
+    (focusRadius / Math.sin((fovDegrees * Math.PI) / 360)) * FIT_MARGIN,
+    state.radius * MAX_DISTANCE_FACTOR,
+  );
+  return {
+    ...state,
+    target: boundsCenter(bounds),
+    distance,
+    minDistance: Math.min(state.radius * MIN_DISTANCE_FACTOR, distance * 0.25),
+  };
 }

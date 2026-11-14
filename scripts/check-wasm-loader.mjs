@@ -104,6 +104,48 @@ function inspect(
   return core.inspect(bytes, maxFileBytes, maxTriangles);
 }
 
+for (const name of ["cube.glb", "cube_open_top.glb", "primitive_modes.glb"]) {
+  const bytes = await fixture(name);
+  const analyzed = core.analyze(bytes, DEFAULT_MAX_FILE_BYTES, DEFAULT_MAX_TRIANGLES);
+  const extracted = geometry(bytes);
+  expect(`analysis ${name} succeeds`, analyzed.ok, true);
+  expect(`analysis ${name} issues`, analyzed.issues, inspect(bytes).issues);
+  expect(`analysis ${name} part count`, analyzed.parts.length, extracted.parts.length);
+  expect(`analysis ${name} instance count`, analyzed.instances.length, extracted.instances.length);
+  expect(
+    `analysis ${name} parts`,
+    analyzed.parts.map(({ mesh, primitive, positions, normals, triangles }) => ({
+      mesh,
+      primitive,
+      positions: Array.from(positions),
+      normals: Array.from(normals),
+      triangles: Array.from(triangles),
+    })),
+    extracted.parts.map(({ mesh, primitive, positions, normals, triangles }) => ({
+      mesh,
+      primitive,
+      positions: Array.from(positions),
+      normals: Array.from(normals),
+      triangles: Array.from(triangles),
+    })),
+  );
+  expect(
+    `analysis ${name} instances`,
+    analyzed.instances.map(({ mesh, world }) => ({ mesh, world: Array.from(world) })),
+    extracted.instances.map(({ mesh, world }) => ({ mesh, world: Array.from(world) })),
+  );
+}
+
+const truncatedAnalysis = core.analyze(
+  await fixture("truncated_cube.glb"),
+  DEFAULT_MAX_FILE_BYTES,
+  DEFAULT_MAX_TRIANGLES,
+);
+expect("analysis truncated file", truncatedAnalysis.ok, false);
+expect("analysis failure has no parts", truncatedAnalysis.parts, []);
+expect("analysis failure has no instances", truncatedAnalysis.instances, []);
+expect("analysis failure has no issues", truncatedAnalysis.issues, []);
+
 const truncatedInspection = inspect(await fixture("truncated_cube.glb"));
 expect("inspection truncated file", truncatedInspection.ok, false);
 expect("inspection failure has no issues", truncatedInspection.issues, []);

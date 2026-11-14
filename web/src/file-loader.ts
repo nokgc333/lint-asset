@@ -4,7 +4,7 @@ import { cancelLimit, confirmLimit } from "./limit-dialog";
 import { type Limits, planAfterLimitError, planIntake, RAISED_LIMITS } from "./load-plan";
 import { formatLoadError } from "./messages";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
-import type { GeometryResult } from "./wasm/lint_core.mjs";
+import type { AnalyzeResult } from "./wasm/lint_core.mjs";
 
 type LoadRequest = Extract<WorkerRequest, { type: "load" }>;
 interface Load {
@@ -17,7 +17,7 @@ interface LoaderOptions {
   status: Pick<HTMLElement, "textContent">;
   error: Pick<HTMLElement, "textContent">;
   post: (request: LoadRequest) => void;
-  showGeometry: (result: GeometryResult) => void;
+  showGeometry: (result: AnalyzeResult) => void;
   isReady: () => boolean;
   firstRequestId: number;
 }
