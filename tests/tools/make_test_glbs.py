@@ -1,3 +1,4 @@
+import base64
 import json
 import struct
 import sys
@@ -436,6 +437,42 @@ def sample_toy_house_broken():
     return toy_house_broken()
 
 
+def gltf_text(document):
+    return json.dumps(document, indent=1, sort_keys=True).encode("utf-8")
+
+
+def split_cube(uri="split_cube.bin", images=None):
+    document, data = cube_document()
+    document["buffers"][0]["uri"] = uri
+    if images:
+        document["images"] = [{"uri": image} for image in images]
+        document["textures"] = [{"source": 0}]
+        document["materials"] = [{"pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}}]
+        document["meshes"][0]["primitives"][0]["material"] = 0
+    return document, bytes(data)
+
+
+def split_files():
+    """Split glTF fixtures: file name -> bytes. Every .gltf here is written next to its .bin."""
+    document, data = split_cube()
+    files = {"split_cube.gltf": gltf_text(document), "split_cube.bin": data}
+    files["split_cube_subfolder.gltf"] = gltf_text(split_cube("buffers/split_cube.bin")[0])
+    files["split_cube_encoded.gltf"] = gltf_text(split_cube("my%20cube.bin")[0])
+    embedded, _ = split_cube("data:application/octet-stream;base64," + base64.b64encode(data).decode())
+    files["embedded_cube.gltf"] = gltf_text(embedded)
+    files["split_cube_web_buffer.gltf"] = gltf_text(split_cube("https://example.invalid/cube.bin")[0])
+    images = ["https://example.invalid/a.png", "textures/b.png", "data:image/png;base64,iVBORw0KGgo="]
+    files["split_cube_images.gltf"] = gltf_text(split_cube(images=images)[0])
+    two, _ = split_cube()
+    two["buffers"] = [
+        {"byteLength": 4, "uri": "part_a.bin"},
+        {"byteLength": 4, "uri": "part_b.bin"},
+        {"byteLength": 4, "uri": "part_a.bin"},
+    ]
+    files["split_cube_two_buffers.gltf"] = gltf_text(two)
+    return files
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit("Usage: python3 make_test_glbs.py <out_dir>")
@@ -457,6 +494,8 @@ def main():
     ]
     for builder in builders:
         (output / (builder.__name__ + ".glb")).write_bytes(builder())
+    for name, content in split_files().items():
+        (output / name).write_bytes(content)
 
 
 if __name__ == "__main__":

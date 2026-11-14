@@ -16,6 +16,8 @@ std::string_view load_error_code(LoadError error) noexcept {
         return "E-LOAD-003";
     case LoadError::unsupported_extension:
         return "E-LOAD-004";
+    case LoadError::missing_files:
+        return "E-LOAD-005";
     }
     return {};
 }
@@ -25,7 +27,10 @@ LoadResult load_glb(std::span<const std::uint8_t> bytes, const LoadLimits &limit
         detail::ParsedModel parsed;
         return detail::parse_glb(parsed, bytes, limits);
     } catch (const std::bad_alloc &) {
-        return {.error = LoadError::limit_exceeded, .message = "out of memory", .stats = {}};
+        LoadResult result;
+        result.error = LoadError::limit_exceeded;
+        result.message = "out of memory";
+        return result;
     }
 }
 }  // namespace lint_asset

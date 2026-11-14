@@ -57,6 +57,7 @@ struct GeometryResult {
     std::string message;
     LoadStats stats;  // the same counts load_glb() reports
     Geometry geometry;
+    std::vector<std::string> missing_files;  // as in LoadResult
 
     bool ok() const noexcept { return error == LoadError::none; }
 };

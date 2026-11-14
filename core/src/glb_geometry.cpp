@@ -360,20 +360,21 @@ void extract_instances(const tg3_model &model, Geometry &geometry) {
 }
 }  // namespace
 
-GeometryResult load_glb_geometry(std::span<const std::uint8_t> bytes, const LoadLimits &limits) {
+GeometryResult detail::extract_geometry(const tg3_model &model, const LoadResult &counted,
+                                        bool split) {
+    GeometryResult result;
     try {
-        detail::ParsedModel parsed;
-        const auto counted = detail::parse_glb(parsed, bytes, limits);
         if (!counted.ok()) {
-            return {
-                .error = counted.error, .message = counted.message, .stats = {}, .geometry = {}};
+            result.error = counted.error;
+            result.message = counted.message;
+            result.missing_files = counted.missing_files;
+            return result;
         }
-        GeometryResult result;
-        for (std::uint32_t i = 0; i < parsed.model.images_count; ++i) {
-            const auto &uri = parsed.model.images[i].uri;
+        for (std::uint32_t i = 0; i < model.images_count; ++i) {
+            const auto &uri = model.images[i].uri;
             const auto kind = classify_uri(uri.len == 0 ? std::string_view{}
                                                         : std::string_view(uri.data, uri.len));
-            if (kind == UriKind::embedded) {
+            if (kind == UriKind::embedded || (split && kind != UriKind::web_address)) {
                 continue;
             }
             auto &count = kind == UriKind::web_address
@@ -383,22 +384,36 @@ GeometryResult load_glb_geometry(std::span<const std::uint8_t> bytes, const Load
                 ++count;
             }
         }
-        extract_parts(parsed.model, result.geometry);
-        extract_instances(parsed.model, result.geometry);
+        extract_parts(model, result.geometry);
+        extract_instances(model, result.geometry);
         result.stats = counted.stats;
         return result;
     } catch (const Failure &failure) {
-        return {.error = failure.error, .message = failure.message, .stats = {}, .geometry = {}};
+        result = GeometryResult{};
+        result.error = failure.error;
+        result.message = failure.message;
     } catch (const std::bad_alloc &) {
-        return {.error = LoadError::limit_exceeded,
-                .message = "out of memory",
-                .stats = {},
-                .geometry = {}};
+        result = GeometryResult{};
+        result.error = LoadError::limit_exceeded;
+        result.message = "out of memory";
     } catch (const std::length_error &) {
-        return {.error = LoadError::limit_exceeded,
-                .message = "geometry exceeds the memory limit",
-                .stats = {},
-                .geometry = {}};
+        result = GeometryResult{};
+        result.error = LoadError::limit_exceeded;
+        result.message = "geometry exceeds the memory limit";
+    }
+    return result;
+}
+
+GeometryResult load_glb_geometry(std::span<const std::uint8_t> bytes, const LoadLimits &limits) {
+    try {
+        detail::ParsedModel parsed;
+        const auto counted = detail::parse_glb(parsed, bytes, limits);
+        return detail::extract_geometry(parsed.model, counted, false);
+    } catch (const std::bad_alloc &) {
+        GeometryResult result;
+        result.error = LoadError::limit_exceeded;
+        result.message = "out of memory";
+        return result;
     }
 }
 }  // namespace lint_asset
