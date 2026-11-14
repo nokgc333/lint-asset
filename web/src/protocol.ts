@@ -1,6 +1,28 @@
-import type { AnalyzeResult, NormalMapResult, Thresholds } from "./wasm/lint_core.mjs";
+import type {
+  AnalyzeResult,
+  NormalMapResult,
+  PackOrmResult,
+  Thresholds,
+  UnpackOrmResult,
+} from "./wasm/lint_core.mjs";
 
 export type WorkerRequest =
+  | {
+      id: number;
+      type: "packOrm";
+      width: number;
+      height: number;
+      inputs: [ArrayBuffer | null, ArrayBuffer | null, ArrayBuffer | null];
+      maxPixels: number;
+    }
+  | {
+      id: number;
+      type: "unpackOrm";
+      pixels: ArrayBuffer;
+      width: number;
+      height: number;
+      maxPixels: number;
+    }
   | { readonly id: number; readonly type: "version" }
   | {
       id: number;
@@ -20,6 +42,8 @@ export type WorkerRequest =
     };
 
 export type WorkerResponse =
+  | { id: number; type: "packedOrm"; result: PackOrmResult }
+  | { id: number; type: "unpackedOrm"; result: UnpackOrmResult }
   | { id: number; type: "flipped"; pixels: ArrayBuffer; result: NormalMapResult }
   | { readonly id: number; readonly type: "version"; readonly version: string }
   | { readonly id: number; readonly type: "loaded"; readonly result: AnalyzeResult }

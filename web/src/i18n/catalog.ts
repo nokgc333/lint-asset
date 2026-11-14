@@ -2,6 +2,59 @@ import type { Locale } from "./locale";
 
 export const catalogs: Record<Locale, Record<string, string>> = {
   en: {
+    "texture.mode.legend": "Conversion type",
+    "texture.mode.normal": "Normal map: DirectX / OpenGL",
+    "texture.mode.ormPack": "ORM: pack three textures into one",
+    "texture.mode.ormUnpack": "ORM: split one texture into three",
+    "texture.orm.channel.occlusion": "occlusion",
+    "texture.orm.channel.roughness": "roughness",
+    "texture.orm.channel.metallic": "metallic",
+    "texture.orm.slot.occlusion": "Occlusion (red)",
+    "texture.orm.slot.roughness": "Roughness (green)",
+    "texture.orm.slot.metallic": "Metallic (blue)",
+    "texture.orm.remove.occlusion": "Remove occlusion",
+    "texture.orm.remove.roughness": "Remove roughness",
+    "texture.orm.remove.metallic": "Remove metallic",
+    "texture.orm.default.occlusion": "No {channel} texture: filled with white ({value}).",
+    "texture.orm.default.roughness": "No {channel} texture: filled with white ({value}).",
+    "texture.orm.default.metallic": "No {channel} texture: filled with black ({value}).",
+    "texture.orm.status.packed.one": "{name}: {width} × {height} px, packed from {count} texture",
+    "texture.orm.status.packed.other":
+      "{name}: {width} × {height} px, packed from {count} textures",
+    "texture.orm.status.unpacked": "{name}: {width} × {height} px, split into three textures",
+    "texture.orm.status.cancelled": "Cancelled.",
+    "texture.orm.status.idle.pack": "Open at least one texture to pack an ORM texture.",
+    "texture.orm.status.idle.unpack": "Open an ORM texture to split it.",
+    "texture.orm.warning.translucent.one":
+      "{count} pixel in the inputs is partly transparent. The browser may have changed its color. The packed output is opaque.",
+    "texture.orm.warning.translucent.other":
+      "{count} pixels in the inputs are partly transparent. The browser may have changed their colors. The packed output is opaque.",
+    "texture.orm.warning.nonGray.one":
+      "The {channel} texture has {count} pixel that is not gray. Only its red channel is used.",
+    "texture.orm.warning.nonGray.other":
+      "The {channel} texture has {count} pixels that are not gray. Only its red channel is used.",
+    "texture.orm.warning.depth16":
+      "The {channel} texture is 16-bit. It is reduced to 8 bits per channel.",
+    "texture.orm.warning.icc":
+      "The {channel} texture has an embedded color profile. It is ignored.",
+    "texture.error.E-TEX-002":
+      "E-TEX-002: The textures to combine must have the same size. Open textures that are all the same size.",
+    "texture.orm.download.occlusion": "Download occlusion PNG",
+    "texture.orm.download.roughness": "Download roughness PNG",
+    "texture.orm.download.metallic": "Download metallic PNG",
+    "texture.orm.download.all": "Download all three",
+    "texture.orm.pane.input.occlusion": "Before: occlusion",
+    "texture.orm.pane.input.roughness": "Before: roughness",
+    "texture.orm.pane.input.metallic": "Before: metallic",
+    "texture.orm.pane.packed": "Packed ORM",
+    "texture.orm.pane.input": "Before: packed ORM",
+    "texture.orm.pane.occlusion": "Occlusion",
+    "texture.orm.pane.roughness": "Roughness",
+    "texture.orm.pane.metallic": "Metallic",
+    "texture.orm.open": "Open an ORM texture (PNG or JPEG)",
+    "texture.orm.dropHint": "Drop one PNG or JPEG here, or use the file input.",
+    "texture.orm.note":
+      "ORM uses R = occlusion, G = roughness, B = metallic (glTF / Unreal). Only the red channel of each input is used. Missing inputs use the defaults shown after packing. This is not Unity’s mask map layout; smoothness is not converted to roughness.",
     "settings.open": "Settings",
     "settings.title": "Settings",
     "settings.description":
@@ -44,7 +97,7 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "nav.label": "Screens",
     "nav.inspect": "Inspect",
     "nav.texture": "Texture",
-    "texture.heading": "Normal map converter",
+    "texture.heading": "Texture converter",
     "texture.direction.legend": "Conversion direction",
     "texture.direction.dx-to-gl": "DirectX to OpenGL",
     "texture.direction.gl-to-dx": "OpenGL to DirectX",
@@ -66,11 +119,11 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "texture.status.converted": "{name}: {width} × {height} px, converted ({direction})",
     "texture.status.cancelled": "Cancelled.",
     "texture.error.E-TEX-001":
-      "E-TEX-001: This file is not a PNG or JPEG image that the browser can read. Open a PNG or JPEG normal map.",
+      "E-TEX-001: This file is not a PNG or JPEG image that the browser can read. Open a PNG or JPEG image.",
     "texture.error.E-TEX-003":
       "E-TEX-003: The image is {width} × {height} px, over the size this tool can convert (at most {limit} pixels, and 16384 px on a side). Reduce the resolution and open it again.",
     "texture.error.worker": "The conversion worker is unavailable. Reload the page and try again.",
-    "texture.error.drop": "Open one normal map at a time.",
+    "texture.error.drop": "Open one file at a time.",
     "dialog.pixels":
       "{name} is {width} × {height} px. Images over {defaultLimit} pixels can be slow or run out of memory. Continue? Images over {maxLimit} pixels cannot be opened.",
     "texture.warning.translucent.one":
@@ -258,6 +311,60 @@ export const catalogs: Record<Locale, Record<string, string>> = {
       "The longest side of the bounding box is {extent} m (limit {limit} m).",
   },
   ja: {
+    "texture.mode.legend": "変換の種類",
+    "texture.mode.normal": "法線マップ: DirectX / OpenGL",
+    "texture.mode.ormPack": "ORM: 3 枚のテクスチャを 1 枚に合成",
+    "texture.mode.ormUnpack": "ORM: 1 枚のテクスチャを 3 枚に分解",
+    "texture.orm.channel.occlusion": "オクルージョン",
+    "texture.orm.channel.roughness": "ラフネス",
+    "texture.orm.channel.metallic": "メタリック",
+    "texture.orm.slot.occlusion": "オクルージョン（赤）",
+    "texture.orm.slot.roughness": "ラフネス（緑）",
+    "texture.orm.slot.metallic": "メタリック（青）",
+    "texture.orm.remove.occlusion": "オクルージョンを削除",
+    "texture.orm.remove.roughness": "ラフネスを削除",
+    "texture.orm.remove.metallic": "メタリックを削除",
+    "texture.orm.default.occlusion": "{channel}のテクスチャがないため、白（{value}）で補いました。",
+    "texture.orm.default.roughness": "{channel}のテクスチャがないため、白（{value}）で補いました。",
+    "texture.orm.default.metallic": "{channel}のテクスチャがないため、黒（{value}）で補いました。",
+    "texture.orm.status.packed.one":
+      "{name}: {width} × {height} px、{count} 枚のテクスチャから合成しました",
+    "texture.orm.status.packed.other":
+      "{name}: {width} × {height} px、{count} 枚のテクスチャから合成しました",
+    "texture.orm.status.unpacked": "{name}: {width} × {height} px、3 枚のテクスチャに分解しました",
+    "texture.orm.status.cancelled": "キャンセルしました。",
+    "texture.orm.status.idle.pack": "テクスチャを 1 枚以上開くと、ORM テクスチャを合成できます。",
+    "texture.orm.status.idle.unpack": "ORM テクスチャを開くと、3 枚に分解できます。",
+    "texture.orm.warning.translucent.one":
+      "入力画像に半透明の画素が {count} 個あります。読み込み時にブラウザが色を変更している可能性があります。合成結果は不透明になります。",
+    "texture.orm.warning.translucent.other":
+      "入力画像に半透明の画素が {count} 個あります。読み込み時にブラウザが色を変更している可能性があります。合成結果は不透明になります。",
+    "texture.orm.warning.nonGray.one":
+      "{channel}のテクスチャにグレーではない画素が {count} 個あります。赤チャンネルだけを使います。",
+    "texture.orm.warning.nonGray.other":
+      "{channel}のテクスチャにグレーではない画素が {count} 個あります。赤チャンネルだけを使います。",
+    "texture.orm.warning.depth16":
+      "{channel}のテクスチャは 16 ビットです。チャンネルあたり 8 ビットに変換します。",
+    "texture.orm.warning.icc":
+      "{channel}のテクスチャにはカラープロファイルが埋め込まれています。このプロファイルは無視されます。",
+    "texture.error.E-TEX-002":
+      "E-TEX-002: 合成するテクスチャのサイズが異なります。すべて同じサイズのテクスチャを開いてください。",
+    "texture.orm.download.occlusion": "オクルージョン PNG をダウンロード",
+    "texture.orm.download.roughness": "ラフネス PNG をダウンロード",
+    "texture.orm.download.metallic": "メタリック PNG をダウンロード",
+    "texture.orm.download.all": "3 枚すべてをダウンロード",
+    "texture.orm.pane.input.occlusion": "合成前: オクルージョン",
+    "texture.orm.pane.input.roughness": "合成前: ラフネス",
+    "texture.orm.pane.input.metallic": "合成前: メタリック",
+    "texture.orm.pane.packed": "合成後の ORM",
+    "texture.orm.pane.input": "分解前の ORM",
+    "texture.orm.pane.occlusion": "分解後のオクルージョン",
+    "texture.orm.pane.roughness": "分解後のラフネス",
+    "texture.orm.pane.metallic": "分解後のメタリック",
+    "texture.orm.open": "ORM テクスチャを開く（PNG または JPEG）",
+    "texture.orm.dropHint": "PNG または JPEG を 1 枚ドロップするか、ファイル選択を使ってください。",
+    "texture.orm.note":
+      "ORM は R = オクルージョン、G = ラフネス、B = メタリックです（glTF / Unreal）。各入力の赤チャンネルだけを使います。入力がない場合は既定値で補い、合成後に使用した値を表示します。Unity のマスクマップとは配置が異なります。スムースネスからラフネスへの変換は行いません。",
     "settings.open": "設定",
     "settings.title": "設定",
     "settings.description":
@@ -300,7 +407,7 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "nav.label": "画面",
     "nav.inspect": "検査",
     "nav.texture": "テクスチャ",
-    "texture.heading": "法線マップの変換",
+    "texture.heading": "テクスチャの変換",
     "texture.direction.legend": "変換の方向",
     "texture.direction.dx-to-gl": "DirectX から OpenGL へ",
     "texture.direction.gl-to-dx": "OpenGL から DirectX へ",
@@ -323,12 +430,12 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "texture.status.converted": "{name}: {width} × {height} px、変換しました（{direction}）",
     "texture.status.cancelled": "キャンセルしました。",
     "texture.error.E-TEX-001":
-      "E-TEX-001: このファイルはブラウザで読み込める PNG または JPEG 画像ではありません。PNG または JPEG の法線マップを開いてください。",
+      "E-TEX-001: このファイルはブラウザで読み込める PNG または JPEG 画像ではありません。PNG または JPEG の画像を開いてください。",
     "texture.error.E-TEX-003":
       "E-TEX-003: この画像は {width} × {height} px で、変換できるサイズ（最大 {limit} 画素、各辺 16384 px）を超えています。解像度を下げて、もう一度開いてください。",
     "texture.error.worker":
       "変換処理を実行できません。ページを再読み込みして、もう一度お試しください。",
-    "texture.error.drop": "法線マップは 1 枚ずつ開いてください。",
+    "texture.error.drop": "ファイルは 1 枚ずつ開いてください。",
     "dialog.pixels":
       "{name} は {width} × {height} px です。{defaultLimit} 画素を超える画像は処理に時間がかかったり、メモリが不足したりする場合があります。続行しますか？ {maxLimit} 画素を超える画像は開けません。",
     "texture.warning.translucent.one":

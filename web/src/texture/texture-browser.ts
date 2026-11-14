@@ -155,5 +155,14 @@ export function createTextureBrowser(options: {
   download.addEventListener("click", () => {
     void screen.download();
   });
-  return screen;
+  return {
+    ...screen,
+    clear() {
+      generation++;
+      cancelLimit();
+      screen.clear();
+      input.value = "";
+      before.width = after.width = before.height = after.height = 1;
+    },
+  };
 }

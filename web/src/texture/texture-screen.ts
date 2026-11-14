@@ -179,6 +179,15 @@ export function createTextureScreen(options: Options) {
   options.status.set((locale) => createTranslator(locale).t("texture.status.idle"));
   options.setDownloadEnabled(false);
   return {
+    clear() {
+      token++;
+      active = null;
+      warnings = [];
+      renderWarnings();
+      options.status.set(null);
+      options.error.set(null);
+      options.setDownloadEnabled(false);
+    },
     openFile,
     handleResponse,
     refresh,

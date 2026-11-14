@@ -25,6 +25,37 @@ export function createRequestHandler(corePromise: Promise<LintCore>, reply: Repl
         ]);
         return;
       }
+      if (request.type === "packOrm") {
+        const [occlusion, roughness, metallic] = request.inputs.map((buffer) =>
+          buffer === null ? null : new Uint8ClampedArray(buffer),
+        );
+        const result = core.packOrm(
+          request.width,
+          request.height,
+          occlusion ?? null,
+          roughness ?? null,
+          metallic ?? null,
+          request.maxPixels,
+        );
+        reply({ id: request.id, type: "packedOrm", result }, [result.pixels.buffer as ArrayBuffer]);
+        return;
+      }
+      if (request.type === "unpackOrm") {
+        const result = core.unpackOrm(
+          new Uint8ClampedArray(request.pixels),
+          request.width,
+          request.height,
+          request.maxPixels,
+        );
+        reply({ id: request.id, type: "unpackedOrm", result }, [
+          ...new Set([
+            result.occlusion.buffer as ArrayBuffer,
+            result.roughness.buffer as ArrayBuffer,
+            result.metallic.buffer as ArrayBuffer,
+          ]),
+        ]);
+        return;
+      }
       const result = core.analyze(
         new Uint8Array(request.bytes),
         request.maxFileBytes,

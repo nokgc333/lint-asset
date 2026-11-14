@@ -102,6 +102,52 @@ async function runAxe(label, page) {
   report(result.violations.length === 0, `axe: ${label}`, detail);
 }
 
+async function loadTexture(page, selector, name, gray) {
+  await page.evaluate(
+    async ({ selector, name, gray }) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 128;
+      const context = canvas.getContext("2d");
+      const image = context.createImageData(canvas.width, canvas.height);
+      for (let at = 0; at < image.data.length; at += 4) {
+        const value = (at / 4) % 256;
+        image.data.set(gray ? [value, value, value, 255] : [value, 128, 220, 255], at);
+      }
+      context.putImageData(image, 0, 0);
+      const blob = await new Promise((done) => canvas.toBlob(done, "image/png"));
+      const data = new DataTransfer();
+      data.items.add(new File([blob], name, { type: "image/png" }));
+      const input = document.querySelector(selector);
+      input.files = data.files;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    },
+    { selector, name, gray },
+  );
+}
+
+async function auditOrm(page, label) {
+  await page.click('input[name="texture-mode"][value="pack"]');
+  await loadTexture(page, "#orm-pack-file-0", "stone_ao.png", true);
+  await loadTexture(page, "#orm-pack-file-1", "stone_roughness.png", true);
+  await page.waitForFunction(
+    () =>
+      !document.querySelector("#orm-pack-download").disabled &&
+      document.querySelector("#orm-pack-defaults").children.length === 1,
+  );
+  await runAxe(`${label} ORM pack with two gray inputs and a default`, page);
+  await loadTexture(page, "#orm-pack-file-2", "stone_metallic.png", false);
+  await page.waitForFunction(
+    () =>
+      !document.querySelector("#orm-pack-download").disabled &&
+      document.querySelector("#orm-pack-warnings").children.length > 0,
+  );
+  await runAxe(`${label} ORM pack with a non-gray warning`, page);
+  await page.click('input[name="texture-mode"][value="unpack"]');
+  await loadTexture(page, "#orm-unpack-file-0", "stone_orm.png", false);
+  await page.waitForFunction(() => !document.querySelector("#orm-unpack-all").disabled);
+  await runAxe(`${label} ORM unpack with three results`, page);
+}
+
 for (const locale of ["en", "ja"]) {
   const page = await openPage(locale);
   await page.waitForFunction(() => !document.querySelector("#controls").disabled, {
@@ -184,6 +230,7 @@ for (const locale of ["en", "ja"]) {
   });
   await wait(1500);
   await runAxe(`[${locale}] texture screen with a result and a warning`, page);
+  await auditOrm(page, `[${locale}]`);
   await page.close();
 }
 
@@ -208,6 +255,19 @@ for (const locale of ["en", "ja"]) {
       `${sideways} px too wide`,
     );
     await runAxe(`${width} px window`, page);
+    await page.click("#screen-texture-button");
+    await auditOrm(page, `${width} px window`);
+    for (const mode of ["pack", "unpack"]) {
+      await page.click(`input[name="texture-mode"][value="${mode}"]`);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      report(
+        overflow <= 0,
+        `ORM ${mode}: ${width} px without sideways scrolling`,
+        `${overflow} px too wide`,
+      );
+    }
     await page.close();
   }
   // A touch-only device sees the guide, which must have a main landmark and one heading.
