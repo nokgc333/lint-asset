@@ -1,0 +1,15 @@
+[
+  {
+    "rule": "uv.overlap",
+    "severity": "warning",
+    "message": "Triangles overlap in UV space in a mirrored layout (for example, left and right halves that share one area).",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 0
+    },
+    "count": 4,
+    "elements": [0, 1, 2, 3],
+    "truncated": false
+  }
+]

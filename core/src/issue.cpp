@@ -20,6 +20,8 @@ std::string_view rule_name(RuleId rule) noexcept {
         return "uv.missing";
     case RuleId::uv_out_of_range:
         return "uv.out_of_range";
+    case RuleId::uv_overlap:
+        return "uv.overlap";
     case RuleId::asset_triangle_count_exceeded:
         return "asset.triangle_count_exceeded";
     case RuleId::asset_scale_too_small:

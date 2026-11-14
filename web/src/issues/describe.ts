@@ -15,6 +15,7 @@ const RULE_TITLES: Record<string, string> = {
   "mesh.degenerate_triangle": "Degenerate triangles",
   "uv.missing": "Missing UVs",
   "uv.out_of_range": "UVs outside 0 to 1",
+  "uv.overlap": "Overlapping UVs",
   "asset.triangle_count_exceeded": "Too many triangles",
   "asset.scale_too_small": "Model too small",
   "asset.scale_too_large": "Model too large",

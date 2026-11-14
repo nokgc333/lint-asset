@@ -57,6 +57,7 @@ describe("describeIssue", () => {
       "mesh.degenerate_triangle",
       "uv.missing",
       "uv.out_of_range",
+      "uv.overlap",
     ].map((rule) => describeIssue(triangleIssue({ rule })).title);
 
     expect(titles).toEqual([
@@ -68,6 +69,7 @@ describe("describeIssue", () => {
       "Degenerate triangles",
       "Missing UVs",
       "UVs outside 0 to 1",
+      "Overlapping UVs",
     ]);
     const assetTitles = [
       "asset.triangle_count_exceeded",
