@@ -31,6 +31,9 @@ does the normal map conversion in one screen, without uploading anything.
   problem triangles over the model, colored by severity. Choose a problem in the list and the
   camera moves to it. Severity is also given by shape and text, not only by color, and
   everything works from the keyboard.
+- **Filter and sort problems.** Filter by severity and rule; sort by report order, severity,
+  rule or triangle count. The 3D colors, selection and detail panel follow the filter.
+  The summary and JSON/Markdown reports always include every problem. Filters are not saved.
 - **Understand and fix a problem.** Select a problem to see its location, triangle numbers,
   meaning, impact and fix guide in the detail panel. Tool guides name Blender, Maya, 3ds Max,
   Houdini and Unreal Engine where applicable. Hints are a guide; menu names can differ by version.
@@ -135,7 +138,7 @@ Environment:
 - So far it has been checked in a Chromium-based browser. Firefox and Safari are not checked yet.
 
 Planned, not implemented: split glTF and OBJ input,
-a command-line version, and filtering and sorting the list.
+and a command-line version.
 
 ## How it works
 
