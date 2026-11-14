@@ -148,6 +148,92 @@ async function auditOrm(page, label) {
   await runAxe(`${label} ORM unpack with three results`, page);
 }
 
+async function auditFilters(page, locale) {
+  for (const width of [1400, 320]) {
+    await page.setViewport({ width, height: 900 });
+    await page.click("#issues-warning");
+    await page.click("#issues-info");
+    report(
+      await page.$$eval(
+        "#issues-list button",
+        (rows) => rows.length > 0 && rows.every((row) => row.classList.contains("severity-error")),
+      ),
+      `[${locale}] ${width} px, errors only`,
+    );
+    await runAxe(`[${locale}] ${width} px, errors only`, page);
+    await page.click("#issues-clear");
+    await page.select("#issues-rule", "mesh.boundary_edge");
+    await runAxe(`[${locale}] ${width} px, a chosen rule`, page);
+    await page.click("#issues-warning");
+    report(
+      await page.$eval("#issues-none", (element) => !element.hidden),
+      `[${locale}] ${width} px, empty filter state`,
+    );
+    await runAxe(`[${locale}] ${width} px, no matching problems`, page);
+    await page.click("#issues-none-clear");
+    await page.select("#issues-sort", "triangles");
+    await runAxe(`[${locale}] ${width} px, sorted by triangles`, page);
+    const layout = await page.evaluate(() => ({
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      above:
+        document.querySelector("#issues-filters").getBoundingClientRect().bottom <=
+        document.querySelector("#issues-list-region").getBoundingClientRect().top,
+    }));
+    report(
+      layout.overflow <= 0 && layout.above,
+      `[${locale}] ${width} px, filter controls above the list without overflow`,
+    );
+    await page.select("#issues-sort", "report");
+  }
+}
+
+async function keyboardFilters(page, label) {
+  const activeId = () => page.evaluate(() => document.activeElement?.id);
+  async function tabTo(id) {
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      await page.keyboard.press("Tab");
+      if ((await activeId()) === id) return true;
+    }
+    return false;
+  }
+  const count = () => page.$$eval("#issues-list button", (rows) => rows.length);
+  const total = await count();
+  await page.focus("#export-markdown");
+  report(await tabTo("issues-error"), `${label}: Tab reaches the error checkbox`);
+  report(await tabTo("issues-warning"), `${label}: Tab reaches the warning checkbox`);
+  await page.keyboard.press("Space");
+  report(
+    (await count()) < total && (await activeId()) === "issues-warning",
+    `${label}: Space filters the list and retains focus`,
+  );
+  report(await tabTo("issues-info"), `${label}: Tab reaches the info checkbox`);
+  report(await tabTo("issues-rule"), `${label}: Tab reaches the rule select`);
+  // A native select is operated with the keys of the platform (on macOS the arrow keys open its
+  // list, elsewhere they change it), so the check is what the page does with the choice.
+  await page.select(
+    "#issues-rule",
+    await page.$eval("#issues-rule option:nth-child(2)", (option) => option.value),
+  );
+  report(
+    (await page.$eval("#issues-rule", (select) => select.value !== "all")) &&
+      (await count()) < total,
+    `${label}: choosing a rule filters the list`,
+  );
+  report(await tabTo("issues-sort"), `${label}: Tab reaches the sort select`);
+  await page.select("#issues-sort", "severity");
+  report(
+    await page.$eval("#issues-sort", (select) => select.value === "severity"),
+    `${label}: choosing a sort order is accepted`,
+  );
+  report(await tabTo("issues-clear"), `${label}: Tab reaches Clear filters`);
+  await page.keyboard.press("Enter");
+  report(
+    (await count()) === total && (await activeId()) === "issues-error",
+    `${label}: Clear filters restores every row and focuses the first checkbox`,
+  );
+  await page.select("#issues-sort", "report");
+}
+
 for (const locale of ["en", "ja"]) {
   const page = await openPage(locale);
   await page.waitForFunction(() => !document.querySelector("#controls").disabled, {
@@ -209,6 +295,11 @@ for (const locale of ["en", "ja"]) {
       `[${locale}] open tool guide at ${width} px without sideways scrolling`,
       `${overflow} px too wide`,
     );
+  }
+  await auditFilters(page, locale);
+  for (const width of [1400, 320]) {
+    await page.setViewport({ width, height: 900 });
+    await keyboardFilters(page, `[${locale}] ${width} px keyboard`);
   }
   await page.setViewport({ width: 1400, height: 900 });
 
