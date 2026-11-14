@@ -107,6 +107,28 @@ describe("applyAboutLinks", () => {
     expect(donate.attributes.has("href")).toBe(false);
   });
 
+  it("takes a donation link without an address out of the page", () => {
+    let removed = 0;
+    const donate = Object.assign(fakeLink("donate"), {
+      remove: () => {
+        removed += 1;
+      },
+    });
+    applyAboutLinks(fakeRoot(donate), buildAboutLinks(null));
+    expect(removed).toBe(1);
+  });
+
+  it("keeps a donation link that has an address", () => {
+    let removed = 0;
+    const donate = Object.assign(fakeLink("donate"), {
+      remove: () => {
+        removed += 1;
+      },
+    });
+    applyAboutLinks(fakeRoot(donate), links);
+    expect(removed).toBe(0);
+  });
+
   it("leaves an unknown link name alone", () => {
     const other = fakeLink("unknown");
     applyAboutLinks(fakeRoot(other), links);
