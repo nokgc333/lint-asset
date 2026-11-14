@@ -391,3 +391,66 @@ TEST_CASE("inspection golden: three_pages") {
     };
     CHECK(inspect_fixture("three_pages") == expected);
 }
+
+TEST_CASE("inspection golden: external_image_uri") {
+    const std::vector<lint_asset::Issue> expected = {
+        {lint_asset::RuleId::asset_external_uri,
+         lint_asset::Severity::warning,
+         "External image references: 1 (web addresses: 1, other: 0).",
+         0,
+         0,
+         1,
+         {},
+         false,
+         lint_asset::ElementKind::asset},
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
+         0,
+         0,
+         12,
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
+         false,
+         lint_asset::ElementKind::triangle},
+    };
+    CHECK(inspect_fixture("external_image_uri") == expected);
+}
+
+TEST_CASE("inspection golden: external_image_uris_mixed") {
+    const std::vector<lint_asset::Issue> expected = {
+        {lint_asset::RuleId::asset_external_uri,
+         lint_asset::Severity::warning,
+         "External image references: 5 (web addresses: 3, other: 2).",
+         0,
+         0,
+         1,
+         {},
+         false,
+         lint_asset::ElementKind::asset},
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
+         0,
+         0,
+         12,
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
+         false,
+         lint_asset::ElementKind::triangle},
+    };
+    CHECK(inspect_fixture("external_image_uris_mixed") == expected);
+}
+
+TEST_CASE("inspection golden: embedded_image_uri") {
+    const std::vector<lint_asset::Issue> expected = {
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
+         0,
+         0,
+         12,
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
+         false,
+         lint_asset::ElementKind::triangle},
+    };
+    CHECK(inspect_fixture("embedded_image_uri") == expected);
+}

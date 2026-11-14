@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "glb_parse.hpp"
+#include "lint_asset/uri_inspection.hpp"
 
 namespace lint_asset {
 namespace {
@@ -368,6 +369,20 @@ GeometryResult load_glb_geometry(std::span<const std::uint8_t> bytes, const Load
                 .error = counted.error, .message = counted.message, .stats = {}, .geometry = {}};
         }
         GeometryResult result;
+        for (std::uint32_t i = 0; i < parsed.model.images_count; ++i) {
+            const auto &uri = parsed.model.images[i].uri;
+            const auto kind = classify_uri(uri.len == 0 ? std::string_view{}
+                                                        : std::string_view(uri.data, uri.len));
+            if (kind == UriKind::embedded) {
+                continue;
+            }
+            auto &count = kind == UriKind::web_address
+                              ? result.geometry.external_images.web_addresses
+                              : result.geometry.external_images.other;
+            if (count < std::numeric_limits<std::uint32_t>::max()) {
+                ++count;
+            }
+        }
         extract_parts(parsed.model, result.geometry);
         extract_instances(parsed.model, result.geometry);
         result.stats = counted.stats;

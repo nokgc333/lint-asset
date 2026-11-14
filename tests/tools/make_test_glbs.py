@@ -236,6 +236,31 @@ def external_image_uri():
     return build_glb(document, data)
 
 
+def external_image_uris_mixed():
+    document, data = cube_document()
+    document["images"] = [{"uri": uri} for uri in [
+        "https://example.invalid/a.png",
+        "textures/b.png",
+        "C:\\Users\\me\\c.png",
+        "//cdn.example.invalid/d.png",
+        "data:image/png;base64,iVBORw0KGgo=",
+        "HTTPS://UPPER.example.invalid/e.png",
+    ]]
+    document["textures"] = [{"source": 0}]
+    document["materials"] = [{"pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}}]
+    document["meshes"][0]["primitives"][0]["material"] = 0
+    return build_glb(document, data)
+
+
+def embedded_image_uri():
+    document, data = cube_document()
+    document["images"] = [{"uri": "data:image/png;base64,iVBORw0KGgo="}]
+    document["textures"] = [{"source": 0}]
+    document["materials"] = [{"pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}}]
+    document["meshes"][0]["primitives"][0]["material"] = 0
+    return build_glb(document, data)
+
+
 def extension_cube(extension, required=False):
     document, data = cube_document()
     document["extensionsUsed"] = [extension]
@@ -414,6 +439,7 @@ def main():
         cube_small, cube_huge, cube_cm_export, cube_with_degenerate,
         cube, cube_flipped_normals, cube_open_top, cube_faces_flipped, cube_unnormalized,
         primitive_modes, three_pages, external_image_uri,
+        external_image_uris_mixed, embedded_image_uri,
         unknown_extension_used, required_supported_extension, bad_version_1,
         external_buffer_uri, truncated_cube, length_mismatch, invalid_json, missing_asset,
         accessor_out_of_range, huge_accessor_count, required_draco, required_unknown_extension,

@@ -1,0 +1,24 @@
+[
+  {
+    "rule": "asset.external_uri",
+    "severity": "warning",
+    "message": "External image references: 5 (web addresses: 3, other: 2).",
+    "element_kind": "asset",
+    "count": 1,
+    "elements": [],
+    "truncated": false
+  },
+  {
+    "rule": "uv.missing",
+    "severity": "warning",
+    "message": "The primitive has no UV coordinates.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 0
+    },
+    "count": 12,
+    "elements": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    "truncated": false
+  }
+]

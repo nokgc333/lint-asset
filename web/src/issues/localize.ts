@@ -68,6 +68,12 @@ const patterns: Record<string, readonly [RegExp, string][]> = {
       "checks.asset.scale_too_small",
     ],
   ],
+  "asset.external_uri": [
+    [
+      /^External image references: (?<total>\d+) \(web addresses: (?<web>\d+), other: (?<other>\d+)\)\.$/,
+      "checks.asset.external_uri",
+    ],
+  ],
   "asset.scale_too_large": [
     [
       new RegExp(

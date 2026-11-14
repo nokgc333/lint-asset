@@ -35,12 +35,21 @@ struct MeshInstance {
     std::array<float, 16> world{};  // column-major 4x4 matrix, as in glTF
 };
 
+// How many entries of the glTF "images" array keep their data outside the file (see
+// uri_inspection.hpp). Only the counts are kept, never the uri text.
+struct ExternalImageCounts {
+    std::uint32_t web_addresses = 0;  // http, https, ftp, ftps, or a protocol-relative address
+    std::uint32_t other = 0;          // a file path, file:, blob:, or any other non-data uri
+};
+
 struct Geometry {
     // Only primitives that draw triangles. Points and lines are left out. Ordered by mesh, then
     // primitive.
     std::vector<PrimitiveGeometry> primitives;
     // In depth-first order from the scene's root nodes. A mesh can appear more than once.
     std::vector<MeshInstance> instances;
+    // Images stored outside the file. The file is never asked for them (SEC-002).
+    ExternalImageCounts external_images;
 };
 
 struct GeometryResult {

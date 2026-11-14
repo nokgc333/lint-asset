@@ -24,6 +24,7 @@ enum class RuleId : std::uint8_t {
     asset_triangle_count_exceeded,  // "asset.triangle_count_exceeded"
     asset_scale_too_small,          // "asset.scale_too_small"
     asset_scale_too_large,          // "asset.scale_too_large"
+    asset_external_uri,             // "asset.external_uri"
 };
 
 // What an issue points at: the triangles of one primitive, or the whole asset.
