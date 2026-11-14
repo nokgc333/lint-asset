@@ -2,13 +2,22 @@ import { afterEach, expect, it, vi } from "vitest";
 import type { WorkerResponse } from "./protocol";
 import type { AnalyzeResult } from "./wasm/lint_core.mjs";
 
-const { worker, downloadText, setGeometry } = vi.hoisted(() => ({
+const { worker, downloadText, setGeometry, textureScreens } = vi.hoisted(() => ({
   worker: { addEventListener: vi.fn(), postMessage: vi.fn() },
   downloadText: vi.fn(),
   setGeometry: vi.fn(),
+  textureScreens: Array.from({ length: 3 }, () => ({
+    clear: vi.fn(),
+    refresh: vi.fn(),
+    handleResponse: vi.fn(),
+    failWorker: vi.fn(),
+  })),
 }));
 vi.mock("./texture/texture-browser", () => ({
-  createTextureBrowser: () => ({ refresh: vi.fn(), handleResponse: vi.fn(), failWorker: vi.fn() }),
+  createTextureBrowser: () => textureScreens[0],
+}));
+vi.mock("./texture/orm-browser", () => ({
+  createOrmBrowser: (_options: unknown, mode: string) => textureScreens[mode === "pack" ? 1 : 2],
 }));
 vi.mock("./trusted-worker", () => ({ createModuleWorker: () => worker }));
 vi.mock("./report/download", () => ({ downloadText }));
@@ -41,12 +50,16 @@ it("exports the displayed model with the engine version and retains it after a f
     "export-json",
     "export-markdown",
     "sample-button",
+    "texture-normal-panel",
+    "orm-pack-panel",
+    "orm-unpack-panel",
   ];
   const elements = new Map(
     selectors.map((id) => [
       id,
       Object.assign(new EventTarget(), {
         disabled: true,
+        hidden: false,
         textContent: "",
         value: "",
         files: [] as File[],
@@ -59,9 +72,13 @@ it("exports the displayed model with the engine version and retains it after a f
     if (!value) throw new Error(`Missing test element: ${id}`);
     return value;
   };
+  const radios = ["normal", "pack", "unpack"].map((value) =>
+    Object.assign(new EventTarget(), { value, checked: false }),
+  );
   vi.stubGlobal("document", {
     addEventListener: vi.fn(),
     querySelector: (selector: string) => elements.get(selector.slice(1)),
+    querySelectorAll: () => radios,
   });
   vi.stubGlobal("window", new EventTarget());
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
@@ -131,4 +148,33 @@ it("exports the displayed model with the engine version and retains it after a f
   element("export-json").dispatchEvent(new Event("click"));
   expect(JSON.parse(downloadText.mock.calls.at(-1)?.[2]).asset).toEqual(report.asset);
   expect(setGeometry).toHaveBeenCalledOnce();
+  for (const screen of textureScreens) expect(screen.refresh).toHaveBeenCalled();
+  for (const radio of radios) {
+    radio.checked = true;
+    radio.dispatchEvent(new Event("change"));
+    expect(element("texture-normal-panel").hidden).toBe(radio.value !== "normal");
+    expect(element("orm-pack-panel").hidden).toBe(radio.value !== "pack");
+    expect(element("orm-unpack-panel").hidden).toBe(radio.value !== "unpack");
+    radio.checked = false;
+  }
+  for (const screen of textureScreens) expect(screen.clear).toHaveBeenCalledTimes(3);
+  const ormResponse: WorkerResponse = {
+    id: 2_000_000,
+    type: "unpackedOrm",
+    result: {
+      ok: true,
+      code: "",
+      message: "",
+      occlusion: new Uint8ClampedArray(4),
+      roughness: new Uint8ClampedArray(4),
+      metallic: new Uint8ClampedArray(4),
+      translucent_pixels: 0,
+    },
+  };
+  receive(ormResponse);
+  for (const screen of textureScreens)
+    expect(screen.handleResponse).toHaveBeenLastCalledWith(ormResponse);
+  const failure = worker.addEventListener.mock.calls.find(([type]) => type === "error")?.[1];
+  failure();
+  for (const screen of textureScreens) expect(screen.failWorker).toHaveBeenCalledOnce();
 });

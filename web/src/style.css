@@ -367,6 +367,7 @@ canvas {
   border-width: 2px;
 }
 
+.orm-zoom button[aria-pressed="true"],
 .screen-switch button[aria-current="page"],
 #texture-zoom button[aria-pressed="true"] {
   font-weight: 800;
@@ -528,4 +529,83 @@ canvas {
 .settings-error:not(:empty) {
   color: var(--severity-error);
   font-weight: 700;
+}
+
+.texture-modes .toggle {
+  display: flex;
+  width: fit-content;
+  min-height: 24px;
+}
+
+.orm-panel,
+.orm-slot,
+.orm-compare > div,
+.orm-compare > figure {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.orm-slot {
+  border: 3px solid #9aaec4;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-block: 0.5rem;
+}
+
+.orm-slot.is-dragging {
+  outline: 4px solid #ffda79;
+}
+
+.orm-slot input {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.orm-panel button,
+.texture-modes input {
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.orm-panel :focus-visible,
+.texture-modes :focus-visible {
+  outline: 3px solid #ffda79;
+  outline-offset: 2px;
+}
+
+.orm-panel [role="alert"]:not(:empty),
+.orm-panel ul[id$="warnings"]:not(:empty) {
+  border: 2px solid #ffb4ab;
+  padding: 1rem 2rem;
+}
+
+.orm-panel ul > :not(:first-child) {
+  margin-top: 0.75rem;
+}
+
+.orm-inputs,
+.orm-results,
+.orm-slots {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.orm-inputs .compare-pane {
+  height: 18vh;
+}
+
+@media (min-width: 640px) {
+  .orm-compare {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .orm-unpack {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  }
+
+  .orm-results,
+  .orm-slots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }

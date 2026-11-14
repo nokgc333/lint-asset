@@ -78,45 +78,204 @@
       </div>
       </div>
       <section id="screen-texture" hidden aria-labelledby="texture-title">
-        <h2 id="texture-title" data-i18n="texture.heading">Normal map converter</h2>
-        <fieldset>
-          <legend data-i18n="texture.direction.legend">Conversion direction</legend>
-          <label class="toggle"><input type="radio" name="texture-direction" value="dx-to-gl" checked /><span data-i18n="texture.direction.dx-to-gl">DirectX to OpenGL</span></label>
-          <label class="toggle"><input type="radio" name="texture-direction" value="gl-to-dx" /><span data-i18n="texture.direction.gl-to-dx">OpenGL to DirectX</span></label>
+        <h2 id="texture-title" data-i18n="texture.heading">Texture converter</h2>
+        <fieldset class="texture-modes">
+          <legend data-i18n="texture.mode.legend">Conversion type</legend>
+          <label class="toggle">
+            <input type="radio" name="texture-mode" value="normal" checked />
+            <span data-i18n="texture.mode.normal">Normal map: DirectX / OpenGL</span>
+          </label>
+          <label class="toggle">
+            <input type="radio" name="texture-mode" value="pack" />
+            <span data-i18n="texture.mode.ormPack">ORM: pack three textures into one</span>
+          </label>
+          <label class="toggle">
+            <input type="radio" name="texture-mode" value="unpack" />
+            <span data-i18n="texture.mode.ormUnpack">ORM: split one texture into three</span>
+          </label>
         </fieldset>
-        <p data-i18n="texture.note">Both directions flip the green channel (Y). Applying the same conversion twice gives back the original.</p>
-        <label for="texture-file" class="file-control" data-i18n="texture.open">Open a normal map (PNG or JPEG)</label>
-        <input id="texture-file" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" />
-        <div id="texture-drop-zone"><p data-i18n="texture.dropHint">Drop a PNG or JPEG normal map here, or use Open a normal map.</p></div>
-        <p id="texture-status" role="status" data-i18n="texture.status.idle">Open a normal map to convert it.</p>
-        <p id="texture-error" role="alert"></p>
-        <ul id="texture-warnings"></ul>
-        <div class="texture-compare" id="texture-compare">
-          <figure>
-            <figcaption data-i18n="texture.before">Before</figcaption>
-            <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
-            <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
-            <div id="texture-before-pane" class="compare-pane" tabindex="0" role="region" aria-label="Before" data-i18n-attr="aria-label:texture.before">
-              <canvas id="texture-before" aria-label="Before" data-i18n-attr="aria-label:texture.before" width="1" height="1"></canvas>
-            </div>
-          </figure>
-          <figure>
-            <figcaption data-i18n="texture.after">After</figcaption>
-            <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
-            <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
-            <div id="texture-after-pane" class="compare-pane" tabindex="0" role="region" aria-label="After" data-i18n-attr="aria-label:texture.after">
-              <canvas id="texture-after" aria-label="After" data-i18n-attr="aria-label:texture.after" width="1" height="1"></canvas>
-            </div>
-          </figure>
+        <div id="texture-normal-panel">
+          <fieldset>
+            <legend data-i18n="texture.direction.legend">Conversion direction</legend>
+            <label class="toggle">
+              <input type="radio" name="texture-direction" value="dx-to-gl" checked />
+              <span data-i18n="texture.direction.dx-to-gl">DirectX to OpenGL</span>
+            </label>
+            <label class="toggle">
+              <input type="radio" name="texture-direction" value="gl-to-dx" />
+              <span data-i18n="texture.direction.gl-to-dx">OpenGL to DirectX</span>
+            </label>
+          </fieldset>
+          <p data-i18n="texture.note">Both directions flip the green channel (Y). Applying the same conversion twice gives back the original.</p>
+          <label for="texture-file" class="file-control" data-i18n="texture.open">Open a normal map (PNG or JPEG)</label>
+          <input id="texture-file" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" />
+          <div id="texture-drop-zone">
+            <p data-i18n="texture.dropHint">Drop a PNG or JPEG normal map here, or use Open a normal map.</p>
+          </div>
+          <p id="texture-status" role="status" data-i18n="texture.status.idle">Open a normal map to convert it.</p>
+          <p id="texture-error" role="alert"></p>
+          <ul id="texture-warnings"></ul>
+          <div class="texture-compare" id="texture-compare">
+            <figure>
+              <figcaption data-i18n="texture.before">Before</figcaption>
+              <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
+              <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
+              <div id="texture-before-pane" class="compare-pane" tabindex="0" role="region" aria-label="Before" data-i18n-attr="aria-label:texture.before">
+                <canvas id="texture-before" aria-label="Before" data-i18n-attr="aria-label:texture.before" width="1" height="1"></canvas>
+              </div>
+            </figure>
+            <figure>
+              <figcaption data-i18n="texture.after">After</figcaption>
+              <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
+              <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
+              <div id="texture-after-pane" class="compare-pane" tabindex="0" role="region" aria-label="After" data-i18n-attr="aria-label:texture.after">
+                <canvas id="texture-after" aria-label="After" data-i18n-attr="aria-label:texture.after" width="1" height="1"></canvas>
+              </div>
+            </figure>
+          </div>
+          <fieldset id="texture-zoom">
+            <legend data-i18n="texture.zoom.legend">Zoom</legend>
+            <button type="button" data-zoom="fit" aria-pressed="true" data-i18n="texture.zoom.fit">Fit</button>
+            <button type="button" data-zoom="100" aria-pressed="false" data-i18n="texture.zoom.100">100%</button>
+            <button type="button" data-zoom="200" aria-pressed="false" data-i18n="texture.zoom.200">200%</button>
+            <button type="button" data-zoom="400" aria-pressed="false" data-i18n="texture.zoom.400">400%</button>
+          </fieldset>
+          <button id="texture-download" type="button" disabled data-i18n="texture.download">Download PNG</button>
         </div>
-        <fieldset id="texture-zoom">
-          <legend data-i18n="texture.zoom.legend">Zoom</legend>
-          <button type="button" data-zoom="fit" aria-pressed="true" data-i18n="texture.zoom.fit">Fit</button>
-          <button type="button" data-zoom="100" aria-pressed="false" data-i18n="texture.zoom.100">100%</button>
-          <button type="button" data-zoom="200" aria-pressed="false" data-i18n="texture.zoom.200">200%</button>
-          <button type="button" data-zoom="400" aria-pressed="false" data-i18n="texture.zoom.400">400%</button>
-        </fieldset>
-        <button id="texture-download" type="button" disabled data-i18n="texture.download">Download PNG</button>
+        <div id="orm-pack-panel" class="orm-panel" hidden>
+          <p data-i18n="texture.orm.note">ORM uses R = occlusion, G = roughness, B = metallic (glTF / Unreal). Only the red channel of each input is used. Missing inputs use the defaults shown after packing. This is not Unity’s mask map layout; smoothness is not converted to roughness.</p>
+          <div class="orm-slots">
+            <div id="orm-pack-drop-0" class="orm-slot">
+              <label for="orm-pack-file-0" class="file-control" data-i18n="texture.orm.slot.occlusion">Occlusion (red)</label>
+              <input id="orm-pack-file-0" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" />
+              <p class="orm-file-name"></p>
+              <p data-i18n="texture.orm.dropHint">Drop one PNG or JPEG here, or use the file input.</p>
+              <button id="orm-pack-remove-0" type="button" data-i18n="texture.orm.remove.occlusion">Remove occlusion</button>
+            </div>
+            <div id="orm-pack-drop-1" class="orm-slot">
+              <label for="orm-pack-file-1" class="file-control" data-i18n="texture.orm.slot.roughness">Roughness (green)</label>
+              <input id="orm-pack-file-1" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" />
+              <p class="orm-file-name"></p>
+              <p data-i18n="texture.orm.dropHint">Drop one PNG or JPEG here, or use the file input.</p>
+              <button id="orm-pack-remove-1" type="button" data-i18n="texture.orm.remove.roughness">Remove roughness</button>
+            </div>
+            <div id="orm-pack-drop-2" class="orm-slot">
+              <label for="orm-pack-file-2" class="file-control" data-i18n="texture.orm.slot.metallic">Metallic (blue)</label>
+              <input id="orm-pack-file-2" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" />
+              <p class="orm-file-name"></p>
+              <p data-i18n="texture.orm.dropHint">Drop one PNG or JPEG here, or use the file input.</p>
+              <button id="orm-pack-remove-2" type="button" data-i18n="texture.orm.remove.metallic">Remove metallic</button>
+            </div>
+          </div>
+          <p id="orm-pack-status" role="status"></p>
+          <p id="orm-pack-error" role="alert"></p>
+          <ul id="orm-pack-defaults"></ul>
+          <ul id="orm-pack-warnings"></ul>
+          <div id="orm-pack-compare" class="texture-compare orm-compare orm-pack">
+            <div class="orm-inputs">
+              <figure>
+                <figcaption data-i18n="texture.orm.pane.input.occlusion">Before: occlusion</figcaption>
+                <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
+                <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
+                <div class="compare-pane" tabindex="0" role="region" aria-label="Before: occlusion" data-i18n-attr="aria-label:texture.orm.pane.input.occlusion">
+                  <canvas id="orm-pack-before-0" width="1" height="1" aria-label="Before: occlusion" data-i18n-attr="aria-label:texture.orm.pane.input.occlusion"></canvas>
+                </div>
+              </figure>
+              <figure>
+                <figcaption data-i18n="texture.orm.pane.input.roughness">Before: roughness</figcaption>
+                <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
+                <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
+                <div class="compare-pane" tabindex="0" role="region" aria-label="Before: roughness" data-i18n-attr="aria-label:texture.orm.pane.input.roughness">
+                  <canvas id="orm-pack-before-1" width="1" height="1" aria-label="Before: roughness" data-i18n-attr="aria-label:texture.orm.pane.input.roughness"></canvas>
+                </div>
+              </figure>
+              <figure>
+                <figcaption data-i18n="texture.orm.pane.input.metallic">Before: metallic</figcaption>
+                <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
+                <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
+                <div class="compare-pane" tabindex="0" role="region" aria-label="Before: metallic" data-i18n-attr="aria-label:texture.orm.pane.input.metallic">
+                  <canvas id="orm-pack-before-2" width="1" height="1" aria-label="Before: metallic" data-i18n-attr="aria-label:texture.orm.pane.input.metallic"></canvas>
+                </div>
+              </figure>
+            </div>
+            <figure>
+              <figcaption data-i18n="texture.orm.pane.packed">Packed ORM</figcaption>
+              <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
+              <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
+              <div class="compare-pane" tabindex="0" role="region" aria-label="Packed ORM" data-i18n-attr="aria-label:texture.orm.pane.packed">
+                <canvas id="orm-pack-packed" width="1" height="1" aria-label="Packed ORM" data-i18n-attr="aria-label:texture.orm.pane.packed"></canvas>
+              </div>
+            </figure>
+          </div>
+          <fieldset class="orm-zoom">
+            <legend data-i18n="texture.zoom.legend">Zoom</legend>
+            <button type="button" data-zoom="fit" aria-pressed="true" data-i18n="texture.zoom.fit">Fit</button>
+            <button type="button" data-zoom="100" aria-pressed="false" data-i18n="texture.zoom.100">100%</button>
+            <button type="button" data-zoom="200" aria-pressed="false" data-i18n="texture.zoom.200">200%</button>
+            <button type="button" data-zoom="400" aria-pressed="false" data-i18n="texture.zoom.400">400%</button>
+          </fieldset>
+          <button id="orm-pack-download" type="button" data-output="packed" disabled data-i18n="texture.download">Download PNG</button>
+        </div>
+        <div id="orm-unpack-panel" class="orm-panel" hidden>
+          <p data-i18n="texture.orm.note">ORM uses R = occlusion, G = roughness, B = metallic (glTF / Unreal). Only the red channel of each input is used. Missing inputs use the defaults shown after packing. This is not Unity’s mask map layout; smoothness is not converted to roughness.</p>
+          <div id="orm-unpack-drop-0" class="orm-slot">
+            <label for="orm-unpack-file-0" class="file-control" data-i18n="texture.orm.open">Open an ORM texture (PNG or JPEG)</label>
+            <input id="orm-unpack-file-0" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" />
+            <p class="orm-file-name"></p>
+            <p data-i18n="texture.orm.dropHint">Drop one PNG or JPEG here, or use the file input.</p>
+          </div>
+          <p id="orm-unpack-status" role="status"></p>
+          <p id="orm-unpack-error" role="alert"></p>
+          <ul id="orm-unpack-defaults"></ul>
+          <ul id="orm-unpack-warnings"></ul>
+          <div id="orm-unpack-compare" class="texture-compare orm-compare orm-unpack">
+            <figure>
+              <figcaption data-i18n="texture.orm.pane.input">Before: packed ORM</figcaption>
+              <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
+              <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
+              <div class="compare-pane" tabindex="0" role="region" aria-label="Before: packed ORM" data-i18n-attr="aria-label:texture.orm.pane.input">
+                <canvas id="orm-unpack-before-0" width="1" height="1" aria-label="Before: packed ORM" data-i18n-attr="aria-label:texture.orm.pane.input"></canvas>
+              </div>
+            </figure>
+            <div class="orm-results">
+              <figure>
+                <figcaption data-i18n="texture.orm.pane.occlusion">Occlusion</figcaption>
+                <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
+                <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
+                <div class="compare-pane" tabindex="0" role="region" aria-label="Occlusion" data-i18n-attr="aria-label:texture.orm.pane.occlusion">
+                  <canvas id="orm-unpack-occlusion" width="1" height="1" aria-label="Occlusion" data-i18n-attr="aria-label:texture.orm.pane.occlusion"></canvas>
+                </div>
+                <button id="orm-unpack-download-occlusion" type="button" data-output="occlusion" disabled data-i18n="texture.orm.download.occlusion">Download occlusion PNG</button>
+              </figure>
+              <figure>
+                <figcaption data-i18n="texture.orm.pane.roughness">Roughness</figcaption>
+                <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
+                <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
+                <div class="compare-pane" tabindex="0" role="region" aria-label="Roughness" data-i18n-attr="aria-label:texture.orm.pane.roughness">
+                  <canvas id="orm-unpack-roughness" width="1" height="1" aria-label="Roughness" data-i18n-attr="aria-label:texture.orm.pane.roughness"></canvas>
+                </div>
+                <button id="orm-unpack-download-roughness" type="button" data-output="roughness" disabled data-i18n="texture.orm.download.roughness">Download roughness PNG</button>
+              </figure>
+              <figure>
+                <figcaption data-i18n="texture.orm.pane.metallic">Metallic</figcaption>
+                <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
+                <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
+                <div class="compare-pane" tabindex="0" role="region" aria-label="Metallic" data-i18n-attr="aria-label:texture.orm.pane.metallic">
+                  <canvas id="orm-unpack-metallic" width="1" height="1" aria-label="Metallic" data-i18n-attr="aria-label:texture.orm.pane.metallic"></canvas>
+                </div>
+                <button id="orm-unpack-download-metallic" type="button" data-output="metallic" disabled data-i18n="texture.orm.download.metallic">Download metallic PNG</button>
+              </figure>
+            </div>
+          </div>
+          <fieldset class="orm-zoom">
+            <legend data-i18n="texture.zoom.legend">Zoom</legend>
+            <button type="button" data-zoom="fit" aria-pressed="true" data-i18n="texture.zoom.fit">Fit</button>
+            <button type="button" data-zoom="100" aria-pressed="false" data-i18n="texture.zoom.100">100%</button>
+            <button type="button" data-zoom="200" aria-pressed="false" data-i18n="texture.zoom.200">200%</button>
+            <button type="button" data-zoom="400" aria-pressed="false" data-i18n="texture.zoom.400">400%</button>
+          </fieldset>
+          <button id="orm-unpack-all" type="button" disabled data-i18n="texture.orm.download.all">Download all three</button>
+        </div>
         <p data-i18n="texture.privacy">The image stays in this browser. Nothing is sent anywhere.</p>
       </section>
       <footer class="page-footer">

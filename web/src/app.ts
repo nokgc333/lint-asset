@@ -13,6 +13,7 @@ import { exportFileName } from "./report/export-name";
 import { reportToJson } from "./report/to-json";
 import { reportToMarkdown } from "./report/to-markdown";
 import { fetchSampleFile } from "./sample";
+import { createOrmBrowser } from "./texture/orm-browser";
 import { createTextureBrowser } from "./texture/texture-browser";
 import { createModuleWorker } from "./trusted-worker";
 import { ORBIT_STEP, PAN_STEP, ZOOM_FACTOR } from "./viewer/controls";
@@ -67,6 +68,17 @@ export function startApp(
   const panel = createIssuePanel({ getLocale, onSelect: (issue) => viewer?.selectIssue(issue) });
 
   const texture = createTextureBrowser({ getLocale, post });
+  const ormPack = createOrmBrowser({ getLocale, post }, "pack");
+  const ormUnpack = createOrmBrowser({ getLocale, post }, "unpack");
+  const textureModes = [texture, ormPack, ormUnpack];
+  for (const radio of document.querySelectorAll<HTMLInputElement>('input[name="texture-mode"]'))
+    radio.addEventListener("change", () => {
+      if (!radio.checked) return;
+      for (const screen of textureModes) screen.clear();
+      required<HTMLElement>("#texture-normal-panel").hidden = radio.value !== "normal";
+      required<HTMLElement>("#orm-pack-panel").hidden = radio.value !== "pack";
+      required<HTMLElement>("#orm-unpack-panel").hidden = radio.value !== "unpack";
+    });
   document.addEventListener("screen-inspect-shown", () => viewer?.resize());
 
   output.set((locale) => createTranslator(locale).t("app.loading"));
@@ -74,7 +86,7 @@ export function startApp(
   controller.subscribe(() => {
     for (const slot of [output, status, error]) slot.refresh();
     panel.refresh();
-    texture.refresh();
+    for (const screen of textureModes) screen.refresh();
     refreshLimitText();
   });
 
@@ -126,7 +138,7 @@ export function startApp(
       );
       return;
     }
-    texture.handleResponse(response);
+    for (const screen of textureModes) screen.handleResponse(response);
     void loader.handleResponse(response);
   });
 
@@ -134,7 +146,7 @@ export function startApp(
     workerAvailable = false;
     output.set((locale) => createTranslator(locale).t("app.unavailable"));
     loader.failWorker();
-    texture.failWorker();
+    for (const screen of textureModes) screen.failWorker();
     controls.disabled = true;
   });
 
