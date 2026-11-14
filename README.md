@@ -287,6 +287,9 @@ range, and an image stored outside the file.
 Bug reports and ideas are welcome as
 [GitHub issues](https://github.com/nokgc333/lint-asset/issues).
 
+To report a security problem, please do not open an issue: follow [SECURITY.md](SECURITY.md) and
+report it privately.
+
 ## License
 
 [MIT](LICENSE). Third-party components and their licenses are listed in
