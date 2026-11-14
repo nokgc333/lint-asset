@@ -1,0 +1,15 @@
+# Response headers for every page and file, applied by the host (Workers static assets).
+# One rule per path; a request that matches several rules gets all of them, so a header that must
+# have a single value (Cache-Control) is set in only one rule.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; img-src 'self' blob: data:; connect-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'; require-trusted-types-for 'script'; trusted-types lint-asset-worker
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+
+# Files under /assets/ have a content hash in their name, so a changed file gets a new address.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
