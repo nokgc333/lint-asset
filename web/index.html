@@ -22,7 +22,12 @@
           <button id="language-en" type="button" lang="en" aria-pressed="true">English</button>
           <button id="language-ja" type="button" lang="ja" aria-pressed="false">日本語</button>
         </div>
+        <nav class="screen-switch" aria-label="Screens" data-i18n-attr="aria-label:nav.label">
+          <button id="screen-inspect-button" type="button" aria-current="page" aria-controls="screen-inspect" data-i18n="nav.inspect">Inspect</button>
+          <button id="screen-texture-button" type="button" aria-controls="screen-texture" data-i18n="nav.texture">Texture</button>
+        </nav>
       </header>
+      <div id="screen-inspect">
       <p><span data-i18n="app.engineVersion">Engine version:</span> <output id="engine-version" data-i18n="app.loading">loading…</output></p>
       <fieldset id="controls" disabled>
         <legend data-i18n="controls.model">Model controls</legend>
@@ -69,6 +74,49 @@
           </div>
         </aside>
       </div>
+      </div>
+      <section id="screen-texture" hidden aria-labelledby="texture-title">
+        <h2 id="texture-title" data-i18n="texture.heading">Normal map converter</h2>
+        <fieldset>
+          <legend data-i18n="texture.direction.legend">Conversion direction</legend>
+          <label class="toggle"><input type="radio" name="texture-direction" value="dx-to-gl" checked /><span data-i18n="texture.direction.dx-to-gl">DirectX to OpenGL</span></label>
+          <label class="toggle"><input type="radio" name="texture-direction" value="gl-to-dx" /><span data-i18n="texture.direction.gl-to-dx">OpenGL to DirectX</span></label>
+        </fieldset>
+        <p data-i18n="texture.note">Both directions flip the green channel (Y). Applying the same conversion twice gives back the original.</p>
+        <label for="texture-file" class="file-control" data-i18n="texture.open">Open a normal map (PNG or JPEG)</label>
+        <input id="texture-file" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" />
+        <div id="texture-drop-zone"><p data-i18n="texture.dropHint">Drop a PNG or JPEG normal map here, or use Open a normal map.</p></div>
+        <p id="texture-status" role="status" data-i18n="texture.status.idle">Open a normal map to convert it.</p>
+        <p id="texture-error" role="alert"></p>
+        <ul id="texture-warnings"></ul>
+        <div class="texture-compare" id="texture-compare">
+          <figure>
+            <figcaption data-i18n="texture.before">Before</figcaption>
+            <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
+            <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
+            <div id="texture-before-pane" class="compare-pane" tabindex="0" role="region" aria-label="Before" data-i18n-attr="aria-label:texture.before">
+              <canvas id="texture-before" aria-label="Before" data-i18n-attr="aria-label:texture.before" width="1" height="1"></canvas>
+            </div>
+          </figure>
+          <figure>
+            <figcaption data-i18n="texture.after">After</figcaption>
+            <!-- biome-ignore lint/a11y/useSemanticElements: The requested comparison pane is a named div region. -->
+            <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must be able to scroll the image pane. -->
+            <div id="texture-after-pane" class="compare-pane" tabindex="0" role="region" aria-label="After" data-i18n-attr="aria-label:texture.after">
+              <canvas id="texture-after" aria-label="After" data-i18n-attr="aria-label:texture.after" width="1" height="1"></canvas>
+            </div>
+          </figure>
+        </div>
+        <fieldset id="texture-zoom">
+          <legend data-i18n="texture.zoom.legend">Zoom</legend>
+          <button type="button" data-zoom="fit" aria-pressed="true" data-i18n="texture.zoom.fit">Fit</button>
+          <button type="button" data-zoom="100" aria-pressed="false" data-i18n="texture.zoom.100">100%</button>
+          <button type="button" data-zoom="200" aria-pressed="false" data-i18n="texture.zoom.200">200%</button>
+          <button type="button" data-zoom="400" aria-pressed="false" data-i18n="texture.zoom.400">400%</button>
+        </fieldset>
+        <button id="texture-download" type="button" disabled data-i18n="texture.download">Download PNG</button>
+        <p data-i18n="texture.privacy">The image stays in this browser. Nothing is sent anywhere.</p>
+      </section>
       <dialog id="limit-dialog" aria-labelledby="limit-dialog-title" aria-describedby="limit-dialog-text">
         <h2 id="limit-dialog-title" data-i18n="dialog.title">This file is large</h2>
         <p id="limit-dialog-text"></p>

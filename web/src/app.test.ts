@@ -7,6 +7,9 @@ const { worker, downloadText, setGeometry } = vi.hoisted(() => ({
   downloadText: vi.fn(),
   setGeometry: vi.fn(),
 }));
+vi.mock("./texture/texture-browser", () => ({
+  createTextureBrowser: () => ({ refresh: vi.fn(), handleResponse: vi.fn(), failWorker: vi.fn() }),
+}));
 vi.mock("./trusted-worker", () => ({ createModuleWorker: () => worker }));
 vi.mock("./report/download", () => ({ downloadText }));
 vi.mock("./issues/panel", () => ({
@@ -55,6 +58,7 @@ it("exports the displayed model with the engine version and retains it after a f
     return value;
   };
   vi.stubGlobal("document", {
+    addEventListener: vi.fn(),
     querySelector: (selector: string) => elements.get(selector.slice(1)),
   });
   vi.stubGlobal("window", new EventTarget());

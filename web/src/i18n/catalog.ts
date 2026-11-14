@@ -2,6 +2,45 @@ import type { Locale } from "./locale";
 
 export const catalogs: Record<Locale, Record<string, string>> = {
   en: {
+    "nav.label": "Screens",
+    "nav.inspect": "Inspect",
+    "nav.texture": "Texture",
+    "texture.heading": "Normal map converter",
+    "texture.direction.legend": "Conversion direction",
+    "texture.direction.dx-to-gl": "DirectX to OpenGL",
+    "texture.direction.gl-to-dx": "OpenGL to DirectX",
+    "texture.note":
+      "Both directions flip the green channel (Y). Applying the same conversion twice gives back the original.",
+    "texture.open": "Open a normal map (PNG or JPEG)",
+    "texture.dropHint": "Drop a PNG or JPEG normal map here, or use Open a normal map.",
+    "texture.before": "Before",
+    "texture.after": "After",
+    "texture.zoom.legend": "Zoom",
+    "texture.zoom.fit": "Fit",
+    "texture.zoom.100": "100%",
+    "texture.zoom.200": "200%",
+    "texture.zoom.400": "400%",
+    "texture.download": "Download PNG",
+    "texture.privacy": "The image stays in this browser. Nothing is sent anywhere.",
+    "texture.status.idle": "Open a normal map to convert it.",
+    "texture.status.reading": "Reading {name}…",
+    "texture.status.converted": "{name}: {width} × {height} px, converted ({direction})",
+    "texture.status.cancelled": "Cancelled.",
+    "texture.error.E-TEX-001":
+      "E-TEX-001: This file is not a PNG or JPEG image that the browser can read. Open a PNG or JPEG normal map.",
+    "texture.error.E-TEX-003":
+      "E-TEX-003: The image is {width} × {height} px, over the size this tool can convert (at most {limit} pixels, and 16384 px on a side). Reduce the resolution and open it again.",
+    "texture.error.worker": "The conversion worker is unavailable. Reload the page and try again.",
+    "texture.error.drop": "Open one normal map at a time.",
+    "dialog.pixels":
+      "{name} is {width} × {height} px. Images over {defaultLimit} pixels can be slow or run out of memory. Continue? Images over {maxLimit} pixels cannot be opened.",
+    "texture.warning.translucent.one":
+      "{count} pixel is partly transparent. The browser may have changed its color when it read the image, so the result may not be exactly reversible.",
+    "texture.warning.translucent.other":
+      "{count} pixels are partly transparent. The browser may have changed their colors when it read the image, so the result may not be exactly reversible.",
+    "texture.warning.depth16": "This is a 16-bit image. It is reduced to 8 bits per channel.",
+    "texture.warning.icc": "This image has an embedded color profile. It is ignored.",
+
     "app.name": "lint-asset",
     "load.E-LOAD-001.cause":
       "This file is not a GLB (binary glTF 2.x), or it depends on files that are not included.",
@@ -171,6 +210,48 @@ export const catalogs: Record<Locale, Record<string, string>> = {
       "The longest side of the bounding box is {extent} m (limit {limit} m).",
   },
   ja: {
+    "nav.label": "画面",
+    "nav.inspect": "検査",
+    "nav.texture": "テクスチャ",
+    "texture.heading": "法線マップの変換",
+    "texture.direction.legend": "変換の方向",
+    "texture.direction.dx-to-gl": "DirectX から OpenGL へ",
+    "texture.direction.gl-to-dx": "OpenGL から DirectX へ",
+    "texture.note":
+      "どちらの方向も緑チャンネル（Y）を反転します。同じ変換を 2 回適用すると元に戻ります。",
+    "texture.open": "法線マップ（PNG または JPEG）を開く",
+    "texture.dropHint":
+      "PNG または JPEG の法線マップをここにドロップするか、「法線マップを開く」を使ってください。",
+    "texture.before": "変換前",
+    "texture.after": "変換後",
+    "texture.zoom.legend": "表示倍率",
+    "texture.zoom.fit": "全体を表示",
+    "texture.zoom.100": "100%（等倍）",
+    "texture.zoom.200": "200%（2 倍）",
+    "texture.zoom.400": "400%（4 倍）",
+    "texture.download": "PNG をダウンロード",
+    "texture.privacy": "画像はこのブラウザ内で処理します。外部には何も送信しません。",
+    "texture.status.idle": "変換する法線マップを開いてください。",
+    "texture.status.reading": "{name} を読み込んでいます…",
+    "texture.status.converted": "{name}: {width} × {height} px、変換しました（{direction}）",
+    "texture.status.cancelled": "キャンセルしました。",
+    "texture.error.E-TEX-001":
+      "E-TEX-001: このファイルはブラウザで読み込める PNG または JPEG 画像ではありません。PNG または JPEG の法線マップを開いてください。",
+    "texture.error.E-TEX-003":
+      "E-TEX-003: この画像は {width} × {height} px で、変換できるサイズ（最大 {limit} 画素、各辺 16384 px）を超えています。解像度を下げて、もう一度開いてください。",
+    "texture.error.worker":
+      "変換処理を実行できません。ページを再読み込みして、もう一度お試しください。",
+    "texture.error.drop": "法線マップは 1 枚ずつ開いてください。",
+    "dialog.pixels":
+      "{name} は {width} × {height} px です。{defaultLimit} 画素を超える画像は処理に時間がかかったり、メモリが不足したりする場合があります。続行しますか？ {maxLimit} 画素を超える画像は開けません。",
+    "texture.warning.translucent.one":
+      "{count} 画素が半透明です。読み込み時にブラウザが色を変更している可能性があるため、変換を繰り返しても元の画像に正確に戻らない場合があります。",
+    "texture.warning.translucent.other":
+      "{count} 画素が半透明です。読み込み時にブラウザが色を変更している可能性があるため、変換を繰り返しても元の画像に正確に戻らない場合があります。",
+    "texture.warning.depth16": "この画像は 16 ビットです。各チャンネルが 8 ビットに変換されます。",
+    "texture.warning.icc":
+      "この画像には ICC カラープロファイルが埋め込まれています。プロファイルは無視されます。",
+
     "app.name": "lint-asset",
     "load.E-LOAD-001.cause":
       "このファイルは GLB（バイナリ glTF 2.x）ではないか、含まれていない別ファイルに依存しています。",

@@ -346,3 +346,87 @@ canvas {
   outline: 3px solid #ffda79;
   outline-offset: 4px;
 }
+
+.screen-switch {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.screen-switch button {
+  border-width: 2px;
+}
+
+.screen-switch button[aria-current="page"],
+#texture-zoom button[aria-pressed="true"] {
+  font-weight: 800;
+  border-width: 4px;
+}
+
+.texture-compare {
+  display: grid;
+  gap: 1rem;
+  margin-block: 1rem;
+}
+
+.texture-compare figure {
+  min-width: 0;
+  margin: 0;
+}
+
+.compare-pane {
+  height: 60vh;
+  overflow: auto;
+  border: 1px solid #9aaec4;
+}
+
+.compare-pane canvas {
+  width: var(--texture-width, auto);
+  height: auto;
+  max-width: none;
+  touch-action: auto;
+  border: 0;
+  border-radius: 0;
+}
+
+.texture-fit canvas {
+  width: auto;
+  max-width: 100%;
+}
+
+.texture-pixelated canvas {
+  image-rendering: pixelated;
+}
+
+#texture-drop-zone {
+  padding: 1rem;
+  margin-block: 1rem;
+  border: 3px solid #9aaec4;
+  border-radius: 0.5rem;
+}
+
+#texture-drop-zone.is-dragging {
+  outline: 4px solid #ffda79;
+  background: #293b51;
+}
+
+#texture-status,
+#texture-error,
+#texture-warnings {
+  overflow-wrap: anywhere;
+}
+
+#texture-error:not(:empty),
+#texture-warnings:not(:empty) {
+  border: 2px solid #ffb4ab;
+  padding: 1rem 2rem;
+}
+
+#texture-warnings li + li {
+  margin-top: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+  .texture-compare {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
