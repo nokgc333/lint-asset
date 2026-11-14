@@ -37,6 +37,8 @@ does the normal map conversion in one screen, without uploading anything.
   your files.
 - **Convert a normal map.** DirectX to OpenGL and back (it flips the green channel), PNG or
   JPEG in, PNG out, with the before and after side by side and zoom and scroll kept in step.
+- **Pack and split ORM textures.** Combine up to three maps or split one ORM into three PNGs,
+  with per-channel previews, defaults and warnings.
 - **Try a sample.** One button opens a small model with deliberate problems.
 - **English and Japanese.** The language follows the browser and can be switched on the page.
 - **Private by design.** Nothing is uploaded, there are no cookies, and there is no analytics.
@@ -52,6 +54,8 @@ does the normal map conversion in one screen, without uploading anything.
 4. Download the JSON or Markdown report if you need it.
 5. For a normal map, switch to "Texture" in the header, drop a PNG or JPEG, pick the direction,
    and download the PNG.
+6. For ORM, choose the packing or splitting conversion type. Open the input textures, review
+   the defaults and warnings, then save the PNG result or the three separate PNGs.
 
 ## What it checks
 
@@ -109,8 +113,12 @@ Textures:
 - Images are decoded by the browser. A partly transparent pixel can lose its exact color, a
   16-bit image becomes 8 bits per channel, an embedded color profile is ignored, and EXIF
   orientation is ignored. The page warns about each of these. For an opaque 8-bit image the
-  conversion is exact: converting twice gives back every byte (this is tested).
-- The output is PNG only. Packing and unpacking an ORM texture is not implemented.
+  normal map conversion is exact: converting twice gives back every byte (this is tested).
+- The output is PNG only. ORM uses R = occlusion, G = roughness, B = metallic (glTF and Unreal).
+  Packing reads only the red channel of each input. Missing inputs use occlusion 255,
+  roughness 255 and metallic 0; the page lists the defaults used. All inputs must have the same
+  size. Splitting produces three gray PNGs, saved individually or in sequence, without a zip.
+  This is not Unity's mask map layout, and smoothness is not converted to roughness.
 - Memory use near the 8192 x 8192 limit has not been measured; it may be around 1 GB.
 
 Environment:
@@ -123,7 +131,7 @@ Environment:
   problem. Reading the page with a screen reader has not been checked yet.
 - So far it has been checked in a Chromium-based browser. Firefox and Safari are not checked yet.
 
-Planned, not implemented: ORM packing, split glTF and OBJ input,
+Planned, not implemented: split glTF and OBJ input,
 a command-line version, fix hints for each problem, and filtering and sorting the list.
 
 ## How it works
