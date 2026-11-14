@@ -1,0 +1,45 @@
+[
+  {
+    "bom-ref": "native:tinygltf",
+    "type": "library",
+    "name": "tinygltf",
+    "version": "3.1.0",
+    "description": "glTF parser compiled into lint_core.wasm. Pinned to commit 97789b346ed792f413b9520c80bb479f3b63368f (tag v3.1.0) in core/CMakeLists.txt.",
+    "purl": "pkg:github/syoyo/tinygltf@97789b346ed792f413b9520c80bb479f3b63368f",
+    "licenses": [{ "license": { "id": "MIT" } }],
+    "externalReferences": [{ "type": "vcs", "url": "https://github.com/syoyo/tinygltf" }],
+    "pedigree": {
+      "notes": "Patched when it is fetched: its memory arena is zero-initialised (core/patches/zero_arena.cmake)."
+    }
+  },
+  {
+    "bom-ref": "native:fast_float",
+    "type": "library",
+    "name": "fast_float",
+    "description": "Floating-point conversion code bundled in tinygltf_json_c.h (version not stated by tinygltf).",
+    "purl": "pkg:github/fastfloat/fast_float",
+    "licenses": [{ "expression": "Apache-2.0 OR MIT OR BSL-1.0" }],
+    "externalReferences": [{ "type": "vcs", "url": "https://github.com/fastfloat/fast_float" }]
+  },
+  {
+    "bom-ref": "native:dragonbox",
+    "type": "library",
+    "name": "Dragonbox",
+    "description": "Floating-point conversion code bundled in tinygltf_json_c.h (version not stated by tinygltf).",
+    "purl": "pkg:github/jk-jeon/dragonbox",
+    "licenses": [{ "expression": "Apache-2.0 WITH LLVM-exception OR BSL-1.0" }],
+    "externalReferences": [{ "type": "vcs", "url": "https://github.com/jk-jeon/dragonbox" }]
+  },
+  {
+    "bom-ref": "native:emscripten",
+    "type": "library",
+    "name": "emscripten",
+    "version": "7.0.0",
+    "description": "Runtime and glue code compiled into lint_core.wasm and lint_core.mjs. The toolchain is the emscripten/emsdk 7.0.0 image pinned by digest in the CI workflows. Libraries that the toolchain links in (libc++, musl, compiler-rt) are not listed one by one.",
+    "purl": "pkg:github/emscripten-core/emscripten@7.0.0",
+    "licenses": [{ "expression": "MIT OR NCSA" }],
+    "externalReferences": [
+      { "type": "vcs", "url": "https://github.com/emscripten-core/emscripten" }
+    ]
+  }
+]
