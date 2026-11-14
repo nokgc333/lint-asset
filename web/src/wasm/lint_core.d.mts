@@ -49,6 +49,21 @@ export type GeometryResult = LoadResult & {
   instances: MeshInstance[];
 };
 
+export interface Issue {
+  rule: "normal.flipped" | "normal.missing" | "normal.unnormalized";
+  severity: "error" | "warning" | "info";
+  message: string;
+  element_kind: "triangle";
+  target: { mesh: number; primitive: number };
+  count: number;
+  elements: number[];
+  truncated: boolean;
+}
+
+export type InspectResult = LoadResult & {
+  issues: Issue[];
+};
+
 export interface LintCore {
   version(): string;
   /**
@@ -58,6 +73,7 @@ export interface LintCore {
    */
   loadGlb(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): LoadResult;
   loadGlbGeometry(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): GeometryResult;
+  inspect(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): InspectResult;
 }
 
 export default function createLintCore(): Promise<LintCore>;
