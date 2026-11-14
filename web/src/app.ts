@@ -1,4 +1,5 @@
 import { createFileLoader } from "./file-loader";
+import type { Locale } from "./i18n/locale";
 import type { LocaleController } from "./i18n/locale-controller";
 import { createTextSlot } from "./i18n/text-slot";
 import { createTranslator } from "./i18n/translate";
@@ -11,6 +12,7 @@ import { downloadText } from "./report/download";
 import { exportFileName } from "./report/export-name";
 import { reportToJson } from "./report/to-json";
 import { reportToMarkdown } from "./report/to-markdown";
+import { fetchSampleFile } from "./sample";
 import { createTextureBrowser } from "./texture/texture-browser";
 import { createModuleWorker } from "./trusted-worker";
 import { ORBIT_STEP, PAN_STEP, ZOOM_FACTOR } from "./viewer/controls";
@@ -93,6 +95,19 @@ export function startApp(controller: LocaleController): void {
     firstRequestId: VERSION_REQUEST_ID,
   });
   const { openFile } = loader;
+
+  const sampleButton = required<HTMLButtonElement>("#sample-button");
+  sampleButton.addEventListener("click", async () => {
+    error.set(null);
+    status.set((locale) => createTranslator(locale).t("sample.loading"));
+    try {
+      await openFile(await fetchSampleFile());
+    } catch {
+      const text = (locale: Locale) => createTranslator(locale).t("sample.error");
+      error.set(text);
+      status.set(text);
+    }
+  });
 
   worker.addEventListener("message", (event: MessageEvent<WorkerResponse>) => {
     const response = event.data;

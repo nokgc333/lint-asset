@@ -39,6 +39,7 @@ it("exports the displayed model with the engine version and retains it after a f
     "normals",
     "export-json",
     "export-markdown",
+    "sample-button",
   ];
   const elements = new Map(
     selectors.map((id) => [
