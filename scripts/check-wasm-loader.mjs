@@ -462,4 +462,101 @@ console.log(`info a flip of 8192 x 8192 took ${elapsed.toFixed(0)} ms`);
 expect("an 8192 x 8192 texture is flipped", bigResult.ok, true);
 expect("the big texture's green bytes are inverted", big[1] === 255 - bigBefore[1], true);
 
+// FR-013: the inspection thresholds can be given to analyze(); without them, or with values that
+// cannot be used, the defaults apply and are reported back.
+{
+  const withThresholds = (bytes, thresholds) =>
+    core.analyze(bytes, DEFAULT_MAX_FILE_BYTES, DEFAULT_MAX_TRIANGLES, thresholds);
+  const rulesOf = (result) => result.issues.map((issue) => issue.rule);
+  const small = await fixture("cube_small.glb");
+  const cube = await fixture("cube.glb");
+
+  expect(
+    "a cube of 0.005 m is too small by default",
+    rulesOf(withThresholds(small, undefined)).includes("asset.scale_too_small"),
+    true,
+  );
+  const relaxed = withThresholds(small, {
+    max_triangles: 100000,
+    min_extent_m: 0.001,
+    max_extent_m: 1000,
+  });
+  expect(
+    "a lower minimum size removes the scale warning",
+    rulesOf(relaxed).includes("asset.scale_too_small"),
+    false,
+  );
+  expect("the thresholds used are reported back", relaxed.thresholds, {
+    max_triangles: 100000,
+    min_extent_m: 0.001,
+    max_extent_m: 1000,
+  });
+  const strict = withThresholds(cube, { max_triangles: 5, min_extent_m: 0.01, max_extent_m: 1000 });
+  expect(
+    "a lower triangle limit adds the triangle-count warning with the limit in the message",
+    strict.issues.find((issue) => issue.rule === "asset.triangle_count_exceeded")?.message,
+    "The scene draws 12 triangles (limit 5).",
+  );
+  const exactly = withThresholds(cube, {
+    max_triangles: 12,
+    min_extent_m: 0.01,
+    max_extent_m: 1000,
+  });
+  expect(
+    "exactly the limit is fine",
+    rulesOf(exactly).includes("asset.triangle_count_exceeded"),
+    false,
+  );
+  const tiny = withThresholds(cube, { max_triangles: 100000, min_extent_m: 2, max_extent_m: 1000 });
+  expect(
+    "a larger minimum size adds the too-small warning",
+    rulesOf(tiny).includes("asset.scale_too_small"),
+    true,
+  );
+  const narrow = withThresholds(cube, {
+    max_triangles: 100000,
+    min_extent_m: 0.01,
+    max_extent_m: 0.5,
+  });
+  expect(
+    "a smaller maximum size adds the too-large warning",
+    rulesOf(narrow).includes("asset.scale_too_large"),
+    true,
+  );
+
+  for (const [label, bad] of [
+    ["a negative triangle limit", { max_triangles: -1, min_extent_m: 0.01, max_extent_m: 1000 }],
+    ["a fractional triangle limit", { max_triangles: 1.5, min_extent_m: 0.01, max_extent_m: 1000 }],
+    ["a missing field", { max_triangles: 100000, min_extent_m: 0.01 }],
+    ["not a number", { max_triangles: 100000, min_extent_m: Number.NaN, max_extent_m: 1000 }],
+    [
+      "infinity",
+      { max_triangles: 100000, min_extent_m: 0.01, max_extent_m: Number.POSITIVE_INFINITY },
+    ],
+    ["a zero minimum", { max_triangles: 100000, min_extent_m: 0, max_extent_m: 1000 }],
+    ["a minimum above the maximum", { max_triangles: 100000, min_extent_m: 10, max_extent_m: 1 }],
+    ["a minimum equal to the maximum", { max_triangles: 100000, min_extent_m: 1, max_extent_m: 1 }],
+    ["text", { max_triangles: "5", min_extent_m: 0.01, max_extent_m: 1000 }],
+    ["null", null],
+    ["a number", 5],
+  ]) {
+    expect(
+      `${label} falls back to the defaults`,
+      withThresholds(cube, bad).thresholds,
+      INSPECTION_THRESHOLDS,
+    );
+  }
+  expect(
+    "inspect() also takes thresholds",
+    core
+      .inspect(cube, DEFAULT_MAX_FILE_BYTES, DEFAULT_MAX_TRIANGLES, {
+        max_triangles: 5,
+        min_extent_m: 0.01,
+        max_extent_m: 1000,
+      })
+      .issues.some((issue) => issue.rule === "asset.triangle_count_exceeded"),
+    true,
+  );
+}
+
 process.exit(failures === 0 ? 0 : 1);

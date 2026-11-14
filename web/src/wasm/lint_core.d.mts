@@ -117,8 +117,25 @@ export interface LintCore {
    */
   loadGlb(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): LoadResult;
   loadGlbGeometry(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): GeometryResult;
-  analyze(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): AnalyzeResult;
-  inspect(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): InspectResult;
+  /**
+   * Parses a GLB and returns its geometry and its findings in one call.
+   * `thresholds` (FR-013) sets the limits of the triangle-count and scale checks. When it is left
+   * out, or when any value cannot be used (not a finite number, a negative or fractional triangle
+   * limit, a minimum size that is not above zero, or a maximum that is not above the minimum), the
+   * defaults apply. The values that were used come back in the result's `thresholds`.
+   */
+  analyze(
+    bytes: Uint8Array,
+    maxFileBytes: number,
+    maxTriangles: number,
+    thresholds?: Thresholds,
+  ): AnalyzeResult;
+  inspect(
+    bytes: Uint8Array,
+    maxFileBytes: number,
+    maxTriangles: number,
+    thresholds?: Thresholds,
+  ): InspectResult;
   /**
    * Converts a normal map between DirectX and OpenGL (FR-008), in place: g' = 255 - g.
    * `rgba` holds width * height pixels of 4 bytes (R, G, B, A), straight alpha, row by row.
