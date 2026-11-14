@@ -11,10 +11,11 @@ namespace lint_asset {
 enum class TextureError : std::uint8_t {
     none,            // success
     invalid_pixels,  // E-TEX-001: the pixel buffer does not match the width and height
+    size_mismatch,   // E-TEX-002: the textures to combine do not have the same size
     over_limit       // E-TEX-003: more pixels than the limit
 };
 
-// Returns "E-TEX-001" or "E-TEX-003", or an empty string for TextureError::none.
+// Returns "E-TEX-001", "E-TEX-002", or "E-TEX-003", or an empty string for TextureError::none.
 std::string_view texture_error_code(TextureError error) noexcept;
 
 // The data-volume limit for a texture: 8192 x 8192 pixels (requirements, data volume). It is a
