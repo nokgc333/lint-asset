@@ -22,7 +22,22 @@ if(LINT_ASSET_SANITIZE AND NOT EMSCRIPTEN)
   target_link_options(lint_asset_sanitizers INTERFACE -fsanitize=address,undefined)
 endif()
 
+# libFuzzer targets. Clang only. The code under test is built with coverage instrumentation.
+option(LINT_ASSET_FUZZ "Build the libFuzzer targets in fuzz/" OFF)
+if(LINT_ASSET_FUZZ)
+  if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    message(FATAL_ERROR "LINT_ASSET_FUZZ needs clang")
+  endif()
+  if(EMSCRIPTEN)
+    message(FATAL_ERROR "LINT_ASSET_FUZZ is for the native build")
+  endif()
+  target_compile_options(lint_asset_sanitizers INTERFACE -fsanitize=fuzzer-no-link)
+endif()
+
 add_subdirectory(core)
+if(LINT_ASSET_FUZZ)
+  add_subdirectory(fuzz)
+endif()
 
 # Tests run natively only; the WASM build has no test runner.
 if(NOT EMSCRIPTEN)
