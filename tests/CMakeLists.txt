@@ -1,10 +1,10 @@
 include(FetchContent)
 
-# Pinned to the commit of tag v2.4.12 so every build uses exactly the same source.
+# Pinned to the commit of tag v2.5.3 so every build uses exactly the same source.
 FetchContent_Declare(
   doctest
   GIT_REPOSITORY https://github.com/doctest/doctest.git
-  GIT_TAG 1da23a3e8119ec5cce4f9388e91b065e20bf06f5)
+  GIT_TAG 2d0a9359a60c51affe2a9bebb1be1dca47868151)
 set(DOCTEST_WITH_TESTS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(doctest)
 

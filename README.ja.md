@@ -177,7 +177,7 @@ flowchart LR
 
 - C++20、CMake 3.24 以上、Emscripten 7.0.0、tinygltf 3.1.0（MIT）
 - TypeScript 7.0.2、Vite 8.3.8、three 0.187.0、Node.js 22.12 以上
-- テスト: doctest 2.4.12（ネイティブ 181 ケース。AddressSanitizer と UBSan つき）、Vitest 5.0.5
+- テスト: doctest 2.5.3（ネイティブ 237 ケース。AddressSanitizer と UBSan つき）、Vitest 5.0.5
   （Web のテスト約 420 件）、スキーマ検査の Ajv 8.20.0、手で導出した期待結果との、WebAssembly の
   ビルドの照合。件数は、この文章を書いた時点のものです。
 - 整形は Biome 2.6.7 と clang-format、CI は GitHub Actions（アクションはコミットで固定）
