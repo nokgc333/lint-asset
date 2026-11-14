@@ -95,6 +95,51 @@ def cube_open_top():
     return build_glb(*cube_document(open_top=True))
 
 
+def flat_cube(normal_scales):
+    faces = [
+        ((0, 0, -1), [(0, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 0)]),
+        ((0, 0, 1), [(0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)]),
+        ((-1, 0, 0), [(0, 0, 0), (0, 0, 1), (0, 1, 1), (0, 1, 0)]),
+        ((1, 0, 0), [(1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1)]),
+        ((0, -1, 0), [(0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1)]),
+        ((0, 1, 0), [(0, 1, 0), (0, 1, 1), (1, 1, 1), (1, 1, 0)]),
+    ]
+    positions, normals, indices = [], [], []
+    for face, (outward, vertices) in enumerate(faces):
+        for triangle in [(0, 1, 2), (0, 2, 3)]:
+            v0, v1, v2 = [vertices[index] for index in triangle]
+            a = [v1[axis] - v0[axis] for axis in range(3)]
+            b = [v2[axis] - v0[axis] for axis in range(3)]
+            cross = [a[1] * b[2] - a[2] * b[1],
+                     a[2] * b[0] - a[0] * b[2],
+                     a[0] * b[1] - a[1] * b[0]]
+            assert cross == list(outward)
+        positions.extend(value for vertex in vertices for value in vertex)
+        normals.extend(value * normal_scales[face] for _ in vertices for value in outward)
+        indices.extend(face * len(vertices) + index for index in (0, 1, 2, 0, 2, 3))
+    document = {"asset": {"version": "2.0"}}
+    data = bytearray()
+    position = add_accessor(document, data, positions, 5126, "VEC3")
+    normal = add_accessor(document, data, normals, 5126, "VEC3")
+    index = add_accessor(document, data, indices, 5123, "SCALAR")
+    document["meshes"] = [{"primitives": [{
+        "attributes": {"POSITION": position, "NORMAL": normal},
+        "indices": index, "mode": 4,
+    }]}]
+    document["nodes"] = [{"mesh": 0}]
+    document["scenes"] = [{"nodes": [0]}]
+    document["scene"] = 0
+    return build_glb(document, bytes(data))
+
+
+def cube_faces_flipped():
+    return flat_cube([1, -1, 1, 1, -1, 1])
+
+
+def cube_unnormalized():
+    return flat_cube([2, 1, 0.5, 1.005, 1.02, 1])
+
+
 def primitive_modes():
     document = {"asset": {"version": "2.0"}, "meshes": []}
     data = bytearray()
@@ -273,7 +318,8 @@ def main():
     builders = [
         node_transforms, quantized_strided, index_out_of_vertex_range, sparse_accessor,
         node_cycle, node_instance_explosion,
-        cube, cube_flipped_normals, cube_open_top, primitive_modes, external_image_uri,
+        cube, cube_flipped_normals, cube_open_top, cube_faces_flipped, cube_unnormalized,
+        primitive_modes, external_image_uri,
         unknown_extension_used, required_supported_extension, bad_version_1,
         external_buffer_uri, truncated_cube, length_mismatch, invalid_json, missing_asset,
         accessor_out_of_range, huge_accessor_count, required_draco, required_unknown_extension,
