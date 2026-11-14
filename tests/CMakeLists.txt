@@ -21,9 +21,15 @@ set(LINT_ASSET_TEST_GLB_NAMES
   unknown_extension_used required_supported_extension bad_version_1 external_buffer_uri
   truncated_cube length_mismatch invalid_json missing_asset accessor_out_of_range
   huge_accessor_count required_draco required_unknown_extension)
+set(LINT_ASSET_TEST_SPLIT_FILES
+  split_cube.gltf split_cube.bin split_cube_subfolder.gltf split_cube_encoded.gltf
+  embedded_cube.gltf split_cube_web_buffer.gltf split_cube_images.gltf split_cube_two_buffers.gltf)
 set(LINT_ASSET_TEST_GLB_FILES)
 foreach(name IN LISTS LINT_ASSET_TEST_GLB_NAMES)
   list(APPEND LINT_ASSET_TEST_GLB_FILES "${LINT_ASSET_TEST_GLB_DIR}/${name}.glb")
+endforeach()
+foreach(name IN LISTS LINT_ASSET_TEST_SPLIT_FILES)
+  list(APPEND LINT_ASSET_TEST_GLB_FILES "${LINT_ASSET_TEST_GLB_DIR}/${name}")
 endforeach()
 add_custom_command(
   OUTPUT ${LINT_ASSET_TEST_GLB_FILES}
@@ -34,7 +40,7 @@ add_custom_command(
   VERBATIM)
 add_custom_target(lint_test_glbs DEPENDS ${LINT_ASSET_TEST_GLB_FILES})
 
-add_executable(lint_core_tests main.cpp samples_test.cpp version_test.cpp glb_loader_test.cpp glb_geometry_test.cpp normal_inspection_test.cpp uv_inspection_test.cpp normal_golden_test.cpp edge_inspection_test.cpp inspection_test.cpp size_inspection_test.cpp uri_inspection_test.cpp external_uri_limits_test.cpp normal_map_test.cpp orm_test.cpp)
+add_executable(lint_core_tests main.cpp samples_test.cpp version_test.cpp glb_loader_test.cpp glb_geometry_test.cpp normal_inspection_test.cpp uv_inspection_test.cpp normal_golden_test.cpp edge_inspection_test.cpp inspection_test.cpp size_inspection_test.cpp uri_inspection_test.cpp external_uri_limits_test.cpp normal_map_test.cpp orm_test.cpp gltf_loader_test.cpp)
 add_dependencies(lint_core_tests lint_test_glbs)
 target_compile_definitions(lint_core_tests PRIVATE
   LINT_ASSET_SAMPLES_DIR="${PROJECT_SOURCE_DIR}/samples"

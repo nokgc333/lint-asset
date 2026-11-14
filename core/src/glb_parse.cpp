@@ -35,6 +35,8 @@ const tg3_error_entry *first_error(const tg3_error_stack &errors) {
     return nullptr;
 }
 
+}  // namespace
+
 LoadResult parse_failure(tg3_error_code returned_code, const tg3_error_stack &errors) {
     const tg3_error_entry *root = first_error(errors);
 
@@ -54,6 +56,8 @@ LoadResult parse_failure(tg3_error_code returned_code, const tg3_error_stack &er
         return failure(LoadError::corrupt_file, std::move(message));
     }
 }
+
+namespace {
 
 bool is_supported_required_extension(const tg3_str &name) {
     const std::string_view view(name.data, name.len);
@@ -132,21 +136,24 @@ LoadResult parse_glb(ParsedModel &parsed, std::span<const std::uint8_t> bytes,
         return parse_failure(code, parsed.errors);
     }
 
-    if (const std::string name = find_unsupported_required_extension(parsed.model); !name.empty()) {
+    return count_model(parsed.model, limits);
+}
+
+LoadResult count_model(const tg3_model &model, const LoadLimits &limits) {
+    if (const std::string name = find_unsupported_required_extension(model); !name.empty()) {
         return failure(LoadError::unsupported_extension,
                        "the file requires an unsupported extension: " + name);
     }
 
     LoadResult result;
-    result.stats.meshes = parsed.model.meshes_count;
-    for (std::uint32_t m = 0; m < parsed.model.meshes_count; ++m) {
-        const tg3_mesh &mesh = parsed.model.meshes[m];
+    result.stats.meshes = model.meshes_count;
+    for (std::uint32_t m = 0; m < model.meshes_count; ++m) {
+        const tg3_mesh &mesh = model.meshes[m];
         result.stats.primitives += mesh.primitives_count;
         for (std::uint32_t p = 0; p < mesh.primitives_count; ++p) {
             const tg3_primitive &primitive = mesh.primitives[p];
             const std::int32_t mode = primitive.mode < 0 ? TG3_MODE_TRIANGLES : primitive.mode;
-            const std::uint64_t triangles =
-                triangle_count(mode, element_count(parsed.model, primitive));
+            const std::uint64_t triangles = triangle_count(mode, element_count(model, primitive));
 
             if (triangles > limits.max_triangles - result.stats.triangles) {
                 return failure(LoadError::limit_exceeded,

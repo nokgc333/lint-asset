@@ -4,19 +4,21 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace lint_asset {
 
 // Why a load failed. Each value maps to one E-LOAD-xxx code shown to the user.
 enum class LoadError : std::uint8_t {
-    none,                  // success
-    unsupported_format,    // E-LOAD-001: not a GLB 2.x file, or it needs an external resource
-    corrupt_file,          // E-LOAD-002: a GLB that is truncated or structurally invalid
-    limit_exceeded,        // E-LOAD-003: over the size, triangle, or memory limit
-    unsupported_extension  // E-LOAD-004: requires a glTF extension this tool cannot read
+    none,                   // success
+    unsupported_format,     // E-LOAD-001: not a GLB 2.x file, or it needs an external resource
+    corrupt_file,           // E-LOAD-002: a GLB that is truncated or structurally invalid
+    limit_exceeded,         // E-LOAD-003: over the size, triangle, or memory limit
+    unsupported_extension,  // E-LOAD-004: requires a glTF extension this tool cannot read
+    missing_files  // E-LOAD-005: a file a .gltf refers to was not supplied (see missing_files)
 };
 
-// Returns "E-LOAD-001" .. "E-LOAD-004", or an empty string for LoadError::none.
+// Returns "E-LOAD-001" .. "E-LOAD-005", or an empty string for LoadError::none.
 std::string_view load_error_code(LoadError error) noexcept;
 
 // Upper bounds for one load. The defaults are the limits in the requirements (data volume).
@@ -38,6 +40,10 @@ struct LoadResult {
     LoadError error = LoadError::none;
     std::string message;  // English reason; empty on success
     LoadStats stats;
+    // Only for LoadError::missing_files: the names of the files a .gltf needs and was not given, as
+    // the .gltf writes them (after percent-decoding), in the order they are needed, without
+    // repeats.
+    std::vector<std::string> missing_files;
 
     bool ok() const noexcept { return error == LoadError::none; }
 };

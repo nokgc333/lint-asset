@@ -50,6 +50,7 @@ function failure(id: number, code = "E-LOAD-003"): WorkerResponse {
       ok: false,
       code: code as "E-LOAD-003",
       message: "Technical detail",
+      missing_files: [],
       meshes: 0,
       primitives: 0,
       triangles: 0,
