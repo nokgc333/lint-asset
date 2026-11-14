@@ -35,7 +35,7 @@
     "type": "library",
     "name": "emscripten",
     "version": "7.0.0",
-    "description": "Runtime and glue code compiled into lint_core.wasm and lint_core.mjs. The toolchain is the emscripten/emsdk 7.0.0 image pinned by digest in the CI workflows. Libraries that the toolchain links in (libc++, musl, compiler-rt) are not listed one by one.",
+    "description": "Runtime and glue code compiled into lint_core.wasm and lint_core.mjs. The toolchain is the emscripten/emsdk 7.0.0 image pinned by digest in the CI workflows. The libraries that the toolchain links in (libc++, musl, compiler-rt, dlmalloc) are named in THIRD_PARTY_NOTICES, not here one by one.",
     "purl": "pkg:github/emscripten-core/emscripten@7.0.0",
     "licenses": [{ "expression": "MIT OR NCSA" }],
     "externalReferences": [
