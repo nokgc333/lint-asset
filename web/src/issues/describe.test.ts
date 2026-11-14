@@ -55,6 +55,8 @@ describe("describeIssue", () => {
       "mesh.nonmanifold_edge",
       "mesh.boundary_edge",
       "mesh.degenerate_triangle",
+      "uv.missing",
+      "uv.out_of_range",
     ].map((rule) => describeIssue(triangleIssue({ rule })).title);
 
     expect(titles).toEqual([
@@ -64,6 +66,8 @@ describe("describeIssue", () => {
       "Non-manifold edges",
       "Open edges (holes)",
       "Degenerate triangles",
+      "Missing UVs",
+      "UVs outside 0 to 1",
     ]);
     const assetTitles = [
       "asset.triangle_count_exceeded",
@@ -74,7 +78,7 @@ describe("describeIssue", () => {
   });
 
   it("falls back to the rule id for a rule it does not know", () => {
-    expect(describeIssue(triangleIssue({ rule: "uv.overlap" })).title).toBe("uv.overlap");
+    expect(describeIssue(triangleIssue({ rule: "future.rule" })).title).toBe("future.rule");
   });
 
   it("says where a triangle issue is and how many triangles it covers", () => {
