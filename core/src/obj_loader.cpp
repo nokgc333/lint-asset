@@ -282,7 +282,7 @@ GeometryResult failure(LoadError error, const char *message) {
     return result;
 }
 
-}
+}  // namespace
 
 GeometryResult load_obj_geometry(std::span<const std::uint8_t> bytes, const LoadLimits &limits) {
     try {
@@ -315,4 +315,4 @@ LoadResult load_obj(std::span<const std::uint8_t> bytes, const LoadLimits &limit
     return result;
 }
 
-}
+}  // namespace lint_asset
