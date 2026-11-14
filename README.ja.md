@@ -270,6 +270,19 @@ CI は、プルリクエストごとに対象あたり 60 秒（`fuzz-smoke`）�
 クラッシュした入力は、直るまでツールを攻撃する手がかりになるので、表示も保存もしません。ログに
 残るのは、サニタイザーの報告・シード値・入力のサイズと SHA-256 だけで、シード値で再現できます。
 
+## リリース
+
+GitHub の Release ごとに、画面一式（`lint-asset-web-<タグ>.tar.gz`）、配る物の部品表
+（SBOM。`lint-asset-web-<タグ>.cdx.json`。CycloneDX 1.6。配る npm パッケージと、WebAssembly に
+組み込む C++ のコード）、リリース用のワークフローが付けた 2 つの署名つきの証明（ビルドの来歴と
+SBOM）が付きます。ダウンロードしたアーカイブは、次のコマンドで確かめられます。
+
+```sh
+gh attestation verify lint-asset-web-<タグ>.tar.gz --repo nokgc333/lint-asset
+gh attestation verify lint-asset-web-<タグ>.tar.gz --repo nokgc333/lint-asset \
+  --predicate-type https://cyclonedx.org/bom
+```
+
 ## サンプル
 
 `samples/` の2ファイルは `tests/tools/make_samples.py` で生成し、CC0 1.0 により

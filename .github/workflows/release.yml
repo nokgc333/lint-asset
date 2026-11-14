@@ -1,0 +1,158 @@
+name: Release
+
+# Runs when a GitHub Release is published (the Release itself is made by hand, after approval). It
+# builds the web app from the tag, makes the SBOM (CycloneDX) of what is shipped, signs a build
+# provenance attestation and an SBOM attestation for the archive, and adds the archive and the
+# SBOM to the Release. A manual run, or a pull request that changes this workflow, the SBOM files
+# or the lock file, is a trial: it builds and checks everything, and only keeps the files as a
+# workflow artifact.
+
+on:
+  release:
+    types: [published]
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/release.yml"
+      - "scripts/make-sbom.mjs"
+      - "scripts/sbom-native-components.json"
+      - "package-lock.json"
+  workflow_dispatch:
+    inputs:
+      attest:
+        description: "Also sign the attestations (they are public records, so use it with care)"
+        type: boolean
+        default: false
+
+# Least privilege: the jobs only read the repository, except the last one (see below).
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  wasm:
+    name: wasm
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      # The same Emscripten image as ci.yml, pinned by digest.
+      image: emscripten/emsdk:7.0.0@sha256:6bd7aef93408b10bf7b36642cb7c91119b302f720b9ec2d20439f73cf07fe894
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name || github.sha }}
+          persist-credentials: false
+      - name: Build the WASM module
+        run: |
+          emcmake cmake -S . -B build/wasm -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/wasm
+      - name: Check the compressed size
+        run: python3 scripts/check-wasm-size.py web/src/wasm/lint_core.wasm
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wasm-module
+          path: |
+            web/src/wasm/lint_core.mjs
+            web/src/wasm/lint_core.wasm
+          if-no-files-found: error
+          retention-days: 1
+
+  package:
+    name: package
+    needs: wasm
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      # Used in shell commands only through the environment, never pasted into the script.
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name || github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: wasm-module
+          path: web/src/wasm
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies exactly as locked
+        run: npm ci --ignore-scripts
+      - name: Check that the tag is the version of package.json
+        if: github.event_name == 'release'
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "v$version" ]; then
+            echo "::error::the tag $TAG is not v$version (the version in package.json)"
+            exit 1
+          fi
+      - name: Build the web app
+        run: npx --no-install vite build
+      - name: Pack the web app
+        # Sorted, with fixed times and owners, so the same files always give the same archive.
+        run: |
+          name="lint-asset-web-${TAG:-trial}"
+          mkdir -p build/release
+          tar --sort=name --mtime='1970-01-01 00:00:00Z' --owner=0 --group=0 --numeric-owner \
+            -C build/web -cf - . | gzip -n -9 > "build/release/$name.tar.gz"
+      - name: Make the SBOM
+        run: |
+          name="lint-asset-web-${TAG:-trial}"
+          npx --no-install cyclonedx-npm --omit dev --spec-version 1.6 --output-format JSON \
+            --output-file build/sbom.base.json --mc-type application --output-reproducible
+          node scripts/make-sbom.mjs build/sbom.base.json "build/release/$name.cdx.json"
+      - name: Show what was made
+        run: sha256sum build/release/*
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-files
+          path: build/release
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: publish
+    needs: package
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # The only job that can write: it signs the attestations and adds files to the Release.
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-files
+          path: release
+      - name: Find the files
+        id: files
+        run: |
+          echo "archive=$(ls release/*.tar.gz)" >> "$GITHUB_OUTPUT"
+          echo "sbom=$(ls release/*.cdx.json)" >> "$GITHUB_OUTPUT"
+      - name: Attest the build provenance of the archive
+        if: github.event_name == 'release' || inputs.attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ steps.files.outputs.archive }}
+      - name: Attest the SBOM of the archive
+        if: github.event_name == 'release' || inputs.attest
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: ${{ steps.files.outputs.archive }}
+          sbom-path: ${{ steps.files.outputs.sbom }}
+      - name: Add the files to the Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARCHIVE: ${{ steps.files.outputs.archive }}
+          SBOM: ${{ steps.files.outputs.sbom }}
+        run: gh release upload "$TAG" "$ARCHIVE" "$SBOM" --repo "$GITHUB_REPOSITORY"

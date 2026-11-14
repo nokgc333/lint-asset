@@ -9,6 +9,6 @@ export default defineConfig({
     emptyOutDir: true,
     target: "es2022",
   },
-  test: { include: ["src/**/*.test.ts"], environment: "node" },
+  test: { include: ["src/**/*.test.ts", "../scripts/**/*.test.mjs"], environment: "node" },
   worker: { format: "es" },
 });
