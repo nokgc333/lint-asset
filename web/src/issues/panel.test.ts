@@ -173,7 +173,9 @@ describe("problem panel", () => {
     expect(region.hidden).toBe(false);
     expect(elements.get("#issues-summary")?.textContent).toBe("No problems found");
     panel.clear();
-    expect(elements.get("#issues-summary")?.textContent).toBe("Open a GLB file to see problems.");
+    expect(elements.get("#issues-summary")?.textContent).toBe(
+      "Open GLB or glTF to see problems. Select a .gltf together with all its .bin and image files, or drop its folder.",
+    );
   });
 });
 

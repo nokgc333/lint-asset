@@ -32,8 +32,8 @@
       <p><span data-i18n="app.engineVersion">Engine version:</span> <output id="engine-version" data-i18n="app.loading">loading…</output></p>
       <fieldset id="controls" disabled>
         <legend data-i18n="controls.model">Model controls</legend>
-        <label class="file-control" for="file" data-i18n="controls.open">Open a GLB file</label>
-        <input id="file" type="file" accept=".glb" />
+        <label class="file-control" for="file" data-i18n="controls.open">Open GLB or glTF</label>
+        <input id="file" type="file" accept=".glb,.gltf,.bin,.png,.jpg,.jpeg,.webp,.ktx2" multiple />
         <button id="sample-button" type="button" data-i18n="controls.sample">Try a sample</button>
         <fieldset class="toolbar">
           <legend data-i18n="controls.view">View controls</legend>
@@ -57,14 +57,14 @@
       <p id="instructions" data-i18n="viewer.instructions">Drag to rotate. Right-drag or Shift+drag to pan. Scroll to zoom. Focus the viewer for keyboard controls.</p>
       <div class="workspace">
         <div id="drop-zone">
-          <p id="drop-hint" data-i18n="viewer.dropHint">Drop a .glb file here, or use Open a GLB file.</p>
+          <p id="drop-hint" data-i18n="viewer.dropHint">Drop GLB or glTF here, or use Open GLB or glTF. Open a .gltf together with all its .bin and image files, or drop its folder.</p>
           <div class="viewport">
             <canvas data-i18n-attr="aria-label:viewer.label" id="viewer" tabindex="0" role="img" aria-label="3D model viewer. Arrow keys rotate; Shift and arrow keys pan; plus and minus zoom; 0 or Home resets the view." aria-describedby="instructions"></canvas>
           </div>
         </div>
         <aside id="issues-panel" aria-labelledby="issues-title">
           <h2 id="issues-title" data-i18n="panel.title">Problems</h2>
-          <p data-i18n="panel.empty" id="issues-summary" aria-live="polite">Open a GLB file to see problems.</p>
+          <p data-i18n="panel.empty" id="issues-summary" aria-live="polite">Open GLB or glTF to see problems. Select a .gltf together with all its .bin and image files, or drop its folder.</p>
           <div class="export-actions">
             <button id="export-json" type="button" aria-describedby="export-note" disabled data-i18n="export.json">Download JSON</button>
             <button id="export-markdown" type="button" aria-describedby="export-note" disabled data-i18n="export.markdown">Download Markdown</button>

@@ -49,6 +49,11 @@ function input(overrides: Record<string, unknown> = {}) {
 }
 
 describe("buildReport", () => {
+  it("records the format that was given, glb by default", () => {
+    expect(buildReport(input()).asset.format).toBe("glb");
+    expect(buildReport(input({ format: "gltf" })).asset.format).toBe("gltf");
+  });
+
   it("fills every field of the report, in the order of the schema", () => {
     const report = buildReport(input());
 

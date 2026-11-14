@@ -1,10 +1,10 @@
 import type { Locale } from "../i18n/locale";
 import { createTextSlot } from "../i18n/text-slot";
 import { createTranslator } from "../i18n/translate";
-import { pickSingleFile } from "../intake";
 import { cancelLimit, confirmLimit } from "../limit-dialog";
 import type { WorkerRequest } from "../protocol";
 import { downloadBlob } from "../report/download";
+import { selectTextureFile } from "./file-selection";
 import { HEADER_READ_BYTES } from "./texture-plan";
 import { createTextureScreen } from "./texture-screen";
 
@@ -109,7 +109,7 @@ export function createTextureBrowser(options: {
     void screen.openFile(file);
   }
   input.addEventListener("change", () => {
-    const selected = pickSingleFile(input.files);
+    const selected = selectTextureFile(input.files);
     input.value = "";
     if (selected.kind === "file") openFile(selected.file);
   });
@@ -126,7 +126,7 @@ export function createTextureBrowser(options: {
   drop.addEventListener("drop", (event) => {
     event.preventDefault();
     drop.classList.remove("is-dragging");
-    const selected = pickSingleFile(event.dataTransfer?.files);
+    const selected = selectTextureFile(event.dataTransfer?.files);
     if (selected.kind === "file") openFile(selected.file);
     else if (selected.kind === "many") {
       const text = (locale: Locale) => createTranslator(locale).t("texture.error.drop");

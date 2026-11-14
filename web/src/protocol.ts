@@ -36,6 +36,7 @@ export type WorkerRequest =
       readonly id: number;
       readonly type: "load";
       readonly bytes: ArrayBuffer;
+      readonly files?: readonly { name: string; bytes: ArrayBuffer }[];
       readonly thresholds: Thresholds;
       readonly maxFileBytes: number;
       readonly maxTriangles: number;

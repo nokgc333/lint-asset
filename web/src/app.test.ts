@@ -241,6 +241,33 @@ it("exports the displayed model with the engine version and retains it after a f
   receive(ormResponse);
   for (const screen of textureScreens)
     expect(screen.handleResponse).toHaveBeenLastCalledWith(ormResponse);
+  controller.set("en");
+  const previousRequests = worker.postMessage.mock.calls.length;
+  input.files = [new File(["bin"], "only.bin")];
+  input.dispatchEvent(new Event("change"));
+  expect(element("error").textContent).toBe(
+    "Select one GLB or glTF model together with its files.",
+  );
+  input.files = [new File(["{}"], "a.gltf"), new File(["data"], "b.glb")];
+  input.dispatchEvent(new Event("change"));
+  expect(element("error").textContent).toBe("Select exactly one GLB or glTF model.");
+  expect(worker.postMessage).toHaveBeenCalledTimes(previousRequests);
+  const image = new File(["image"], "a.png");
+  const readImage = vi.spyOn(image, "arrayBuffer");
+  input.files = [new File(["{}"], "scene.gltf"), new File(["bin"], "scene.bin"), image];
+  input.dispatchEvent(new Event("change"));
+  await vi.dynamicImportSettled();
+  const [request, transfer] = worker.postMessage.mock.calls.at(-1) ?? [];
+  expect(request.files).toEqual([{ name: "scene.bin", bytes: expect.any(ArrayBuffer) }]);
+  expect(transfer).toEqual([request.bytes, request.files[0].bytes]);
+  expect(readImage).not.toHaveBeenCalled();
+  receive({ id: request.id, type: "loaded", result });
+  element("export-json").dispatchEvent(new Event("click"));
+  expect(JSON.parse(downloadText.mock.calls.at(-1)?.[2]).asset).toEqual({
+    name: "scene.gltf",
+    format: "gltf",
+    size_bytes: 5,
+  });
   const failure = worker.addEventListener.mock.calls.find(([type]) => type === "error")?.[1];
   failure();
   for (const screen of textureScreens) expect(screen.failWorker).toHaveBeenCalledOnce();
