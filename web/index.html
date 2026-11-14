@@ -51,6 +51,11 @@
         <aside id="issues-panel" aria-labelledby="issues-title">
           <h2 id="issues-title">Problems</h2>
           <p id="issues-summary" aria-live="polite">Open a GLB file to see problems.</p>
+          <div class="export-actions">
+            <button id="export-json" type="button" aria-describedby="export-note" disabled>Download JSON</button>
+            <button id="export-markdown" type="button" aria-describedby="export-note" disabled>Download Markdown</button>
+          </div>
+          <p id="export-note">Reports contain the file name and the results only. Nothing is sent anywhere.</p>
           <button id="issues-toggle" type="button" aria-expanded="false" aria-controls="issues-list-region">Show problems</button>
           <div id="issues-list-region" hidden>
             <ol id="issues-list" aria-label="Problems"></ol>

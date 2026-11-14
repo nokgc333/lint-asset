@@ -17,7 +17,7 @@ interface LoaderOptions {
   status: Pick<HTMLElement, "textContent">;
   error: Pick<HTMLElement, "textContent">;
   post: (request: LoadRequest) => void;
-  showGeometry: (result: AnalyzeResult) => void;
+  showGeometry: (result: AnalyzeResult, file: { name: string; size: number }) => void;
   isReady: () => boolean;
   firstRequestId: number;
 }
@@ -96,7 +96,7 @@ export function createFileLoader(options: LoaderOptions) {
       const result = response.result;
       load.phase = "done";
       if (result.ok) {
-        options.showGeometry(result);
+        options.showGeometry(result, { name: load.file.name, size: load.file.size });
         options.error.textContent = "";
         options.status.textContent = `${load.file.name}: ${describeCounts(result)}`;
         return;

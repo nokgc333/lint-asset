@@ -43,6 +43,7 @@ function failure(id: number, code = "E-LOAD-003"): WorkerResponse {
       parts: [],
       instances: [],
       issues: [],
+      thresholds: { max_triangles: 100000, min_extent_m: 0.01, max_extent_m: 1000 },
     },
   };
 }
@@ -160,10 +161,18 @@ describe("file loading", () => {
         parts: [],
         instances: [],
         issues: [],
+        thresholds: { max_triangles: 100000, min_extent_m: 0.01, max_extent_m: 1000 },
       },
     });
     expect(loader.error.textContent).toBe("");
     expect(loader.status.textContent).toBe("model.glb: 1 mesh, 1 primitive, 3 triangles");
+    expect(loader.showGeometry).toHaveBeenCalledTimes(1);
+    expect(loader.showGeometry).toHaveBeenCalledWith(expect.objectContaining({ ok: true }), {
+      name: "model.glb",
+      size: 1,
+    });
+    await loader.openFile(fileOfSize(2, "failed.glb").file);
+    await loader.handleResponse(failure(loader.post.mock.calls.at(-1)?.[0].id ?? 0, "E-LOAD-004"));
     expect(loader.showGeometry).toHaveBeenCalledTimes(1);
   });
 });

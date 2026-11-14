@@ -68,6 +68,7 @@ function setup() {
       world: new Float32Array(new THREE.Matrix4().makeTranslation(x, 0, 0).elements),
     })),
     issues: [issue],
+    thresholds: { max_triangles: 100000, min_extent_m: 0.01, max_extent_m: 1000 },
   };
   function flush() {
     while (frames.length) frames.shift()?.(0);
