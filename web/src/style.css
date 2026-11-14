@@ -149,7 +149,8 @@ canvas {
   background: #3b2020;
 }
 
-#limit-dialog {
+#limit-dialog,
+#about-dialog {
   max-width: min(36rem, calc(100% - 2rem));
   padding: 1.5rem;
   border: 2px solid #9aaec4;
@@ -159,7 +160,8 @@ canvas {
   overflow-wrap: anywhere;
 }
 
-#limit-dialog::backdrop {
+#limit-dialog::backdrop,
+#about-dialog::backdrop {
   background: rgb(0 0 0 / 70%);
 }
 
@@ -429,4 +431,54 @@ canvas {
   .texture-compare {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+.page-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 2rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.page-footer a,
+.page-footer button {
+  display: inline-flex;
+  align-items: center;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0.25rem;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.page-footer button {
+  border: 0;
+  background: transparent;
+}
+
+.page-footer [hidden] {
+  display: none;
+}
+
+#about-dialog {
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  line-height: 1.6;
+}
+
+#about-dialog a {
+  display: inline-block;
+  min-width: 24px;
+  min-height: 24px;
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+#about-dialog li + li {
+  margin-top: 0.5rem;
 }

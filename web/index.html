@@ -117,6 +117,51 @@
         <button id="texture-download" type="button" disabled data-i18n="texture.download">Download PNG</button>
         <p data-i18n="texture.privacy">The image stays in this browser. Nothing is sent anywhere.</p>
       </section>
+      <footer class="page-footer">
+        <!-- biome-ignore lint/a11y/useValidAnchor: links.ts assigns the centralized URL before the app is shown. -->
+        <a data-link="github" data-i18n="footer.github">GitHub</a>
+        <button id="about-open" type="button" data-i18n="footer.about">About</button>
+        <!-- biome-ignore lint/a11y/useValidAnchor: links.ts sets the URL only after donation is enabled; otherwise this stays hidden. -->
+        <a data-link="donate" hidden data-i18n="footer.donate">Support the project</a>
+      </footer>
+      <dialog id="about-dialog" aria-labelledby="about-title">
+        <h2 id="about-title" data-i18n="about.title">About this tool</h2>
+        <p data-i18n="about.description">Inspect GLB geometry and convert normal maps in your browser.</p>
+        <section aria-labelledby="about-heading">
+          <h3 id="about-heading" data-i18n="about.heading">About</h3>
+          <p data-i18n="about.details">This tool helps you find geometry problems and convert normal maps between DirectX and OpenGL.</p>
+        </section>
+        <section id="about-privacy" aria-labelledby="about-privacy-heading">
+          <h3 id="about-privacy-heading" data-i18n="about.privacyHeading">Privacy</h3>
+          <p data-i18n="about.privacy">Your files and images are processed in your browser and are never uploaded. This tool sends no data to any server, sets no cookies, and does not use analytics. If this changes, this section will be updated and dated.</p>
+          <p id="about-privacy-date"><span data-i18n="about.privacyDate">Last updated:</span> 2026-11-14</p>
+        </section>
+        <p data-i18n="about.disclaimer">Provided as is under the MIT License, without warranty. The results are a guide, not a guarantee.</p>
+        <section aria-labelledby="about-links-heading">
+          <h3 id="about-links-heading" data-i18n="about.links">Links</h3>
+          <ul>
+            <li>
+              <!-- biome-ignore lint/a11y/useValidAnchor: links.ts assigns the centralized URL before the app is shown. -->
+              <a data-link="github" data-i18n="about.github">GitHub repository</a>
+            </li>
+            <li>
+              <!-- biome-ignore lint/a11y/useValidAnchor: links.ts assigns the centralized URL before the app is shown. -->
+              <a data-link="license" data-i18n="about.license">MIT License</a>
+            </li>
+            <li>
+              <!-- biome-ignore lint/a11y/useValidAnchor: links.ts assigns the centralized URL before the app is shown. -->
+              <a data-link="notices" data-i18n="about.notices">Third-party license notices</a>
+            </li>
+          </ul>
+        </section>
+        <section aria-labelledby="about-third-party-heading">
+          <h3 id="about-third-party-heading" data-i18n="about.thirdParty">Third-party software</h3>
+          <ul id="about-third-party"></ul>
+        </section>
+        <div class="dialog-actions">
+          <button id="about-close" type="button" autofocus data-i18n="about.close">Close</button>
+        </div>
+      </dialog>
       <dialog id="limit-dialog" aria-labelledby="limit-dialog-title" aria-describedby="limit-dialog-text">
         <h2 id="limit-dialog-title" data-i18n="dialog.title">This file is large</h2>
         <p id="limit-dialog-text"></p>
