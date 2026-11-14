@@ -282,6 +282,9 @@ CI は、プルリクエストごとに対象あたり 60 秒（`fuzz-smoke`）�
 不具合の報告やアイデアは、[GitHub の Issue](https://github.com/nokgc333/lint-asset/issues)
 で歓迎します。
 
+セキュリティ上の問題は、Issue にせず、[SECURITY.md](SECURITY.md) に従って非公開で報告して
+ください（本文は英語です）。
+
 ## ライセンス
 
 [MIT](LICENSE)。第三者のコンポーネントとそのライセンスは、
