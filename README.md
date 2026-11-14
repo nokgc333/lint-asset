@@ -178,7 +178,7 @@ Technology and versions:
 
 - C++20, CMake 3.24 or later, Emscripten 7.0.0, tinygltf 3.1.0 (MIT)
 - TypeScript 7.0.2, Vite 8.3.8, three 0.187.0, Node.js 22.12 or later
-- Tests: doctest 2.4.12 (181 native cases, with AddressSanitizer and UBSan), Vitest 5.0.5 (about
+- Tests: doctest 2.5.3 (237 native cases, with AddressSanitizer and UBSan), Vitest 5.0.5 (about
   420 web tests), Ajv 8.20.0 for the schemas, and checks of the WebAssembly build against
   expected results that were worked out by hand. Counts are as of this writing.
 - Biome 2.6.7 and clang-format for formatting; GitHub Actions for CI (the actions are pinned
