@@ -1,17 +1,17 @@
 // Runs the built WASM module in Node.js and checks loadGlb() against the same fixtures and
 // expected values as the native tests (tests/glb_loader_test.cpp).
 //
-// Usage: node scripts/check-wasm-loader.mjs <dir with lint_core.mjs> <dir with the .glb fixtures>
+// Usage: node scripts/check-wasm-loader.mjs <module dir> <fixture dir> [golden dir]
 // The fixtures are written by tests/tools/make_test_glbs.py.
 // The module must be built with -DLINT_ASSET_WASM_NODE=ON.
 
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const [moduleDir, fixtureDir] = process.argv.slice(2);
+const [moduleDir, fixtureDir, goldenDir] = process.argv.slice(2);
 if (!moduleDir || !fixtureDir) {
-  console.error("usage: check-wasm-loader.mjs <module dir> <fixture dir>");
+  console.error("usage: check-wasm-loader.mjs <module dir> <fixture dir> [golden dir]");
   process.exit(2);
 }
 
@@ -93,6 +93,27 @@ function geometry(
   maxTriangles = DEFAULT_MAX_TRIANGLES,
 ) {
   return core.loadGlbGeometry(bytes, maxFileBytes, maxTriangles);
+}
+
+function inspect(
+  bytes,
+  maxFileBytes = DEFAULT_MAX_FILE_BYTES,
+  maxTriangles = DEFAULT_MAX_TRIANGLES,
+) {
+  return core.inspect(bytes, maxFileBytes, maxTriangles);
+}
+
+const truncatedInspection = inspect(await fixture("truncated_cube.glb"));
+expect("inspection truncated file", truncatedInspection.ok, false);
+expect("inspection failure has no issues", truncatedInspection.issues, []);
+
+if (goldenDir) {
+  for (const name of (await readdir(goldenDir)).filter((name) => name.endsWith(".json")).sort()) {
+    const expected = JSON.parse(await readFile(join(goldenDir, name), "utf8"));
+    const result = inspect(await fixture(`${name.slice(0, -5)}.glb`));
+    expect(`inspection ${name} succeeds`, result.ok, true);
+    expect(`inspection ${name} golden issues`, result.issues, expected);
+  }
 }
 
 const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
