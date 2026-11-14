@@ -100,10 +100,11 @@ void add_geometry(emscripten::val &out, const lint_asset::GeometryResult &result
     out.set("instances", instances);
 }
 
-void add_issues(emscripten::val &out, const lint_asset::GeometryResult &result) {
+void add_issues(emscripten::val &out, const lint_asset::GeometryResult &result,
+                const lint_asset::InspectionThresholds &thresholds = {}) {
     auto issues = emscripten::val::array();
     if (result.ok()) {
-        for (const auto &issue : lint_asset::inspect_geometry(result.geometry)) {
+        for (const auto &issue : lint_asset::inspect_geometry(result.geometry, thresholds)) {
             auto item = emscripten::val::object();
             item.set("rule", std::string(lint_asset::rule_name(issue.rule)));
             item.set("severity", std::string(lint_asset::severity_name(issue.severity)));
@@ -150,7 +151,13 @@ emscripten::val analyze_js(const emscripten::val &bytes, double max_file_bytes,
     const auto result = geometry_from_js(bytes, max_file_bytes, max_triangles);
     auto out = load_result_to_js(result);
     add_geometry(out, result);
-    add_issues(out, result);
+    const lint_asset::InspectionThresholds thresholds;
+    auto limits = emscripten::val::object();
+    limits.set("max_triangles", static_cast<double>(thresholds.max_triangles));
+    limits.set("min_extent_m", thresholds.min_extent_m);
+    limits.set("max_extent_m", thresholds.max_extent_m);
+    out.set("thresholds", limits);
+    add_issues(out, result, thresholds);
     return out;
 }
 
