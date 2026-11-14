@@ -47,6 +47,13 @@ git config core.hooksPath .githooks
 
 フックは、ブランチ名・コミットメッセージ・許可リスト（`.public-paths`）に載るパスだけをコミットしていること、を検査します。
 
+## サンプル
+
+`samples/` の2ファイルは `tests/tools/make_samples.py` で生成し、CC0 1.0 により
+パブリックドメインに提供しています。`toy-house-clean.glb` には指摘事項がありません。
+`toy-house-broken.glb` には、屋根の法線の反転、右壁の穴、鏡像配置で重なる屋根の UV、
+0–1 の UV 範囲を外れた煙突の面、ファイル外に保存された画像への参照が含まれます。
+
 ## ライセンス
 
 [MIT](LICENSE)
