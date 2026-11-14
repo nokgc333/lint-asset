@@ -1,4 +1,10 @@
 :root {
+  --panel-background: #18212d;
+  --severity-error: #ff6b6b;
+  --severity-warning: #ffb020;
+  --severity-info: #5cb8ff;
+  --text: #f0f4fa;
+  --text-muted: #bdc9d9;
   color-scheme: dark;
   font-family: system-ui, sans-serif;
   background: #101720;
@@ -182,4 +188,108 @@ canvas {
 
 [hidden] {
   display: none;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem;
+  align-items: start;
+  gap: 1rem;
+}
+
+#issues-panel {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #9aaec4;
+  border-radius: 0.5rem;
+  background: var(--panel-background);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+#issues-title {
+  margin-top: 0;
+}
+
+#issues-list {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.35rem;
+  margin-bottom: 0;
+  list-style: none;
+}
+
+#issues-list-region {
+  max-height: 70vh;
+  overflow: auto;
+  margin-top: 1rem;
+  padding: 0.25rem;
+}
+
+.issue-row {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.25rem 0.5rem;
+  width: 100%;
+  text-align: left;
+  background: var(--panel-background);
+  border: 3px solid #9aaec4;
+  padding: 0.75rem;
+  color: var(--text);
+}
+
+.issue-row:hover {
+  background: var(--panel-background);
+  border-color: var(--text);
+}
+
+.issue-row[aria-current="true"] {
+  border-width: 5px;
+  padding: calc(0.75rem - 2px);
+}
+
+.issue-title {
+  font-weight: 500;
+}
+
+.issue-row[aria-current="true"] .issue-title {
+  font-weight: 800;
+}
+
+.issue-row span {
+  grid-column: 2;
+}
+
+.issue-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: currentColor;
+}
+
+.severity-error .issue-icon {
+  color: var(--severity-error);
+}
+
+.severity-warning .issue-icon {
+  color: var(--severity-warning);
+}
+
+.severity-info .issue-icon {
+  color: var(--severity-info);
+}
+
+.issue-detail,
+.issue-message {
+  font-size: 0.875rem;
+}
+
+.issue-detail {
+  color: var(--text-muted);
+}
+
+@media (min-width: 1280px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+  }
 }
