@@ -426,12 +426,23 @@ def node_instance_explosion():
     return build_glb(document, data)
 
 
+def sample_toy_house_clean():
+    from sample_models import toy_house_clean
+    return toy_house_clean()
+
+
+def sample_toy_house_broken():
+    from sample_models import toy_house_broken
+    return toy_house_broken()
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit("Usage: python3 make_test_glbs.py <out_dir>")
     output = Path(sys.argv[1])
     output.mkdir(parents=True, exist_ok=True)
     builders = [
+        sample_toy_house_clean, sample_toy_house_broken,
         cube_uv_overlap_same, cube_uv_overlap_mirrored,
         cube_flat, cube_uv_out_of_range, uv_ushort_normalized, uv_count_mismatch, uv_wrong_type,
         node_transforms, quantized_strided, index_out_of_vertex_range, sparse_accessor,
