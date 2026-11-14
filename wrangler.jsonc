@@ -1,0 +1,8 @@
+{
+  // The site is static files only: the built web app, served with the headers in web/public/_headers.
+  "name": "lint-asset",
+  "compatibility_date": "2026-11-14",
+  "assets": {
+    "directory": "./build/web"
+  }
+}
