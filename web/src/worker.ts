@@ -15,6 +15,16 @@ self.addEventListener("message", async (event: MessageEvent<WorkerRequest>) => {
       reply({ id: request.id, type: "version", version: core.version() });
       return;
     }
+    if (request.type === "flip") {
+      const result = core.flipNormalMapGreen(
+        new Uint8ClampedArray(request.pixels),
+        request.width,
+        request.height,
+        request.maxPixels,
+      );
+      reply({ id: request.id, type: "flipped", pixels: request.pixels, result }, [request.pixels]);
+      return;
+    }
     const result = core.analyze(
       new Uint8Array(request.bytes),
       request.maxFileBytes,
