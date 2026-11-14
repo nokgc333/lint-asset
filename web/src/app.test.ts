@@ -6,6 +6,7 @@ const {
   worker,
   downloadText,
   setGeometry,
+  setVisibleIssues,
   selectIssue,
   detail,
   issuePanel,
@@ -17,10 +18,21 @@ const {
     worker: { addEventListener: vi.fn(), postMessage: vi.fn() },
     downloadText: vi.fn(),
     setGeometry: vi.fn(),
+    setVisibleIssues: vi.fn(),
     selectIssue: vi.fn(),
     detail: { show: vi.fn(), refresh: vi.fn() },
     issuePanel,
-    createIssuePanel: vi.fn((_options: { onSelect: (issue: Issue | null) => void }) => issuePanel),
+    createIssuePanel: vi.fn(
+      (options: {
+        onSelect: (issue: Issue | null) => void;
+        onVisibleChange: (visible: readonly Issue[]) => void;
+      }) => {
+        issuePanel.setIssues.mockImplementation((issues: readonly Issue[]) =>
+          options.onVisibleChange(issues.slice(0, 1)),
+        );
+        return issuePanel;
+      },
+    ),
     textureScreens: Array.from({ length: 3 }, () => ({
       clear: vi.fn(),
       refresh: vi.fn(),
@@ -41,7 +53,9 @@ vi.mock("./issues/panel", () => ({
   createIssuePanel,
 }));
 vi.mock("./issues/detail-panel", () => ({ createDetailPanel: () => detail }));
-vi.mock("./viewer/viewer", () => ({ createViewer: () => ({ setGeometry, selectIssue }) }));
+vi.mock("./viewer/viewer", () => ({
+  createViewer: () => ({ setGeometry, setVisibleIssues, selectIssue }),
+}));
 vi.mock("./worker.ts?worker&url", () => ({ default: "/worker.js" }));
 
 import { startApp } from "./app";
@@ -146,11 +160,23 @@ it("exports the displayed model with the engine version and retains it after a f
     triangles: 12,
     parts: [],
     instances: [],
-    issues: [],
+    issues: [selected, { ...selected, severity: "info" }],
     thresholds: { max_triangles: 100000, min_extent_m: 0.01, max_extent_m: 1000 },
   };
   receive({ id: 2, type: "loaded", result });
-  expect(setGeometry).toHaveBeenCalledWith(result);
+  expect(setGeometry).toHaveBeenCalledWith(result, [selected]);
+  expect(setVisibleIssues).not.toHaveBeenCalled();
+  const onVisibleChange = createIssuePanel.mock.calls[0]?.[0].onVisibleChange;
+  onSelect?.(selected);
+  onVisibleChange?.([selected]);
+  expect(setVisibleIssues).not.toHaveBeenCalled();
+  onVisibleChange?.(result.issues);
+  expect(setVisibleIssues).toHaveBeenCalledOnce();
+  onVisibleChange?.([...result.issues].reverse());
+  expect(setVisibleIssues).toHaveBeenCalledOnce();
+  expect(detail.show).toHaveBeenLastCalledWith(selected);
+  onVisibleChange?.([]);
+  expect(setVisibleIssues).toHaveBeenLastCalledWith([]);
   expect(detail.show).toHaveBeenLastCalledWith(null);
   expect(element("export-json").disabled).toBe(false);
   expect(element("export-markdown").disabled).toBe(false);
@@ -160,6 +186,7 @@ it("exports the displayed model with the engine version and retains it after a f
   expect(mime).toBe("application/json;charset=utf-8");
   const report = JSON.parse(text);
   expect(report.asset).toEqual({ name: "<crate>.glb", format: "glb", size_bytes: 4 });
+  expect(report.issues).toEqual(result.issues);
   expect(report.tool.version).toBe("1.2.3");
   expect(report.thresholds).toEqual(result.thresholds);
   expect(report.generated_at).toMatch(/T\d{2}:\d{2}:\d{2}Z$/);
