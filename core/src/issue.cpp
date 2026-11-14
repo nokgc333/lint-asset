@@ -28,6 +28,8 @@ std::string_view rule_name(RuleId rule) noexcept {
         return "asset.scale_too_small";
     case RuleId::asset_scale_too_large:
         return "asset.scale_too_large";
+    case RuleId::asset_external_uri:
+        return "asset.external_uri";
     }
     return {};
 }
