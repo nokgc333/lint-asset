@@ -77,6 +77,8 @@ export type InspectResult = LoadResult & {
   issues: Issue[];
 };
 
+export type AnalyzeResult = GeometryResult & { issues: Issue[] };
+
 export interface LintCore {
   version(): string;
   /**
@@ -86,6 +88,7 @@ export interface LintCore {
    */
   loadGlb(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): LoadResult;
   loadGlbGeometry(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): GeometryResult;
+  analyze(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): AnalyzeResult;
   inspect(bytes: Uint8Array, maxFileBytes: number, maxTriangles: number): InspectResult;
 }
 

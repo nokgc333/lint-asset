@@ -40,15 +40,7 @@ std::vector<std::uint8_t> bytes_from_js(const emscripten::val &bytes) {
     return data;
 }
 
-// loadGlb(bytes, maxFileBytes, maxTriangles) returns a plain JavaScript object.
-// The contract is in web/src/wasm/lint_core.d.mts.
-emscripten::val load_glb_js(const emscripten::val &bytes, double max_file_bytes,
-                            double max_triangles) {
-    const lint_asset::LoadLimits limits{limit_from_js(max_file_bytes),
-                                        limit_from_js(max_triangles)};
-    const std::vector<std::uint8_t> data = bytes_from_js(bytes);
-    const lint_asset::LoadResult result = lint_asset::load_glb(data, limits);
-
+template <typename Result> emscripten::val load_result_to_js(const Result &result) {
     emscripten::val out = emscripten::val::object();
     out.set("ok", result.ok());
     out.set("code", std::string(lint_asset::load_error_code(result.error)));
@@ -60,25 +52,33 @@ emscripten::val load_glb_js(const emscripten::val &bytes, double max_file_bytes,
     return out;
 }
 
+// loadGlb(bytes, maxFileBytes, maxTriangles) returns a plain JavaScript object.
+// The contract is in web/src/wasm/lint_core.d.mts.
+emscripten::val load_glb_js(const emscripten::val &bytes, double max_file_bytes,
+                            double max_triangles) {
+    const lint_asset::LoadLimits limits{limit_from_js(max_file_bytes),
+                                        limit_from_js(max_triangles)};
+    const std::vector<std::uint8_t> data = bytes_from_js(bytes);
+    const lint_asset::LoadResult result = lint_asset::load_glb(data, limits);
+
+    return load_result_to_js(result);
+}
+
 template <typename Container>
 emscripten::val copy_array(const char *type, const Container &values) {
     return emscripten::val::global(type).new_(
         emscripten::val(emscripten::typed_memory_view(values.size(), values.data())));
 }
 
-emscripten::val load_glb_geometry_js(const emscripten::val &bytes, double max_file_bytes,
-                                     double max_triangles) {
+lint_asset::GeometryResult geometry_from_js(const emscripten::val &bytes, double max_file_bytes,
+                                            double max_triangles) {
     const lint_asset::LoadLimits limits{limit_from_js(max_file_bytes),
                                         limit_from_js(max_triangles)};
     const auto data = bytes_from_js(bytes);
-    const auto result = lint_asset::load_glb_geometry(data, limits);
-    auto out = emscripten::val::object();
-    out.set("ok", result.ok());
-    out.set("code", std::string(lint_asset::load_error_code(result.error)));
-    out.set("message", result.message);
-    out.set("meshes", result.stats.meshes);
-    out.set("primitives", result.stats.primitives);
-    out.set("triangles", static_cast<double>(result.stats.triangles));
+    return lint_asset::load_glb_geometry(data, limits);
+}
+
+void add_geometry(emscripten::val &out, const lint_asset::GeometryResult &result) {
     auto parts = emscripten::val::array();
     for (const auto &part : result.geometry.primitives) {
         auto item = emscripten::val::object();
@@ -98,22 +98,9 @@ emscripten::val load_glb_geometry_js(const emscripten::val &bytes, double max_fi
     }
     out.set("parts", parts);
     out.set("instances", instances);
-    return out;
 }
 
-emscripten::val inspect_js(const emscripten::val &bytes, double max_file_bytes,
-                           double max_triangles) {
-    const lint_asset::LoadLimits limits{limit_from_js(max_file_bytes),
-                                        limit_from_js(max_triangles)};
-    const auto data = bytes_from_js(bytes);
-    const auto result = lint_asset::load_glb_geometry(data, limits);
-    auto out = emscripten::val::object();
-    out.set("ok", result.ok());
-    out.set("code", std::string(lint_asset::load_error_code(result.error)));
-    out.set("message", result.message);
-    out.set("meshes", result.stats.meshes);
-    out.set("primitives", result.stats.primitives);
-    out.set("triangles", static_cast<double>(result.stats.triangles));
+void add_issues(emscripten::val &out, const lint_asset::GeometryResult &result) {
     auto issues = emscripten::val::array();
     if (result.ok()) {
         for (const auto &issue : lint_asset::inspect_geometry(result.geometry)) {
@@ -140,6 +127,30 @@ emscripten::val inspect_js(const emscripten::val &bytes, double max_file_bytes,
         }
     }
     out.set("issues", issues);
+}
+
+emscripten::val load_glb_geometry_js(const emscripten::val &bytes, double max_file_bytes,
+                                     double max_triangles) {
+    const auto result = geometry_from_js(bytes, max_file_bytes, max_triangles);
+    auto out = load_result_to_js(result);
+    add_geometry(out, result);
+    return out;
+}
+
+emscripten::val inspect_js(const emscripten::val &bytes, double max_file_bytes,
+                           double max_triangles) {
+    const auto result = geometry_from_js(bytes, max_file_bytes, max_triangles);
+    auto out = load_result_to_js(result);
+    add_issues(out, result);
+    return out;
+}
+
+emscripten::val analyze_js(const emscripten::val &bytes, double max_file_bytes,
+                           double max_triangles) {
+    const auto result = geometry_from_js(bytes, max_file_bytes, max_triangles);
+    auto out = load_result_to_js(result);
+    add_geometry(out, result);
+    add_issues(out, result);
     return out;
 }
 
@@ -150,4 +161,5 @@ EMSCRIPTEN_BINDINGS(lint_core) {
     emscripten::function("loadGlb", &load_glb_js);
     emscripten::function("loadGlbGeometry", &load_glb_geometry_js);
     emscripten::function("inspect", &inspect_js);
+    emscripten::function("analyze", &analyze_js);
 }
