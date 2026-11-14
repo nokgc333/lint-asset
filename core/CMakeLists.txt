@@ -5,6 +5,9 @@ FetchContent_Declare(
   tinygltf
   GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
   GIT_TAG 97789b346ed792f413b9520c80bb479f3b63368f
+  # Zeroes the memory the parser hands out (see the file for why). Safe to run twice.
+  PATCH_COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=<SOURCE_DIR>"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/patches/zero_arena.cmake"
   SOURCE_SUBDIR lint_asset_download_only)
 FetchContent_MakeAvailable(tinygltf)
 

@@ -248,3 +248,43 @@ TEST_CASE("a UV accessor with the wrong number of entries is E-LOAD-002") {
 TEST_CASE("a UV accessor that is not VEC2 is E-LOAD-002") {
     CHECK(extract("uv_wrong_type.glb").error == LoadError::corrupt_file);
 }
+
+namespace {
+
+// A GLB made only of a JSON chunk.
+std::vector<std::uint8_t> glb_of_json(const std::string &json) {
+    std::string padded = json;
+    while (padded.size() % 4 != 0) {
+        padded.push_back(' ');
+    }
+    const auto put32 = [](std::vector<std::uint8_t> &out, std::uint32_t value) {
+        for (int shift = 0; shift < 32; shift += 8) {
+            out.push_back(static_cast<std::uint8_t>(value >> shift));
+        }
+    };
+    std::vector<std::uint8_t> out = {'g', 'l', 'T', 'F'};
+    put32(out, 2);
+    put32(out, static_cast<std::uint32_t>(12 + 8 + padded.size()));
+    put32(out, static_cast<std::uint32_t>(padded.size()));
+    out.insert(out.end(), {'J', 'S', 'O', 'N'});
+    out.insert(out.end(), padded.begin(), padded.end());
+    return out;
+}
+
+}  // namespace
+
+TEST_CASE("a GLB array entry that is not an object is rejected and never read") {
+    // Found by fuzzing a .gltf: the parser used to leave such an entry uninitialized and its own
+    // validation read it. The same parser reads the JSON chunk of a GLB.
+    const std::vector<std::string> bad = {
+        R"({"asset":{"version":"2.0"},"buffers":[1]})",
+        R"({"asset":{"version":"2.0"},"meshes":[3.5]})",
+        R"({"asset":{"version":"2.0"},"accessors":[true],"buffers":[{"byteLength":4}]})",
+    };
+    for (const auto &text : bad) {
+        INFO("input: " << text);
+        const auto bytes = glb_of_json(text);
+        const auto result = lint_asset::load_glb_geometry(bytes);
+        CHECK_FALSE(result.ok());
+    }
+}

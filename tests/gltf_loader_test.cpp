@@ -217,3 +217,23 @@ TEST_CASE("a buffer of a .gltf with no uri is E-LOAD-002, not a missing file") {
     CHECK(result.error == LoadError::corrupt_file);
     CHECK(result.missing_files.empty());
 }
+
+TEST_CASE("an array entry that is not an object is E-LOAD-002, and is never read") {
+    // Found by fuzzing: the parser leaves such an entry uninitialized, so reading its fields (for
+    // example the buffer uri) read garbage. Under AddressSanitizer that crashed.
+    const std::vector<std::string> bad = {
+        R"({"asset":{"version":"2.0"},"buffers":[1]})",
+        R"({"asset":{"version":"2.0"},"buffers":[null,{"byteLength":4,"uri":"a.bin"}]})",
+        R"({"asset":{"version":"2.0"},"buffers":[{"byteLength":4,"uri":"a.bin"},"x"]})",
+        R"({"asset":{"version":"2.0"},"bufferViews":[[]],"buffers":[{"byteLength":4,"uri":"a.bin"}]})",
+        R"({"asset":{"version":"2.0"},"accessors":[true],"buffers":[{"byteLength":4,"uri":"a.bin"}]})",
+        R"({"asset":{"version":"2.0"},"meshes":[3.5],"buffers":[{"byteLength":4,"uri":"a.bin"}]})",
+    };
+    for (const auto &text : bad) {
+        INFO("input: " << text);
+        const Bytes json(text.begin(), text.end());
+        const auto result = lint_asset::load_gltf_geometry(json, {});
+        CHECK(result.error == LoadError::corrupt_file);
+        CHECK(result.missing_files.empty());
+    }
+}

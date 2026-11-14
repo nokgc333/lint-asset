@@ -99,7 +99,13 @@ LoadResult parse_gltf(detail::ParsedModel &parsed, std::span<const std::uint8_t>
             tg3_error_stack errors{};
             errors.entries = &parsed.errors.entries[i];
             errors.count = 1;
-            if (entry.code == TG3_ERR_JSON_PARSE || entry.code == TG3_ERR_OUT_OF_MEMORY) {
+            // After an error of the JSON kind (such as an array entry that is not an object) the
+            // model is not complete, so it must not be read. The other errors come after the
+            // arrays are complete: they are what a buffer that was not supplied causes (ranges
+            // that point into data that is not there).
+            const bool json_error =
+                entry.code >= TG3_ERR_JSON_PARSE && entry.code <= TG3_ERR_JSON_INVALID_VALUE;
+            if (json_error || entry.code == TG3_ERR_OUT_OF_MEMORY) {
                 return detail::parse_failure(entry.code, errors);
             }
             if (invalid.ok()) {
