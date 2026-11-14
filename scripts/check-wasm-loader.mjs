@@ -683,4 +683,103 @@ expect("the big texture's green bytes are inverted", big[1] === 255 - bigBefore[
   expect("a round trip restores red, green, and blue exactly", same, true);
 }
 
+// FR-014: a split glTF. analyzeGltf() / inspectGltf() take the .gltf bytes and the files the user
+// gave with it. Nothing else is ever read.
+{
+  const json = await fixture("split_cube.gltf");
+  const bin = await fixture("split_cube.bin");
+  const analyzeGltf = (gltf, files, maxFileBytes = DEFAULT_MAX_FILE_BYTES) =>
+    core.analyzeGltf(gltf, files, maxFileBytes, DEFAULT_MAX_TRIANGLES);
+
+  const split = analyzeGltf(json, [{ name: "split_cube.bin", bytes: bin }]);
+  expect(
+    "split cube loads",
+    [split.ok, split.meshes, split.primitives, split.triangles],
+    [true, 1, 1, 12],
+  );
+  const single = core.analyze(cube, DEFAULT_MAX_FILE_BYTES, DEFAULT_MAX_TRIANGLES);
+  expect("split cube finds what the GLB finds", split.issues, single.issues);
+  expect("split cube has the same parts", split.parts.length, single.parts.length);
+  expect(
+    "split cube has the same positions",
+    Array.from(split.parts[0].positions),
+    Array.from(single.parts[0].positions),
+  );
+  const inspected = core.inspectGltf(json, [{ name: "split_cube.bin", bytes: bin }], 1e8, 2e6);
+  expect("inspectGltf agrees with analyzeGltf", inspected.issues, split.issues);
+
+  const missing = analyzeGltf(json, []);
+  expect(
+    "a missing buffer is E-LOAD-005 and names the file",
+    [missing.ok, missing.code, missing.missing_files],
+    [false, "E-LOAD-005", ["split_cube.bin"]],
+  );
+  expect(
+    "other failures have an empty missing_files",
+    analyzeGltf(new Uint8Array(0), []).missing_files,
+    [],
+  );
+  expect(
+    "a file with another name does not help",
+    analyzeGltf(json, [{ name: "other.bin", bytes: bin }]).code,
+    "E-LOAD-005",
+  );
+  expect(
+    "a buffer in a sub folder is found by its path",
+    analyzeGltf(await fixture("split_cube_subfolder.gltf"), [
+      { name: "buffers/split_cube.bin", bytes: bin },
+    ]).ok,
+    true,
+  );
+  expect(
+    "a percent-encoded name matches the real file name",
+    analyzeGltf(await fixture("split_cube_encoded.gltf"), [{ name: "my cube.bin", bytes: bin }]).ok,
+    true,
+  );
+  expect(
+    "an embedded buffer needs no file",
+    analyzeGltf(await fixture("embedded_cube.gltf"), []).ok,
+    true,
+  );
+  expect(
+    "a web address buffer is E-LOAD-001",
+    analyzeGltf(await fixture("split_cube_web_buffer.gltf"), []).code,
+    "E-LOAD-001",
+  );
+  const withImages = analyzeGltf(await fixture("split_cube_images.gltf"), [
+    { name: "split_cube.bin", bytes: bin },
+  ]);
+  expect(
+    "images are not needed; only web addresses are warned about",
+    [
+      withImages.ok,
+      withImages.issues
+        .filter((issue) => issue.rule === "asset.external_uri")
+        .map((issue) => issue.message),
+    ],
+    [true, ["External image references: 1 (web addresses: 1, other: 0)."]],
+  );
+  expect(
+    "the byte limit counts the .gltf and the files",
+    analyzeGltf(json, [{ name: "split_cube.bin", bytes: bin }], json.length + bin.length - 1).code,
+    "E-LOAD-003",
+  );
+  expect(
+    "bad entries in files are skipped, not thrown on",
+    analyzeGltf(json, [
+      null,
+      { name: 5, bytes: bin },
+      { name: "x" },
+      { name: "split_cube.bin", bytes: bin },
+    ]).ok,
+    true,
+  );
+  expect(
+    "files that is not an array counts as empty",
+    analyzeGltf(json, "nope").code,
+    "E-LOAD-005",
+  );
+  expect("GLB bytes still load as a GLB", analyzeGltf(cube, []).ok, true);
+}
+
 process.exit(failures === 0 ? 0 : 1);

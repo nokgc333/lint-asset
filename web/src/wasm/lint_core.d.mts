@@ -7,7 +7,8 @@ export type LoadErrorCode =
   | "E-LOAD-001" // not a GLB 2.x file, or it needs an external resource
   | "E-LOAD-002" // a damaged or structurally invalid GLB
   | "E-LOAD-003" // over the size, triangle, or memory limit
-  | "E-LOAD-004"; // requires a glTF extension that cannot be read
+  | "E-LOAD-004" // requires a glTF extension that cannot be read
+  | "E-LOAD-005"; // required buffer files were not supplied
 
 /** What the file defines (not node instances). `LoadFailure` always reports zeros. */
 export interface LoadCounts {
@@ -22,9 +23,17 @@ export interface LoadSuccess extends LoadCounts {
   message: "";
 }
 
+/** A file supplied with a split glTF, identified by its name or relative path. */
+export interface SuppliedFileInput {
+  name: string;
+  bytes: Uint8Array;
+}
+
 export interface LoadFailure extends LoadCounts {
   ok: false;
   code: LoadErrorCode;
+  /** Decoded missing buffer names in buffer order; empty unless the code is E-LOAD-005. */
+  missing_files: string[];
   /** An English reason. Show the user a translated text chosen by `code`, not this string. */
   message: string;
 }
@@ -183,6 +192,26 @@ export interface LintCore {
   ): AnalyzeResult;
   inspect(
     bytes: Uint8Array,
+    maxFileBytes: number,
+    maxTriangles: number,
+    thresholds?: Thresholds,
+  ): InspectResult;
+  /**
+   * Loads a split glTF using only the supplied files and embedded data, and returns geometry and
+   * findings. GLB input is also accepted. Images are never decoded or required. Limits count the
+   * JSON and each used supplied file once. Thresholds follow the same rules as `analyze`.
+   */
+  analyzeGltf(
+    json: Uint8Array,
+    files: SuppliedFileInput[],
+    maxFileBytes: number,
+    maxTriangles: number,
+    thresholds?: Thresholds,
+  ): AnalyzeResult;
+  /** Inspects a split glTF with the same inputs and limits as `analyzeGltf`, returning findings. */
+  inspectGltf(
+    json: Uint8Array,
+    files: SuppliedFileInput[],
     maxFileBytes: number,
     maxTriangles: number,
     thresholds?: Thresholds,

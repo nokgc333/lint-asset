@@ -196,7 +196,7 @@ it("exports the displayed model with the engine version and retains it after a f
   receive({
     id: 3,
     type: "loaded",
-    result: { ...result, ok: false, code: "E-LOAD-002", message: "Damaged" },
+    result: { ...result, ok: false, code: "E-LOAD-002", message: "Damaged", missing_files: [] },
   });
   expect(element("export-json").disabled).toBe(false);
   expect(element("export-markdown").disabled).toBe(false);

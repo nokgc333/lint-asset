@@ -13,6 +13,7 @@
 
 #include "lint_asset/glb_geometry.hpp"
 #include "lint_asset/glb_loader.hpp"
+#include "lint_asset/gltf_loader.hpp"
 #include "lint_asset/inspection.hpp"
 #include "lint_asset/normal_map.hpp"
 #include "lint_asset/orm.hpp"
@@ -80,6 +81,13 @@ template <typename Result> emscripten::val load_result_to_js(const Result &resul
     out.set("ok", result.ok());
     out.set("code", std::string(lint_asset::load_error_code(result.error)));
     out.set("message", result.message);
+    if (!result.ok()) {
+        auto missing = emscripten::val::array();
+        for (const auto &name : result.missing_files) {
+            missing.call<void>("push", name);
+        }
+        out.set("missing_files", missing);
+    }
     out.set("meshes", result.stats.meshes);
     out.set("primitives", result.stats.primitives);
     // At most the triangle limit, which is far below 2^53, so a JavaScript number is exact.
@@ -277,6 +285,34 @@ lint_asset::InspectionThresholds thresholds_from_js(const emscripten::val &value
     return {static_cast<std::uint64_t>(count), low, high};
 }
 
+lint_asset::GeometryResult gltf_geometry_from_js(const emscripten::val &json,
+                                                 const emscripten::val &files,
+                                                 double max_file_bytes, double max_triangles) {
+    const lint_asset::LoadLimits limits{limit_from_js(max_file_bytes),
+                                        limit_from_js(max_triangles)};
+    const auto data = bytes_from_js(json);
+    std::vector<std::vector<std::uint8_t>> storage;
+    std::vector<lint_asset::SuppliedFile> supplied;
+    if (emscripten::val::global("Array").call<bool>("isArray", files)) {
+        const auto length = files["length"].as<std::size_t>();
+        for (std::size_t i = 0; i < length; ++i) {
+            const auto item = files[i];
+            if (item.isNull() || item.typeOf().as<std::string>() != "object") {
+                continue;
+            }
+            const auto name = item["name"];
+            const auto bytes = item["bytes"];
+            if (name.typeOf().as<std::string>() != "string" || bytes.isNull() ||
+                bytes.isUndefined() || !bytes.instanceof(emscripten::val::global("Uint8Array"))) {
+                continue;
+            }
+            storage.push_back(bytes_from_js(bytes));
+            supplied.push_back({name.as<std::string>(), storage.back()});
+        }
+    }
+    return lint_asset::load_gltf_geometry(data, supplied, limits);
+}
+
 emscripten::val inspect_js(const emscripten::val &bytes, double max_file_bytes,
                            double max_triangles, const emscripten::val &settings) {
     const auto result = geometry_from_js(bytes, max_file_bytes, max_triangles);
@@ -285,9 +321,8 @@ emscripten::val inspect_js(const emscripten::val &bytes, double max_file_bytes,
     return out;
 }
 
-emscripten::val analyze_js(const emscripten::val &bytes, double max_file_bytes,
-                           double max_triangles, const emscripten::val &settings) {
-    const auto result = geometry_from_js(bytes, max_file_bytes, max_triangles);
+emscripten::val analyze_result_to_js(const lint_asset::GeometryResult &result,
+                                     const emscripten::val &settings) {
     auto out = load_result_to_js(result);
     add_geometry(out, result);
     const auto thresholds = thresholds_from_js(settings);
@@ -300,9 +335,47 @@ emscripten::val analyze_js(const emscripten::val &bytes, double max_file_bytes,
     return out;
 }
 
+emscripten::val analyze_js(const emscripten::val &bytes, double max_file_bytes,
+                           double max_triangles, const emscripten::val &settings) {
+    const auto result = geometry_from_js(bytes, max_file_bytes, max_triangles);
+    return analyze_result_to_js(result, settings);
+}
+
+emscripten::val analyze_gltf_js(const emscripten::val &json, const emscripten::val &files,
+                                double max_file_bytes, double max_triangles,
+                                const emscripten::val &settings) {
+    return analyze_result_to_js(gltf_geometry_from_js(json, files, max_file_bytes, max_triangles),
+                                settings);
+}
+
+emscripten::val inspect_gltf_js(const emscripten::val &json, const emscripten::val &files,
+                                double max_file_bytes, double max_triangles,
+                                const emscripten::val &settings) {
+    const auto result = gltf_geometry_from_js(json, files, max_file_bytes, max_triangles);
+    auto out = load_result_to_js(result);
+    add_issues(out, result, thresholds_from_js(settings));
+    return out;
+}
+
 }  // namespace
 
 EMSCRIPTEN_BINDINGS(lint_core) {
+    emscripten::function("analyzeGltf", &analyze_gltf_js);
+    emscripten::function(
+        "analyzeGltf",
+        emscripten::optional_override([](const emscripten::val &json, const emscripten::val &files,
+                                         double max_file_bytes, double max_triangles) {
+            return analyze_gltf_js(json, files, max_file_bytes, max_triangles,
+                                   emscripten::val::undefined());
+        }));
+    emscripten::function("inspectGltf", &inspect_gltf_js);
+    emscripten::function(
+        "inspectGltf",
+        emscripten::optional_override([](const emscripten::val &json, const emscripten::val &files,
+                                         double max_file_bytes, double max_triangles) {
+            return inspect_gltf_js(json, files, max_file_bytes, max_triangles,
+                                   emscripten::val::undefined());
+        }));
     emscripten::function("flipNormalMapGreen", &flip_normal_map_green_js);
     emscripten::function("packOrm", &pack_orm_js);
     emscripten::function("unpackOrm", &unpack_orm_js);
