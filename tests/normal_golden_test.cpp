@@ -454,3 +454,69 @@ TEST_CASE("inspection golden: embedded_image_uri") {
     };
     CHECK(inspect_fixture("embedded_image_uri") == expected);
 }
+
+TEST_CASE("inspection golden: sample_toy_house_clean") {
+    const std::vector<lint_asset::Issue> expected = {};
+    CHECK(inspect_fixture("sample_toy_house_clean") == expected);
+}
+
+TEST_CASE("inspection golden: sample_toy_house_broken") {
+    const std::vector<lint_asset::Issue> expected = {
+        {lint_asset::RuleId::asset_external_uri,
+         lint_asset::Severity::warning,
+         "External image references: 1 (web addresses: 0, other: 1).",
+         0,
+         0,
+         1,
+         {},
+         false,
+         lint_asset::ElementKind::asset},
+        {lint_asset::RuleId::mesh_boundary_edge,
+         lint_asset::Severity::warning,
+         "2 boundary edges are each used by only one triangle.",
+         0,
+         0,
+         2,
+         {0, 8},
+         false,
+         lint_asset::ElementKind::triangle},
+        {lint_asset::RuleId::normal_flipped,
+         lint_asset::Severity::error,
+         "Vertex normals point opposite to the face winding.",
+         0,
+         1,
+         2,
+         {2, 3},
+         false,
+         lint_asset::ElementKind::triangle},
+        {lint_asset::RuleId::mesh_boundary_edge,
+         lint_asset::Severity::warning,
+         "1 boundary edge is used by only one triangle.",
+         0,
+         1,
+         1,
+         {2},
+         false,
+         lint_asset::ElementKind::triangle},
+        {lint_asset::RuleId::uv_overlap,
+         lint_asset::Severity::warning,
+         "Triangles overlap in UV space in a mirrored layout (for example, left and right halves "
+         "that share one area).",
+         0,
+         1,
+         4,
+         {0, 1, 2, 3},
+         false,
+         lint_asset::ElementKind::triangle},
+        {lint_asset::RuleId::uv_out_of_range,
+         lint_asset::Severity::info,
+         "UV coordinates are outside the 0 to 1 range.",
+         1,
+         0,
+         2,
+         {8, 9},
+         false,
+         lint_asset::ElementKind::triangle},
+    };
+    CHECK(inspect_fixture("sample_toy_house_broken") == expected);
+}

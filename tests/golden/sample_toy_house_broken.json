@@ -1,0 +1,76 @@
+[
+  {
+    "rule": "asset.external_uri",
+    "severity": "warning",
+    "message": "External image references: 1 (web addresses: 0, other: 1).",
+    "element_kind": "asset",
+    "count": 1,
+    "elements": [],
+    "truncated": false
+  },
+  {
+    "rule": "mesh.boundary_edge",
+    "severity": "warning",
+    "message": "2 boundary edges are each used by only one triangle.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 0
+    },
+    "count": 2,
+    "elements": [0, 8],
+    "truncated": false
+  },
+  {
+    "rule": "normal.flipped",
+    "severity": "error",
+    "message": "Vertex normals point opposite to the face winding.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 1
+    },
+    "count": 2,
+    "elements": [2, 3],
+    "truncated": false
+  },
+  {
+    "rule": "mesh.boundary_edge",
+    "severity": "warning",
+    "message": "1 boundary edge is used by only one triangle.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 1
+    },
+    "count": 1,
+    "elements": [2],
+    "truncated": false
+  },
+  {
+    "rule": "uv.overlap",
+    "severity": "warning",
+    "message": "Triangles overlap in UV space in a mirrored layout (for example, left and right halves that share one area).",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 1
+    },
+    "count": 4,
+    "elements": [0, 1, 2, 3],
+    "truncated": false
+  },
+  {
+    "rule": "uv.out_of_range",
+    "severity": "info",
+    "message": "UV coordinates are outside the 0 to 1 range.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 1,
+      "primitive": 0
+    },
+    "count": 2,
+    "elements": [8, 9],
+    "truncated": false
+  }
+]

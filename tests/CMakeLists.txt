@@ -11,6 +11,7 @@ FetchContent_MakeAvailable(doctest)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(LINT_ASSET_TEST_GLB_DIR "${CMAKE_CURRENT_BINARY_DIR}/glb")
 set(LINT_ASSET_TEST_GLB_NAMES
+  sample_toy_house_clean sample_toy_house_broken
   node_transforms quantized_strided index_out_of_vertex_range sparse_accessor
   cube_uv_overlap_same cube_uv_overlap_mirrored
   cube_flat cube_uv_out_of_range uv_ushort_normalized uv_count_mismatch uv_wrong_type
@@ -29,12 +30,14 @@ add_custom_command(
   COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tools/make_test_glbs.py"
     "${LINT_ASSET_TEST_GLB_DIR}"
   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tools/make_test_glbs.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/sample_models.py"
   VERBATIM)
 add_custom_target(lint_test_glbs DEPENDS ${LINT_ASSET_TEST_GLB_FILES})
 
-add_executable(lint_core_tests main.cpp version_test.cpp glb_loader_test.cpp glb_geometry_test.cpp normal_inspection_test.cpp uv_inspection_test.cpp normal_golden_test.cpp edge_inspection_test.cpp inspection_test.cpp size_inspection_test.cpp uri_inspection_test.cpp external_uri_limits_test.cpp normal_map_test.cpp)
+add_executable(lint_core_tests main.cpp samples_test.cpp version_test.cpp glb_loader_test.cpp glb_geometry_test.cpp normal_inspection_test.cpp uv_inspection_test.cpp normal_golden_test.cpp edge_inspection_test.cpp inspection_test.cpp size_inspection_test.cpp uri_inspection_test.cpp external_uri_limits_test.cpp normal_map_test.cpp)
 add_dependencies(lint_core_tests lint_test_glbs)
 target_compile_definitions(lint_core_tests PRIVATE
+  LINT_ASSET_SAMPLES_DIR="${PROJECT_SOURCE_DIR}/samples"
   LINT_ASSET_TEST_GLB_DIR="${LINT_ASSET_TEST_GLB_DIR}")
 target_link_libraries(lint_core_tests PRIVATE lint_core lint_asset_options doctest::doctest)
 add_test(NAME lint_core_tests COMMAND lint_core_tests)
