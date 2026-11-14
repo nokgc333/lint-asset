@@ -13,7 +13,7 @@ set_target_properties(tinygltf_v3 PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED O
 target_include_directories(tinygltf_v3 SYSTEM PUBLIC "${tinygltf_SOURCE_DIR}")
 target_link_libraries(tinygltf_v3 PRIVATE lint_asset_sanitizers)
 
-add_library(lint_core STATIC src/version.cpp src/glb_loader.cpp src/glb_geometry.cpp src/glb_parse.cpp src/issue.cpp src/normal_inspection.cpp)
+add_library(lint_core STATIC src/version.cpp src/glb_loader.cpp src/glb_geometry.cpp src/glb_parse.cpp src/issue.cpp src/normal_inspection.cpp src/edge_inspection.cpp src/inspection.cpp)
 target_include_directories(lint_core PUBLIC include)
 target_compile_definitions(lint_core PRIVATE LINT_ASSET_VERSION="${PROJECT_VERSION}")
 target_link_libraries(lint_core PRIVATE lint_asset_options tinygltf_v3)

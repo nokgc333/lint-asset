@@ -10,6 +10,10 @@ std::string_view rule_name(RuleId rule) noexcept {
         return "normal.missing";
     case RuleId::normal_unnormalized:
         return "normal.unnormalized";
+    case RuleId::mesh_nonmanifold_edge:
+        return "mesh.nonmanifold_edge";
+    case RuleId::mesh_boundary_edge:
+        return "mesh.boundary_edge";
     }
     return {};
 }

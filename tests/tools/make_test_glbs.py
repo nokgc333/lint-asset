@@ -158,6 +158,21 @@ def primitive_modes():
     return build_glb(document, bytes(data))
 
 
+def three_pages():
+    document = {"asset": {"version": "2.0"}}
+    data = bytearray()
+    positions = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0]
+    position = add_accessor(document, data, positions, 5126, "VEC3")
+    index = add_accessor(document, data, [0, 1, 2, 0, 1, 3, 0, 1, 4], 5123, "SCALAR")
+    document["meshes"] = [{"primitives": [{
+        "attributes": {"POSITION": position}, "indices": index, "mode": 4,
+    }]}]
+    document["nodes"] = [{"mesh": 0}]
+    document["scenes"] = [{"nodes": [0]}]
+    document["scene"] = 0
+    return build_glb(document, bytes(data))
+
+
 def external_image_uri():
     document, data = cube_document()
     document["images"] = [{"uri": "https://example.invalid/a.png"}]
@@ -319,7 +334,7 @@ def main():
         node_transforms, quantized_strided, index_out_of_vertex_range, sparse_accessor,
         node_cycle, node_instance_explosion,
         cube, cube_flipped_normals, cube_open_top, cube_faces_flipped, cube_unnormalized,
-        primitive_modes, external_image_uri,
+        primitive_modes, three_pages, external_image_uri,
         unknown_extension_used, required_supported_extension, bad_version_1,
         external_buffer_uri, truncated_cube, length_mismatch, invalid_json, missing_asset,
         accessor_out_of_range, huge_accessor_count, required_draco, required_unknown_extension,

@@ -1,0 +1,41 @@
+[
+  {
+    "rule": "normal.missing",
+    "severity": "warning",
+    "message": "The primitive has no vertex normals.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 0
+    },
+    "count": 3,
+    "elements": [0, 1, 2],
+    "truncated": false
+  },
+  {
+    "rule": "mesh.nonmanifold_edge",
+    "severity": "error",
+    "message": "1 edge is shared by three or more triangles.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 0
+    },
+    "count": 3,
+    "elements": [0, 1, 2],
+    "truncated": false
+  },
+  {
+    "rule": "mesh.boundary_edge",
+    "severity": "warning",
+    "message": "6 boundary edges are each used by only one triangle.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 0
+    },
+    "count": 3,
+    "elements": [0, 1, 2],
+    "truncated": false
+  }
+]

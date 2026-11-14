@@ -61,6 +61,7 @@ const cube = await fixture("cube.glb");
 
 expect("cube", load(cube), counts(1, 1, 12));
 expect("cube_open_top", load(await fixture("cube_open_top.glb")), counts(1, 1, 10));
+expect("three_pages", load(await fixture("three_pages.glb")), counts(1, 1, 3));
 expect("primitive_modes", load(await fixture("primitive_modes.glb")), counts(2, 4, 6));
 expect(
   "text glTF",

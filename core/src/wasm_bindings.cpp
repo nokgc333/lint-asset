@@ -9,7 +9,7 @@
 
 #include "lint_asset/glb_geometry.hpp"
 #include "lint_asset/glb_loader.hpp"
-#include "lint_asset/normal_inspection.hpp"
+#include "lint_asset/inspection.hpp"
 #include "lint_asset/version.hpp"
 
 namespace {
@@ -116,7 +116,7 @@ emscripten::val inspect_js(const emscripten::val &bytes, double max_file_bytes,
     out.set("triangles", static_cast<double>(result.stats.triangles));
     auto issues = emscripten::val::array();
     if (result.ok()) {
-        for (const auto &issue : lint_asset::inspect_normals(result.geometry)) {
+        for (const auto &issue : lint_asset::inspect_geometry(result.geometry)) {
             auto item = emscripten::val::object();
             item.set("rule", std::string(lint_asset::rule_name(issue.rule)));
             item.set("severity", std::string(lint_asset::severity_name(issue.severity)));
