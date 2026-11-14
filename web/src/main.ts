@@ -1,5 +1,9 @@
 import "./style.css";
 import { describeProblem, detectCapabilities, findProblems } from "./environment";
+import { applyDocument, applyStaticTranslations } from "./i18n/apply";
+import { LOCALES } from "./i18n/locale";
+import { createLocaleController, type StorageLike } from "./i18n/locale-controller";
+import { createTranslator } from "./i18n/translate";
 
 function required(id: string): HTMLElement {
   const element = document.getElementById(id);
@@ -7,6 +11,27 @@ function required(id: string): HTMLElement {
   return element;
 }
 
+let storage: StorageLike | null = null;
+try {
+  storage = window.localStorage;
+} catch {}
+const controller = createLocaleController({
+  storage,
+  languages: navigator.languages?.length ? navigator.languages : [navigator.language],
+});
+function translatePage(): void {
+  const translator = createTranslator(controller.locale);
+  applyDocument(document, translator);
+  applyStaticTranslations(document, translator);
+  for (const locale of LOCALES)
+    required(`language-${locale}`).setAttribute(
+      "aria-pressed",
+      String(controller.locale === locale),
+    );
+}
+for (const locale of LOCALES)
+  required(`language-${locale}`).addEventListener("click", () => controller.set(locale));
+translatePage();
 const app = required("app");
 const unsupported = required("unsupported");
 const list = required("unsupported-list");
@@ -19,7 +44,7 @@ async function update(): Promise<void> {
   const problems = findProblems(capabilities, window.innerWidth);
   list.textContent = "";
   for (const problem of problems) {
-    const { cause, action } = describeProblem(problem);
+    const { cause, action } = describeProblem(problem, controller.locale);
     const item = document.createElement("li");
     item.textContent = `${cause} ${action}`;
     list.append(item);
@@ -32,12 +57,16 @@ async function update(): Promise<void> {
     const { startApp } = await import("./app");
     if (findProblems(capabilities, window.innerWidth).length > 0) return;
     started = true;
-    startApp();
+    startApp(controller);
   } finally {
     starting = false;
   }
 }
 
+controller.subscribe(() => {
+  translatePage();
+  void update();
+});
 window.addEventListener("resize", () => {
   if (resizePending) return;
   resizePending = true;

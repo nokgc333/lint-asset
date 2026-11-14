@@ -1,5 +1,8 @@
 import { describeCounts } from "./counts";
 import { formatMiB } from "./file-size";
+import type { Locale } from "./i18n/locale";
+import type { Text, TextSlot } from "./i18n/text-slot";
+import { createTranslator } from "./i18n/translate";
 import { cancelLimit, confirmLimit } from "./limit-dialog";
 import { type Limits, planAfterLimitError, planIntake, RAISED_LIMITS } from "./load-plan";
 import { formatLoadError } from "./messages";
@@ -14,33 +17,39 @@ interface Load {
   phase: "confirming" | "reading" | "loading" | "done";
 }
 interface LoaderOptions {
-  status: Pick<HTMLElement, "textContent">;
-  error: Pick<HTMLElement, "textContent">;
+  status: Pick<TextSlot, "set">;
+  error: Pick<TextSlot, "set">;
   post: (request: LoadRequest) => void;
   showGeometry: (result: AnalyzeResult, file: { name: string; size: number }) => void;
   isReady: () => boolean;
   firstRequestId: number;
+  getLocale?: () => Locale;
 }
 
 export function createFileLoader(options: LoaderOptions) {
   let nextId = options.firstRequestId;
   let active: Load | null = null;
 
-  function showError(code: string, detail: string): void {
-    const message = formatLoadError(code, detail);
-    options.error.textContent = `Error: ${message}`;
-    options.status.textContent = message;
+  function showError(code: string, detail: string | Text): void {
+    const message: Text = (locale) =>
+      formatLoadError(code, typeof detail === "function" ? detail(locale) : detail, locale);
+    options.error.set((locale) =>
+      createTranslator(locale).t("load.error", { message: message(locale) }),
+    );
+    options.status.set(message);
   }
 
   function failWorker(): void {
     active = null;
     cancelLimit();
-    showError("E-LOAD-002", "The geometry worker is unavailable.");
+    showError("E-LOAD-002", (locale) => createTranslator(locale).t("load.workerUnavailable"));
   }
 
   async function send(load: Load): Promise<void> {
     load.phase = "reading";
-    options.status.textContent = `Loading ${load.file.name}…`;
+    options.status.set((locale) =>
+      createTranslator(locale).t("status.loading", { name: load.file.name }),
+    );
     try {
       const bytes = await load.file.arrayBuffer();
       if (active !== load) return;
@@ -57,29 +66,34 @@ export function createFileLoader(options: LoaderOptions) {
     if (!options.isReady()) return;
     active = null;
     cancelLimit();
-    options.error.textContent = "";
+    options.error.set(null);
     const id = ++nextId;
     const plan = planIntake(file.size);
     if (plan.kind === "reject") {
-      showError(
-        "E-LOAD-003",
-        `${file.name} is larger than ${formatMiB(RAISED_LIMITS.maxFileBytes)}`,
+      showError("E-LOAD-003", (locale) =>
+        createTranslator(locale).t("load.tooLarge", {
+          name: file.name,
+          limit: formatMiB(RAISED_LIMITS.maxFileBytes),
+        }),
       );
       return;
     }
     const load: Load = { id, file, limits: plan.limits, phase: "confirming" };
     active = load;
     if (plan.kind === "confirm") {
-      const accepted = await confirmLimit({
-        reason: "size",
-        fileName: file.name,
-        fileBytes: file.size,
-        limits: plan.limits,
-      });
+      const accepted = await confirmLimit(
+        {
+          reason: "size",
+          fileName: file.name,
+          fileBytes: file.size,
+          limits: plan.limits,
+        },
+        options.getLocale ?? (() => "en"),
+      );
       if (active !== load) return;
       if (!accepted) {
         load.phase = "done";
-        options.status.textContent = "Cancelled.";
+        options.status.set((locale) => createTranslator(locale).t("status.cancelled"));
         return;
       }
     }
@@ -97,8 +111,13 @@ export function createFileLoader(options: LoaderOptions) {
       load.phase = "done";
       if (result.ok) {
         options.showGeometry(result, { name: load.file.name, size: load.file.size });
-        options.error.textContent = "";
-        options.status.textContent = `${load.file.name}: ${describeCounts(result)}`;
+        options.error.set(null);
+        options.status.set((locale) =>
+          createTranslator(locale).t("status.loaded", {
+            name: load.file.name,
+            counts: describeCounts(result, locale),
+          }),
+        );
         return;
       }
       showError(result.code, result.message);
@@ -106,17 +125,20 @@ export function createFileLoader(options: LoaderOptions) {
       const plan = planAfterLimitError(load.limits);
       if (plan.kind === "final") return;
       load.phase = "confirming";
-      const accepted = await confirmLimit({
-        reason: "triangles",
-        fileName: load.file.name,
-        limits: plan.limits,
-      });
+      const accepted = await confirmLimit(
+        {
+          reason: "triangles",
+          fileName: load.file.name,
+          limits: plan.limits,
+        },
+        options.getLocale ?? (() => "en"),
+      );
       if (active !== load) return;
       if (!accepted) {
         load.phase = "done";
         return;
       }
-      options.error.textContent = "";
+      options.error.set(null);
       load.id = ++nextId;
       load.limits = plan.limits;
       await send(load);

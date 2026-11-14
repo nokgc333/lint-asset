@@ -1,6 +1,10 @@
 import { createFileLoader } from "./file-loader";
+import type { LocaleController } from "./i18n/locale-controller";
+import { createTextSlot } from "./i18n/text-slot";
+import { createTranslator } from "./i18n/translate";
 import { pickSingleFile } from "./intake";
 import { createIssuePanel } from "./issues/panel";
+import { refreshLimitText } from "./limit-dialog";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
 import { buildReport } from "./report/build-report";
 import { downloadText } from "./report/download";
@@ -13,19 +17,20 @@ import type { Viewer } from "./viewer/viewer";
 import type { AnalyzeResult } from "./wasm/lint_core.mjs";
 import workerUrl from "./worker.ts?worker&url";
 
-export function startApp(): void {
+export function startApp(controller: LocaleController): void {
   function required<T extends Element>(selector: string): T {
     const element = document.querySelector<T>(selector);
     if (!element) throw new Error(`Missing element: ${selector}`);
     return element;
   }
 
-  const output = required<HTMLOutputElement>("#engine-version");
-  const status = required<HTMLParagraphElement>("#status");
+  const getLocale = () => controller.locale;
+  const output = createTextSlot(required<HTMLOutputElement>("#engine-version"), getLocale);
+  const status = createTextSlot(required<HTMLParagraphElement>("#status"), getLocale);
   const canvas = required<HTMLCanvasElement>("#viewer");
   const input = required<HTMLInputElement>("#file");
   const controls = required<HTMLFieldSetElement>("#controls");
-  const error = required<HTMLParagraphElement>("#error");
+  const error = createTextSlot(required<HTMLParagraphElement>("#error"), getLocale);
   const dropZone = required<HTMLDivElement>("#drop-zone");
   const wireframe = required<HTMLInputElement>("#wireframe");
   const normals = required<HTMLInputElement>("#normals");
@@ -42,7 +47,8 @@ export function startApp(): void {
       generatedAt: new Date(),
       result: displayed.result,
     });
-    const text = kind === "json" ? reportToJson(report) : reportToMarkdown(report);
+    const text =
+      kind === "json" ? reportToJson(report) : reportToMarkdown(report, controller.locale);
     const mime = kind === "json" ? "application/json" : "text/markdown";
     downloadText(exportFileName(report.asset.name, kind), `${mime};charset=utf-8`, text);
   }
@@ -52,7 +58,15 @@ export function startApp(): void {
   const VERSION_REQUEST_ID = 1;
   let viewer: Viewer | null = null;
   let workerAvailable = true;
-  const panel = createIssuePanel({ onSelect: (issue) => viewer?.selectIssue(issue) });
+  const panel = createIssuePanel({ getLocale, onSelect: (issue) => viewer?.selectIssue(issue) });
+
+  output.set((locale) => createTranslator(locale).t("app.loading"));
+  status.set((locale) => createTranslator(locale).t("status.preparing"));
+  controller.subscribe(() => {
+    for (const slot of [output, status, error]) slot.refresh();
+    panel.refresh();
+    refreshLimitText();
+  });
 
   function post(request: WorkerRequest, transfer: Transferable[] = []): void {
     worker.postMessage(request, transfer);
@@ -61,6 +75,7 @@ export function startApp(): void {
   const loader = createFileLoader({
     status,
     error,
+    getLocale,
     post: (request) => post(request, [request.bytes]),
     showGeometry: (result, file) => {
       viewer?.setGeometry(result);
@@ -78,12 +93,13 @@ export function startApp(): void {
     const response = event.data;
     if (response.id === VERSION_REQUEST_ID) {
       if (response.type === "version") engineVersion = response.version;
-      output.textContent =
+      output.set((locale) =>
         response.type === "version"
           ? response.version
           : response.type === "error"
-            ? `error: ${response.message}`
-            : "Unavailable";
+            ? createTranslator(locale).t("app.error", { message: response.message })
+            : createTranslator(locale).t("app.unavailable"),
+      );
       return;
     }
     void loader.handleResponse(response);
@@ -91,7 +107,7 @@ export function startApp(): void {
 
   worker.addEventListener("error", () => {
     workerAvailable = false;
-    output.textContent = "Unavailable";
+    output.set((locale) => createTranslator(locale).t("app.unavailable"));
     loader.failWorker();
     controls.disabled = true;
   });
@@ -120,7 +136,7 @@ export function startApp(): void {
     dropZone.classList.remove("is-dragging");
     const selection = pickSingleFile(event.dataTransfer?.files);
     if (selection.kind === "many") {
-      error.textContent = "Error: Drop one file at a time.";
+      error.set((locale) => createTranslator(locale).t("load.dropError"));
     } else if (selection.kind === "file") {
       void openFile(selection.file);
     }
@@ -161,10 +177,10 @@ export function startApp(): void {
       viewer = createViewer(canvas);
       if (workerAvailable) {
         controls.disabled = false;
-        status.textContent = "Open a GLB file to inspect its geometry.";
+        status.set((locale) => createTranslator(locale).t("status.ready"));
       }
     } catch {
-      status.textContent = "WebGL2 is not available in this browser.";
+      status.set((locale) => createTranslator(locale).t("environment.webgl2.cause"));
       controls.disabled = true;
       canvas.setAttribute("aria-disabled", "true");
       canvas.tabIndex = -1;

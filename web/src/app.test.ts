@@ -9,11 +9,14 @@ const { worker, downloadText, setGeometry } = vi.hoisted(() => ({
 }));
 vi.mock("./trusted-worker", () => ({ createModuleWorker: () => worker }));
 vi.mock("./report/download", () => ({ downloadText }));
-vi.mock("./issues/panel", () => ({ createIssuePanel: () => ({ setIssues: vi.fn() }) }));
+vi.mock("./issues/panel", () => ({
+  createIssuePanel: () => ({ setIssues: vi.fn(), refresh: vi.fn() }),
+}));
 vi.mock("./viewer/viewer", () => ({ createViewer: () => ({ setGeometry }) }));
 vi.mock("./worker.ts?worker&url", () => ({ default: "/worker.js" }));
 
 import { startApp } from "./app";
+import { createLocaleController } from "./i18n/locale-controller";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -59,7 +62,8 @@ it("exports the displayed model with the engine version and retains it after a f
     callback(0);
     return 1;
   });
-  startApp();
+  const controller = createLocaleController({ storage: null, languages: ["en"] });
+  startApp(controller);
   await vi.dynamicImportSettled();
   const receive = (response: WorkerResponse) => {
     const listener = worker.addEventListener.mock.calls.find(([type]) => type === "message")?.[1];
@@ -113,5 +117,12 @@ it("exports the displayed model with the engine version and retains it after a f
     "text/markdown;charset=utf-8",
     expect.stringContaining("# lint-asset report: \\<crate\\>.glb"),
   );
+  controller.set("ja");
+  expect(element("status").textContent).toContain("GLB");
+  expect(element("error").textContent).toContain("壊れている");
+  element("export-markdown").dispatchEvent(new Event("click"));
+  expect(downloadText.mock.calls.at(-1)?.[2]).toContain("レポート");
+  element("export-json").dispatchEvent(new Event("click"));
+  expect(JSON.parse(downloadText.mock.calls.at(-1)?.[2]).asset).toEqual(report.asset);
   expect(setGeometry).toHaveBeenCalledOnce();
 });

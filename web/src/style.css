@@ -315,3 +315,34 @@ canvas {
 #export-note {
   font-size: 0.875rem;
 }
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.language-switch {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.language-switch button {
+  min-width: 24px;
+  min-height: 24px;
+  border-width: 3px;
+  border-style: double;
+}
+
+.language-switch button[aria-pressed="true"] {
+  font-weight: 800;
+  border-width: 4px;
+  border-style: solid;
+}
+
+.language-switch button:focus-visible {
+  outline: 3px solid #ffda79;
+  outline-offset: 4px;
+}

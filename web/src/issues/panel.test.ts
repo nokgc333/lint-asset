@@ -31,6 +31,7 @@ class ElementStub {
     this.listeners.set(name, listener);
   }
   focus() {
+    Object.assign(document, { activeElement: this });
     this.focused = true;
     this.fire("focus");
   }
@@ -39,7 +40,7 @@ class ElementStub {
   }
 }
 
-function setup(width = 1280) {
+function setup(width = 1280, getLocale: () => "en" | "ja" = () => "en") {
   const elements = new Map(
     ["issues-list", "issues-summary", "issues-toggle", "issues-list-region"].map((id) => [
       `#${id}`,
@@ -53,7 +54,7 @@ function setup(width = 1280) {
   });
   vi.stubGlobal("window", { innerWidth: width });
   const onSelect = vi.fn();
-  const panel = createIssuePanel({ onSelect });
+  const panel = createIssuePanel({ onSelect, getLocale });
   const list = elements.get("#issues-list") as ElementStub;
   const rows = () => list.children.map((li) => li.children[0] as ElementStub);
   return { panel, onSelect, rows, list, elements };
@@ -71,6 +72,32 @@ const issues: Issue[] = ["error", "warning", "info"].map((severity) => ({
 afterEach(() => vi.unstubAllGlobals());
 
 describe("problem panel", () => {
+  it("refreshes translated rows while preserving selection, focus and the tab stop", () => {
+    let locale: "en" | "ja" = "en";
+    const { panel, rows, elements } = setup(1280, () => locale);
+    panel.setIssues(issues);
+    rows()[1]?.fire("click");
+    rows()[2]?.focus();
+    locale = "ja";
+    panel.refresh();
+    expect(rows()[1]?.attributes.get("aria-current")).toBe("true");
+    expect(rows().map((row) => row.tabIndex)).toEqual([-1, -1, 0]);
+    expect(document.activeElement).toBe(rows()[2]);
+    expect(elements.get("#issues-summary")?.textContent).toContain("警告");
+    expect(elements.get("#issues-toggle")?.textContent).toContain("問題");
+  });
+  it("refreshes the empty prompt without moving focus outside the panel", () => {
+    let locale: "en" | "ja" = "en";
+    const { panel, elements } = setup(1100, () => locale);
+    const outside = new ElementStub("button");
+    outside.focus();
+    locale = "ja";
+    panel.refresh();
+    expect(document.activeElement).toBe(outside);
+    expect(elements.get("#issues-summary")?.textContent).toContain("GLB");
+    expect(elements.get("#issues-summary")?.textContent).not.toContain("Open a GLB");
+    expect(elements.get("#issues-list-region")?.hidden).toBe(true);
+  });
   it("builds native rows with text, distinct shapes, and one tab stop", () => {
     const { panel, rows, elements } = setup();
     panel.setIssues(issues);
