@@ -42,6 +42,7 @@ function failure(id: number, code = "E-LOAD-003"): WorkerResponse {
       triangles: 0,
       parts: [],
       instances: [],
+      issues: [],
     },
   };
 }
@@ -158,6 +159,7 @@ describe("file loading", () => {
         triangles: 3,
         parts: [],
         instances: [],
+        issues: [],
       },
     });
     expect(loader.error.textContent).toBe("");

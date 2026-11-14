@@ -15,7 +15,7 @@ self.addEventListener("message", async (event: MessageEvent<WorkerRequest>) => {
       reply({ id: request.id, type: "version", version: core.version() });
       return;
     }
-    const result = core.loadGlbGeometry(
+    const result = core.analyze(
       new Uint8Array(request.bytes),
       request.maxFileBytes,
       request.maxTriangles,

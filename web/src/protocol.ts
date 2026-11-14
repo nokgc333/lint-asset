@@ -1,4 +1,4 @@
-import type { GeometryResult } from "./wasm/lint_core.mjs";
+import type { AnalyzeResult } from "./wasm/lint_core.mjs";
 
 export type WorkerRequest =
   | { readonly id: number; readonly type: "version" }
@@ -12,5 +12,5 @@ export type WorkerRequest =
 
 export type WorkerResponse =
   | { readonly id: number; readonly type: "version"; readonly version: string }
-  | { readonly id: number; readonly type: "loaded"; readonly result: GeometryResult }
+  | { readonly id: number; readonly type: "loaded"; readonly result: AnalyzeResult }
   | { readonly id: number; readonly type: "error"; readonly message: string };
