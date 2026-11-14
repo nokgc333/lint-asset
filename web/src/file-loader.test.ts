@@ -381,3 +381,61 @@ describe("split glTF intake", () => {
     expect(loader.post.mock.calls[1]?.[0].files?.map((f) => f.name)).toEqual(["scene.bin"]);
   });
 });
+
+describe("OBJ intake", () => {
+  const objEntry = (path: string, size = 1) => {
+    const file = new File([new Uint8Array(1)], path.split("/").pop() ?? path);
+    Object.defineProperty(file, "size", { value: size });
+    return { entry: { file, path }, read: vi.spyOn(file, "arrayBuffer") };
+  };
+  const loaded = (id: number): WorkerResponse => {
+    const base = failure(id) as Extract<WorkerResponse, { type: "loaded" }>;
+    return { ...base, result: { ...base.result, ok: true, code: "", message: "" } as never };
+  };
+
+  it("asks the worker for an OBJ, with no files, and does not read the other files", async () => {
+    const loader = setup();
+    const obj = objEntry("model.obj");
+    const mtl = objEntry("model.mtl");
+    await loader.openModel(obj.entry, [mtl.entry]);
+    const request = loader.post.mock.calls[0]?.[0];
+    expect(request).toMatchObject({ type: "load", format: "obj" });
+    expect(request).not.toHaveProperty("files");
+    expect(mtl.read).not.toHaveBeenCalled();
+  });
+
+  it("does not set a format for a GLB or a .gltf", async () => {
+    const loader = setup();
+    await loader.openModel(objEntry("a.glb").entry, []);
+    await loader.openModel(objEntry("b.gltf").entry, []);
+    expect(loader.post.mock.calls[0]?.[0]).not.toHaveProperty("format");
+    expect(loader.post.mock.calls[1]?.[0]).not.toHaveProperty("format");
+  });
+
+  it("shows a loaded OBJ with format obj and its own size only", async () => {
+    const loader = setup();
+    await loader.openModel(objEntry("model.obj", 700).entry, [objEntry("model.mtl", 9000).entry]);
+    await loader.handleResponse(loaded(loader.post.mock.calls[0]?.[0].id ?? 0));
+    expect(loader.showGeometry).toHaveBeenCalledWith(expect.anything(), {
+      name: "model.obj",
+      size: 700,
+      format: "obj",
+    });
+  });
+
+  it("applies the usual size limits to the OBJ", async () => {
+    const loader = setup();
+    await loader.openModel(objEntry("model.obj", RAISED_LIMITS.maxFileBytes + 1).entry, []);
+    expect(loader.post).not.toHaveBeenCalled();
+    expect(loader.error.textContent).toContain("model.obj is larger than 200 MiB");
+  });
+
+  it("re-runs an OBJ with the same format", async () => {
+    const loader = setup();
+    await loader.openModel(objEntry("model.obj").entry, []);
+    await loader.handleResponse(loaded(loader.post.mock.calls[0]?.[0].id ?? 0));
+    loader.rerun();
+    await vi.waitFor(() => expect(loader.post).toHaveBeenCalledTimes(2));
+    expect(loader.post.mock.calls[1]?.[0]).toMatchObject({ format: "obj" });
+  });
+});

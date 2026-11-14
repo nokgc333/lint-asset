@@ -54,13 +54,26 @@ describe("planSelection", () => {
     expect(planSelection([entry("A.GLB")])).toMatchObject({ format: "glb" });
   });
 
-  it("reports noModel when files were given but none is a .glb or .gltf", () => {
+  it("takes a single OBJ as the model and ignores the other files, like a GLB", () => {
+    const obj = entry("model.obj");
+    expect(planSelection([entry("model.mtl"), obj, entry("a.png")])).toEqual({
+      kind: "model",
+      format: "obj",
+      model: obj,
+      companions: [],
+    });
+    expect(planSelection([entry("DIR/A.OBJ")])).toMatchObject({ format: "obj" });
+  });
+
+  it("reports noModel when files were given but none is a .glb, .gltf or .obj", () => {
     expect(planSelection([entry("scene.bin"), entry("a.png")])).toEqual({ kind: "noModel" });
   });
 
   it("reports manyModels instead of silently picking one", () => {
     expect(planSelection([entry("a.glb"), entry("b.glb")])).toEqual({ kind: "manyModels" });
     expect(planSelection([entry("a.gltf"), entry("b.glb")])).toEqual({ kind: "manyModels" });
+    expect(planSelection([entry("a.obj"), entry("b.glb")])).toEqual({ kind: "manyModels" });
+    expect(planSelection([entry("a.obj"), entry("b.obj")])).toEqual({ kind: "manyModels" });
   });
 });
 

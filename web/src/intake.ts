@@ -7,7 +7,7 @@ type Selection =
   | { kind: "none" | "noModel" | "manyModels" }
   | {
       kind: "model";
-      format: "glb" | "gltf";
+      format: "glb" | "gltf" | "obj";
       model: IntakeEntry;
       companions: readonly IntakeEntry[];
     };
@@ -21,16 +21,16 @@ export function entriesFromFileList(files: ArrayLike<File> | null | undefined): 
 
 export function planSelection(entries: readonly IntakeEntry[]): Selection {
   if (entries.length === 0) return { kind: "none" };
-  const models = entries.filter((entry) => /\.(glb|gltf)$/i.test(entry.path));
+  const models = entries.filter((entry) => /\.(glb|gltf|obj)$/i.test(entry.path));
   const model = models[0];
   if (!model) return { kind: "noModel" };
   if (models.length > 1) return { kind: "manyModels" };
-  const format = /\.gltf$/i.test(model.path) ? "gltf" : "glb";
+  const format = /\.obj$/i.test(model.path) ? "obj" : /\.gltf$/i.test(model.path) ? "gltf" : "glb";
   return {
     kind: "model",
     format,
     model,
-    companions: format === "glb" ? [] : entries.filter((entry) => entry !== model),
+    companions: format === "gltf" ? entries.filter((entry) => entry !== model) : [],
   };
 }
 

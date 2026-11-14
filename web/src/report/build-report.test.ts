@@ -52,6 +52,7 @@ describe("buildReport", () => {
   it("records the format that was given, glb by default", () => {
     expect(buildReport(input()).asset.format).toBe("glb");
     expect(buildReport(input({ format: "gltf" })).asset.format).toBe("gltf");
+    expect(buildReport(input({ format: "obj" })).asset.format).toBe("obj");
   });
 
   it("fills every field of the report, in the order of the schema", () => {

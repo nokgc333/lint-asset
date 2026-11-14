@@ -37,7 +37,7 @@ describe("load errors in Japanese", () => {
       action: "モデルを 1 つの .glb ファイルとして書き出し、そのファイルを開いてください。",
     });
     expect(messageFor("E-LOAD-002", "ja").cause).toBe(
-      "GLB ファイルが壊れているか、途中で切れています。",
+      "モデルファイルが壊れているか、途中で切れています。",
     );
     expect(messageFor("E-LOAD-003", "ja").cause).toBe(
       "ファイルまたはモデルが、このツールで検査できるサイズの上限を超えています。",
@@ -50,7 +50,7 @@ describe("load errors in Japanese", () => {
 
   it("join the code, the cause, the action, and the detail", () => {
     expect(formatLoadError("E-LOAD-002", "GLB total length does not match data size", "ja")).toBe(
-      "E-LOAD-002: GLB ファイルが壊れているか、途中で切れています。" +
+      "E-LOAD-002: モデルファイルが壊れているか、途中で切れています。" +
         "モデルを書き出し直すか、ファイルをもう一度ダウンロードして、再度お試しください。" +
         "（詳細: GLB total length does not match data size）",
     );

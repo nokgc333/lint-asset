@@ -15,7 +15,7 @@ export interface Report {
 
 export interface ReportInput {
   fileName: string;
-  format?: "glb" | "gltf";
+  format?: "glb" | "gltf" | "obj";
   fileSize: number;
   toolVersion: string;
   generatedAt: Date;

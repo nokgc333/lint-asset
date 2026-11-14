@@ -7,12 +7,13 @@ const EMPTY = { parts: [], instances: [] };
 function setup() {
   const analyze = vi.fn(() => ({ ok: true, ...EMPTY }));
   const analyzeGltf = vi.fn(() => ({ ok: true, ...EMPTY }));
+  const analyzeObj = vi.fn(() => ({ ok: true, ...EMPTY }));
   const replies: WorkerResponse[] = [];
   const handle = createRequestHandler(
-    Promise.resolve({ analyze, analyzeGltf } as unknown as LintCore),
+    Promise.resolve({ analyze, analyzeGltf, analyzeObj } as unknown as LintCore),
     (response) => replies.push(response),
   );
-  return { analyze, analyzeGltf, replies, handle };
+  return { analyze, analyzeGltf, analyzeObj, replies, handle };
 }
 const thresholds = { max_triangles: 1, min_extent_m: 0.01, max_extent_m: 1000 };
 
@@ -57,6 +58,24 @@ describe("load requests", () => {
     ]);
     expect(call.slice(2)).toEqual([10, 20, thresholds]);
     expect(replies[0]).toMatchObject({ id: 6, type: "loaded" });
+  });
+
+  it("analyzes an OBJ with analyzeObj and nothing else", async () => {
+    const { analyze, analyzeGltf, analyzeObj, handle, replies } = setup();
+    await handle({
+      id: 8,
+      type: "load",
+      format: "obj",
+      bytes: new ArrayBuffer(4),
+      maxFileBytes: 10,
+      maxTriangles: 20,
+      thresholds,
+    });
+    expect(analyzeObj).toHaveBeenCalledTimes(1);
+    expect(analyzeObj.mock.calls[0]?.slice(1)).toEqual([10, 20, thresholds]);
+    expect(analyze).not.toHaveBeenCalled();
+    expect(analyzeGltf).not.toHaveBeenCalled();
+    expect(replies[0]).toMatchObject({ id: 8, type: "loaded" });
   });
 
   it("answers with an error message, not a throw, when the core throws", async () => {

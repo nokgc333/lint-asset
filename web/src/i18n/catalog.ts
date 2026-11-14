@@ -173,17 +173,17 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "load.E-LOAD-001.action": "Export the model as a single .glb file and open that file.",
     "load.E-LOAD-001.format":
       "{code}: This file is not a GLB (binary glTF 2.x), or it depends on files that are not included. Export the model as a single .glb file and open that file.",
-    "load.E-LOAD-002.cause": "The GLB file is damaged or incomplete.",
+    "load.E-LOAD-002.cause": "The model file is damaged or incomplete.",
     "load.E-LOAD-002.action":
       "Export the model again, or download the file again, and try once more.",
     "load.E-LOAD-002.format":
-      "{code}: The GLB file is damaged or incomplete. Export the model again, or download the file again, and try once more.",
+      "{code}: The model file is damaged or incomplete. Export the model again, or download the file again, and try once more.",
     "load.E-LOAD-003.cause": "The file or the model is over the size limit this tool can inspect.",
     "load.E-LOAD-003.action": "Reduce the polygon count or split the model, then open it again.",
     "load.E-LOAD-003.format":
       "{code}: The file or the model is over the size limit this tool can inspect. Reduce the polygon count or split the model, then open it again.",
-    "load.noModel": "Select one GLB or glTF model together with its files.",
-    "load.manyModels": "Select exactly one GLB or glTF model.",
+    "load.noModel": "Select one GLB, glTF or OBJ model together with its files.",
+    "load.manyModels": "Select exactly one GLB, glTF or OBJ model.",
     "load.E-LOAD-005.cause": "Required buffer files are missing.",
     "load.E-LOAD-005.action":
       "Select the .gltf and ALL its .bin and image files together again, or drop its folder.",
@@ -277,7 +277,7 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "environment.supported":
       "Supported: the latest two versions of Chrome, Edge, Firefox, or Safari on a desktop computer. The page also works when you zoom in and in a narrow window (down to 320 px wide). Phones and tablets are not supported yet.",
     "controls.model": "Model controls",
-    "controls.open": "Open GLB or glTF",
+    "controls.open": "Open GLB, glTF or OBJ",
     "controls.sample": "Try a sample",
     "sample.loading": "Loading the sample…",
     "sample.error": "Error: The sample could not be loaded. Reload the page and try again.",
@@ -296,7 +296,7 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "controls.wireframe": "Wireframe",
     "controls.normals": "Show normals",
     "status.preparing": "Preparing the viewer…",
-    "status.ready": "Open GLB or glTF to inspect its geometry.",
+    "status.ready": "Open GLB, glTF or OBJ to inspect its geometry.",
     "status.loading": "Loading {name}…",
     "status.cancelled": "Cancelled.",
     "status.loaded": "{name}: {counts}",
@@ -306,12 +306,12 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "viewer.instructions":
       "Drag to rotate. Right-drag or Shift+drag to pan. Scroll to zoom. Focus the viewer for keyboard controls.",
     "viewer.dropHint":
-      "Drop GLB or glTF here, or use Open GLB or glTF. Open a .gltf together with all its .bin and image files, or drop its folder.",
+      "Drop GLB, glTF or OBJ here, or use Open GLB, glTF or OBJ. Open a .gltf together with all its .bin and image files, or drop its folder.",
     "viewer.label":
       "3D model viewer. Arrow keys rotate; Shift and arrow keys pan; plus and minus zoom; 0 or Home resets the view.",
     "panel.title": "Problems",
     "panel.empty":
-      "Open GLB or glTF to see problems. Select a .gltf together with all its .bin and image files, or drop its folder.",
+      "Open GLB, glTF or OBJ to see problems. Select a .gltf together with all its .bin and image files, or drop its folder.",
     "panel.show": "Show problems",
     "panel.hide": "Hide problems",
     "export.json": "Download JSON",
@@ -525,19 +525,20 @@ export const catalogs: Record<Locale, Record<string, string>> = {
       "モデルを 1 つの .glb ファイルとして書き出し、そのファイルを開いてください。",
     "load.E-LOAD-001.format":
       "{code}: このファイルは GLB（バイナリ glTF 2.x）ではないか、含まれていない別ファイルに依存しています。モデルを 1 つの .glb ファイルとして書き出し、そのファイルを開いてください。",
-    "load.E-LOAD-002.cause": "GLB ファイルが壊れているか、途中で切れています。",
+    "load.E-LOAD-002.cause": "モデルファイルが壊れているか、途中で切れています。",
     "load.E-LOAD-002.action":
       "モデルを書き出し直すか、ファイルをもう一度ダウンロードして、再度お試しください。",
     "load.E-LOAD-002.format":
-      "{code}: GLB ファイルが壊れているか、途中で切れています。モデルを書き出し直すか、ファイルをもう一度ダウンロードして、再度お試しください。",
+      "{code}: モデルファイルが壊れているか、途中で切れています。モデルを書き出し直すか、ファイルをもう一度ダウンロードして、再度お試しください。",
     "load.E-LOAD-003.cause":
       "ファイルまたはモデルが、このツールで検査できるサイズの上限を超えています。",
     "load.E-LOAD-003.action":
       "ポリゴン数を減らすか、モデルを分割してから、もう一度開いてください。",
     "load.E-LOAD-003.format":
       "{code}: ファイルまたはモデルが、このツールで検査できるサイズの上限を超えています。ポリゴン数を減らすか、モデルを分割してから、もう一度開いてください。",
-    "load.noModel": "GLB または glTF モデルを 1 つ、その関連ファイルと一緒に選択してください。",
-    "load.manyModels": "GLB または glTF モデルは 1 つだけ選択してください。",
+    "load.noModel":
+      "GLB、glTF または OBJ モデルを 1 つ、その関連ファイルと一緒に選択してください。",
+    "load.manyModels": "GLB、glTF または OBJ モデルは 1 つだけ選択してください。",
     "load.E-LOAD-005.cause": "必要なバッファーファイルが不足しています。",
     "load.E-LOAD-005.action":
       ".gltf とすべての .bin・画像ファイルをもう一度一緒に選択するか、フォルダーをドロップしてください。",
@@ -625,7 +626,7 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "environment.supported":
       "対応環境: デスクトップのコンピューターで、Chrome、Edge、Firefox、Safari の最新 2 バージョン。ページを拡大した場合や、狭いウィンドウ（幅 320 px まで）でも使えます。スマートフォンとタブレットにはまだ対応していません。",
     "controls.model": "モデルの操作",
-    "controls.open": "GLB または glTF を開く",
+    "controls.open": "GLB、glTF または OBJ を開く",
     "controls.sample": "サンプルを試す",
     "sample.loading": "サンプルを読み込んでいます…",
     "sample.error":
@@ -645,7 +646,7 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "controls.wireframe": "ワイヤーフレーム",
     "controls.normals": "法線を表示",
     "status.preparing": "ビューアーを準備しています…",
-    "status.ready": "GLB または glTF を開くと、ジオメトリを検査できます。",
+    "status.ready": "GLB、glTF または OBJ を開くと、ジオメトリを検査できます。",
     "status.loading": "{name} を読み込んでいます…",
     "status.cancelled": "キャンセルしました。",
     "status.loaded": "{name} の検査結果: {counts}",
@@ -655,12 +656,12 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "viewer.instructions":
       "ドラッグで回転、右ドラッグまたは Shift キーを押しながらドラッグで移動、スクロールで拡大・縮小できます。キーボードで操作するにはビューアーにフォーカスしてください。",
     "viewer.dropHint":
-      "GLB または glTF をドロップするか、「GLB または glTF を開く」を使ってください。.gltf は .bin と画像をすべて一緒に選択するか、フォルダーをドロップしてください。",
+      "GLB、glTF または OBJ をドロップするか、「GLB、glTF または OBJ を開く」を使ってください。.gltf は .bin と画像をすべて一緒に選択するか、フォルダーをドロップしてください。",
     "viewer.label":
       "3D モデルビューアー。矢印キーで回転、Shift と矢印キーで移動、プラスとマイナスで拡大・縮小、0 または Home で表示をリセットします。",
     "panel.title": "問題",
     "panel.empty":
-      "GLB または glTF を開くと、問題を確認できます。.gltf は .bin と画像をすべて一緒に選択するか、フォルダーをドロップしてください。",
+      "GLB、glTF または OBJ を開くと、問題を確認できます。.gltf は .bin と画像をすべて一緒に選択するか、フォルダーをドロップしてください。",
     "panel.show": "問題を表示",
     "panel.hide": "問題を隠す",
     "export.json": "JSON をダウンロード",

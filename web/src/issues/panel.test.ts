@@ -174,7 +174,7 @@ describe("problem panel", () => {
     expect(elements.get("#issues-summary")?.textContent).toBe("No problems found");
     panel.clear();
     expect(elements.get("#issues-summary")?.textContent).toBe(
-      "Open GLB or glTF to see problems. Select a .gltf together with all its .bin and image files, or drop its folder.",
+      "Open GLB, glTF or OBJ to see problems. Select a .gltf together with all its .bin and image files, or drop its folder.",
     );
   });
 });

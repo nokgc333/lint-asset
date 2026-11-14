@@ -22,6 +22,15 @@ describe("index.html is ready to be translated", () => {
     }
   });
 
+  it("offers OBJ input and keeps the model fallback texts in sync with English", () => {
+    expect(html).toMatch(/id="file"[^>]*accept="[^"]*\.obj(?:,|")/);
+    for (const key of ["controls.open", "viewer.dropHint", "panel.empty"]) {
+      const fallback = html.match(new RegExp(`data-i18n="${key}"[^>]*>([^<]*)<`))?.[1];
+      expect(fallback, key).toBe(catalogs.en[key]);
+      expect(fallback, key).toContain("GLB, glTF or OBJ");
+    }
+  });
+
   it("marks every label of the page, the controls, the viewer, the dialog, the export, and the guide", () => {
     const required = [
       "app.heading",
