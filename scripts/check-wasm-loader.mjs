@@ -782,4 +782,66 @@ expect("the big texture's green bytes are inverted", big[1] === 255 - bigBefore[
   expect("GLB bytes still load as a GLB", analyzeGltf(cube, []).ok, true);
 }
 
+// FR-015: an OBJ is text in one file. analyzeObj() / inspectObj() take its bytes.
+{
+  const encode = (text) => new TextEncoder().encode(text);
+  const positions = "v 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\nv 0 0 1\nv 1 0 1\nv 1 1 1\nv 0 1 1\n";
+  const faces = ["1 4 3 2", "5 6 7 8", "1 2 6 5", "4 8 7 3", "1 5 8 4", "2 3 7 6"];
+  const cubeObj = encode(positions + faces.map((face) => `f ${face}\n`).join(""));
+  const analyzeObj = (
+    bytes,
+    maxFileBytes = DEFAULT_MAX_FILE_BYTES,
+    maxTriangles = DEFAULT_MAX_TRIANGLES,
+  ) => core.analyzeObj(bytes, maxFileBytes, maxTriangles);
+
+  const cubeResult = analyzeObj(cubeObj);
+  expect(
+    "OBJ cube loads as 12 triangles in one mesh",
+    [cubeResult.ok, cubeResult.meshes, cubeResult.primitives, cubeResult.triangles],
+    [true, 1, 1, 12],
+  );
+  expect(
+    "OBJ cube has one part and one instance",
+    [cubeResult.parts.length, cubeResult.instances.length],
+    [1, 1],
+  );
+  expect(
+    "OBJ cube has 8 vertices and no normals",
+    [cubeResult.parts[0].positions.length, cubeResult.parts[0].normals.length],
+    [24, 0],
+  );
+  expect(
+    "OBJ cube without vn is reported as missing normals",
+    cubeResult.issues.map((issue) => issue.rule),
+    ["normal.missing", "uv.missing"],
+  );
+  expect(
+    "inspectObj agrees with analyzeObj",
+    core.inspectObj(cubeObj, DEFAULT_MAX_FILE_BYTES, DEFAULT_MAX_TRIANGLES).issues,
+    cubeResult.issues,
+  );
+  expect(
+    "OBJ bad index is E-LOAD-002",
+    analyzeObj(encode("v 0 0 0\nf 1 2 3\n")).code,
+    "E-LOAD-002",
+  );
+  expect("OBJ empty input is E-LOAD-002", analyzeObj(new Uint8Array(0)).code, "E-LOAD-002");
+  expect(
+    "OBJ byte limit is E-LOAD-003",
+    analyzeObj(cubeObj, cubeObj.length - 1).code,
+    "E-LOAD-003",
+  );
+  expect(
+    "OBJ triangle limit is E-LOAD-003",
+    analyzeObj(cubeObj, DEFAULT_MAX_FILE_BYTES, 11).code,
+    "E-LOAD-003",
+  );
+  expect("GLB bytes given to analyzeObj are E-LOAD-001", analyzeObj(cube).code, "E-LOAD-001");
+  expect(
+    "an OBJ failure has an empty missing_files",
+    analyzeObj(new Uint8Array(0)).missing_files,
+    [],
+  );
+}
+
 process.exit(failures === 0 ? 0 : 1);
