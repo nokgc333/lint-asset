@@ -4,6 +4,7 @@ import type { LocaleController } from "./i18n/locale-controller";
 import { createTextSlot } from "./i18n/text-slot";
 import { createTranslator } from "./i18n/translate";
 import { pickSingleFile } from "./intake";
+import { createDetailPanel } from "./issues/detail-panel";
 import { createIssuePanel } from "./issues/panel";
 import { refreshLimitText } from "./limit-dialog";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
@@ -65,7 +66,14 @@ export function startApp(
   const VERSION_REQUEST_ID = 1;
   let viewer: Viewer | null = null;
   let workerAvailable = true;
-  const panel = createIssuePanel({ getLocale, onSelect: (issue) => viewer?.selectIssue(issue) });
+  const detail = createDetailPanel({ getLocale });
+  const panel = createIssuePanel({
+    getLocale,
+    onSelect: (issue) => {
+      viewer?.selectIssue(issue);
+      detail.show(issue);
+    },
+  });
 
   const texture = createTextureBrowser({ getLocale, post });
   const ormPack = createOrmBrowser({ getLocale, post }, "pack");
@@ -86,6 +94,7 @@ export function startApp(
   controller.subscribe(() => {
     for (const slot of [output, status, error]) slot.refresh();
     panel.refresh();
+    detail.refresh();
     for (const screen of textureModes) screen.refresh();
     refreshLimitText();
   });
@@ -103,6 +112,7 @@ export function startApp(
     showGeometry: (result, file) => {
       viewer?.setGeometry(result);
       panel.setIssues(result.issues);
+      detail.show(null);
       displayed = { ...file, result };
       jsonButton.disabled = false;
       markdownButton.disabled = false;
@@ -110,7 +120,12 @@ export function startApp(
     isReady: () => viewer !== null && workerAvailable,
     firstRequestId: VERSION_REQUEST_ID,
   });
-  const { openFile } = loader;
+  function openFile(file: File): Promise<void> {
+    panel.select(null);
+    viewer?.selectIssue(null);
+    detail.show(null);
+    return loader.openFile(file);
+  }
 
   const sampleButton = required<HTMLButtonElement>("#sample-button");
   sampleButton.addEventListener("click", async () => {
