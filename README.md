@@ -162,8 +162,8 @@ Technology and versions:
 Why these choices:
 
 - C++ and WebAssembly: the checks are geometry-heavy, and the same code can be tested natively
-  and shipped to the browser. On the author's machine a model of about one million triangles
-  is inspected in roughly half a second.
+  and shipped to the browser. On the author's machine a model of one million triangles is
+  inspected in about a third of a second, and one of 100,000 triangles in about 30 ms.
 - tinygltf: a small, single-source loader that is easy to vendor.
 - TypeScript and Vite without a framework: there is no server side, and the page is small.
 - three.js for the drawing, a custom shader for the problem overlay, and the browser's image
@@ -211,6 +211,15 @@ git config core.hooksPath .githooks
 
 The hooks check the branch name, the commit message, and that only allowlisted paths
 (see `.public-paths`) are committed.
+
+To measure how long an inspection takes, generate the large test models and time them with
+the WASM module built for Node.js (`-DLINT_ASSET_WASM_NODE=ON`); `--enforce` fails when a
+time is over its budget:
+
+```sh
+python3 tests/tools/make_perf_models.py build/perf
+node scripts/measure-inspection.mjs build/wasm-node/dist build/perf --enforce
+```
 
 ## Samples
 
