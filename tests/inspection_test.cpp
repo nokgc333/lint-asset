@@ -22,6 +22,7 @@ PrimitiveGeometry triangle(const std::vector<float> &normals, std::uint32_t mesh
     part.primitive = primitive;
     part.positions = {0, 0, 0, 1, 0, 0, 0, 1, 0};
     part.normals = normals;
+    part.uvs = {0.1f, 0.1f, 0.9f, 0.1f, 0.1f, 0.9f};  // valid, so no UV issue
     part.triangles = {0, 1, 2};
     return part;
 }
@@ -93,6 +94,7 @@ TEST_CASE("a degenerate triangle is reported once, and the other checks leave it
     PrimitiveGeometry part;
     part.positions = {0, 0, 0, 1, 0, 0, 2, 0, 0};  // three points on a line
     part.normals = {0, 0, -1, 0, 0, -1, 0, 0, -1};
+    part.uvs = {0.1f, 0.1f, 0.5f, 0.1f, 0.9f, 0.1f};
     part.triangles = {0, 1, 2};
     geometry.primitives.push_back(part);
     const auto issues = lint_asset::inspect_geometry(geometry);
@@ -115,4 +117,17 @@ TEST_CASE("the thresholds reach the size checks") {
     CHECK(with_defaults.size() == 1);  // only the open triangle
     REQUIRE(strict.size() == 2);
     CHECK(strict[0].rule == RuleId::asset_scale_too_small);
+}
+
+TEST_CASE("UV issues are part of the list, after the mesh checks of the same primitive") {
+    Geometry geometry;
+    PrimitiveGeometry part = triangle(DOWN, 0, 0);  // flipped, and an open triangle
+    part.uvs.clear();                               // and no UVs
+    geometry.primitives.push_back(part);
+    const auto issues = lint_asset::inspect_geometry(geometry);
+
+    REQUIRE(issues.size() == 3);
+    CHECK(issues[0].rule == RuleId::normal_flipped);
+    CHECK(issues[1].rule == RuleId::mesh_boundary_edge);
+    CHECK(issues[2].rule == RuleId::uv_missing);
 }

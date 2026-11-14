@@ -26,6 +26,19 @@
     "truncated": false
   },
   {
+    "rule": "uv.missing",
+    "severity": "warning",
+    "message": "The primitive has no UV coordinates.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 0
+    },
+    "count": 1,
+    "elements": [0],
+    "truncated": false
+  },
+  {
     "rule": "normal.missing",
     "severity": "warning",
     "message": "The primitive has no vertex normals.",
@@ -65,6 +78,19 @@
     "truncated": false
   },
   {
+    "rule": "uv.missing",
+    "severity": "warning",
+    "message": "The primitive has no UV coordinates.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 1
+    },
+    "count": 2,
+    "elements": [0, 1],
+    "truncated": false
+  },
+  {
     "rule": "normal.missing",
     "severity": "warning",
     "message": "The primitive has no vertex normals.",
@@ -81,6 +107,19 @@
     "rule": "mesh.boundary_edge",
     "severity": "warning",
     "message": "5 boundary edges are each used by only one triangle.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 1,
+      "primitive": 0
+    },
+    "count": 3,
+    "elements": [0, 1, 2],
+    "truncated": false
+  },
+  {
+    "rule": "uv.missing",
+    "severity": "warning",
+    "message": "The primitive has no UV coordinates.",
     "element_kind": "triangle",
     "target": {
       "mesh": 1,

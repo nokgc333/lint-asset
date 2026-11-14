@@ -197,3 +197,54 @@ TEST_CASE("the errors of load_glb also apply to the geometry path") {
         CHECK(extract("required_draco.glb").error == LoadError::unsupported_extension);
     }
 }
+
+TEST_CASE("a primitive without TEXCOORD_0 has an empty uvs array") {
+    const auto result = extract("cube.glb");
+
+    REQUIRE(result.ok());
+    CHECK(result.geometry.primitives[0].uvs.empty());
+}
+
+TEST_CASE("UV coordinates are extracted, one pair per vertex") {
+    // A flat-shaded cube with the six faces in a 3 x 2 atlas, each face in its own cell.
+    const auto result = extract("cube_flat.glb");
+
+    REQUIRE(result.ok());
+    const PrimitiveGeometry &cube = result.geometry.primitives[0];
+    REQUIRE(cube.uvs.size() == 24 * 2);
+    // Face 0 is in the cell at column 0, row 0, inset by 0.01 on every side.
+    CHECK(cube.uvs[0] == doctest::Approx(0.01f));
+    CHECK(cube.uvs[1] == doctest::Approx(0.01f));
+    CHECK(cube.uvs[2] == doctest::Approx(1.0f / 3.0f - 0.01f));
+    CHECK(cube.uvs[3] == doctest::Approx(0.01f));
+    CHECK(cube.uvs[4] == doctest::Approx(1.0f / 3.0f - 0.01f));
+    CHECK(cube.uvs[5] == doctest::Approx(0.5f - 0.01f));
+    CHECK(cube.uvs[6] == doctest::Approx(0.01f));
+    CHECK(cube.uvs[7] == doctest::Approx(0.5f - 0.01f));
+}
+
+TEST_CASE("normalized unsigned short UV coordinates are decoded to float") {
+    const auto result = extract("uv_ushort_normalized.glb");
+
+    REQUIRE(result.ok());
+    const auto &uvs = result.geometry.primitives[0].uvs;
+    REQUIRE(uvs.size() == 3 * 2);
+    CHECK(uvs[0] == doctest::Approx(0.0f));
+    CHECK(uvs[1] == doctest::Approx(0.0f));
+    CHECK(uvs[2] == doctest::Approx(1.0f));
+    CHECK(uvs[3] == doctest::Approx(0.0f));
+    CHECK(uvs[4] == doctest::Approx(32768.0f / 65535.0f));
+    CHECK(uvs[5] == doctest::Approx(1.0f));
+}
+
+TEST_CASE("a UV accessor with the wrong number of entries is E-LOAD-002") {
+    const auto result = extract("uv_count_mismatch.glb");
+
+    CHECK(result.error == LoadError::corrupt_file);
+    CHECK_FALSE(result.message.empty());
+    CHECK(result.geometry.primitives.empty());
+}
+
+TEST_CASE("a UV accessor that is not VEC2 is E-LOAD-002") {
+    CHECK(extract("uv_wrong_type.glb").error == LoadError::corrupt_file);
+}

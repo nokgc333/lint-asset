@@ -37,5 +37,18 @@
     "count": 3,
     "elements": [0, 1, 2],
     "truncated": false
+  },
+  {
+    "rule": "uv.missing",
+    "severity": "warning",
+    "message": "The primitive has no UV coordinates.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 0
+    },
+    "count": 3,
+    "elements": [0, 1, 2],
+    "truncated": false
   }
 ]

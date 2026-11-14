@@ -13,7 +13,7 @@ std::vector<Issue> inspect_geometry(const Geometry &geometry,
                                     const InspectionThresholds &thresholds) {
     auto issues = inspect_asset_size(geometry, thresholds);
     for (auto findings : {inspect_normals(geometry), inspect_edges(geometry),
-                          inspect_degenerate_triangles(geometry)}) {
+                          inspect_degenerate_triangles(geometry), inspect_uvs(geometry)}) {
         issues.insert(issues.end(), std::make_move_iterator(findings.begin()),
                       std::make_move_iterator(findings.end()));
     }

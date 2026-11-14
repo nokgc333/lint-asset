@@ -58,9 +58,12 @@ struct Accessor {
     const std::uint8_t *data;
     std::uint64_t stride;
     std::uint64_t width;
+    std::uint64_t components;
 
-    Accessor(const tg3_model &model, std::int32_t index, bool indices)
-        : source(get(model, index)), data(nullptr), stride(0), width(0) {
+    Accessor(const tg3_model &model, std::int32_t index, std::uint64_t component_count)
+        : source(get(model, index)), data(nullptr), stride(0), width(0),
+          components(component_count) {
+        const bool indices = components == 1;
         if (source.sparse.is_sparse) {
             throw Failure{LoadError::unsupported_format, "sparse accessors are not supported"};
         }
@@ -68,7 +71,9 @@ struct Accessor {
             throw Failure{LoadError::unsupported_format,
                           "accessors without a buffer view are not supported"};
         }
-        if (source.type != (indices ? TG3_TYPE_SCALAR : TG3_TYPE_VEC3)) {
+        if (source.type != (indices           ? TG3_TYPE_SCALAR
+                            : components == 2 ? TG3_TYPE_VEC2
+                                              : TG3_TYPE_VEC3)) {
             corrupt("the accessor has an invalid type");
         }
         switch (source.component_type) {
@@ -99,7 +104,7 @@ struct Accessor {
             corrupt("the buffer view buffer is invalid");
         }
         const auto &buffer = model.buffers[view.buffer];
-        const auto element_size = width * (indices ? 1 : 3);
+        const auto element_size = width * components;
         stride = view.byte_stride ? view.byte_stride : element_size;
         if (stride < element_size) {
             corrupt("the accessor stride is smaller than its element");
@@ -166,14 +171,14 @@ struct Accessor {
 
     std::vector<float> vectors() const {
         std::vector<float> out;
-        const auto size = multiply(source.count, 3);
+        const auto size = multiply(source.count, components);
         if (size > out.max_size()) {
             throw Failure{LoadError::limit_exceeded, "vertex data exceeds the memory limit"};
         }
         out.resize(static_cast<std::size_t>(size));
         for (std::uint64_t i = 0; i < source.count; ++i) {
-            for (std::uint64_t j = 0; j < 3; ++j) {
-                out[i * 3 + j] = static_cast<float>(value(i, j));
+            for (std::uint64_t j = 0; j < components; ++j) {
+                out[i * components + j] = static_cast<float>(value(i, j));
             }
         }
         return out;
@@ -228,22 +233,30 @@ void extract_parts(const tg3_model &model, Geometry &geometry) {
             if (position < 0 || triangles == 0) {
                 continue;
             }
-            Accessor vertices(model, position, false);
+            Accessor vertices(model, position, 3);
             PrimitiveGeometry part;
             part.mesh = m;
             part.primitive = p;
             part.positions = vertices.vectors();
             const auto normal = attribute(primitive, "NORMAL");
             if (normal >= 0) {
-                Accessor normals(model, normal, false);
+                Accessor normals(model, normal, 3);
                 if (normals.source.count != vertices.source.count) {
                     corrupt("the normal count differs from the position count");
                 }
                 part.normals = normals.vectors();
             }
+            const auto uv = attribute(primitive, "TEXCOORD_0");
+            if (uv >= 0) {
+                Accessor uvs(model, uv, 2);
+                if (uvs.source.count != vertices.source.count) {
+                    corrupt("the UV count differs from the position count");
+                }
+                part.uvs = uvs.vectors();
+            }
             std::vector<std::uint32_t> indices;
             if (primitive.indices >= 0) {
-                Accessor source(model, primitive.indices, true);
+                Accessor source(model, primitive.indices, 1);
                 if (count > indices.max_size()) {
                     throw Failure{LoadError::limit_exceeded, "index data exceeds the memory limit"};
                 }

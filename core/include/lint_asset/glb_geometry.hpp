@@ -23,6 +23,10 @@ struct PrimitiveGeometry {
     // Three vertex indices per triangle. Strips and fans are expanded to plain triangles, with the
     // winding of every other strip triangle swapped so that all triangles face the same way.
     std::vector<std::uint32_t> triangles;
+    // u, v per vertex from TEXCOORD_0 (float, or normalized unsigned byte or short, decoded to
+    // float); empty when the primitive has no TEXCOORD_0. When present it has one pair per vertex.
+    // Only the first set is read; a second set (such as a lightmap's) is ignored.
+    std::vector<float> uvs;
 };
 
 // One placement of a mesh in the scene, from the node hierarchy.
@@ -53,6 +57,8 @@ struct GeometryResult {
 // Everything load_glb() promises also holds here (limits, no external reads, no throwing on bad
 // input). In addition, every read of vertex data is range-checked against its buffer, and a vertex
 // index that points past the vertex count is E-LOAD-002.
+//
+// TEXCOORD_0 must be a VEC2 accessor with one entry per vertex, or the file is E-LOAD-002.
 //
 // Supported accessor layouts: byte stride, and the normalized and plain integer component types
 // used by quantized meshes (decoded to float). Sparse accessors are not supported yet and fail with
