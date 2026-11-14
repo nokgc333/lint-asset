@@ -76,3 +76,16 @@ window.addEventListener("resize", () => {
   });
 });
 void update();
+
+for (const screen of ["inspect", "texture"] as const) {
+  required(`screen-${screen}-button`).addEventListener("click", () => {
+    for (const name of ["inspect", "texture"] as const) {
+      required(`screen-${name}`).hidden = name !== screen;
+      const button = required(`screen-${name}-button`);
+      if (name === screen) button.setAttribute("aria-current", "page");
+      else button.removeAttribute("aria-current");
+    }
+    if (screen === "inspect")
+      requestAnimationFrame(() => document.dispatchEvent(new Event("screen-inspect-shown")));
+  });
+}

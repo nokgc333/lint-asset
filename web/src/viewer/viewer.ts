@@ -24,6 +24,7 @@ export interface Viewer {
   zoomBy(factor: number): void;
   panBy(dx: number, dy: number): void;
   resetView(): void;
+  resize(): void;
   dispose(): void;
 }
 
@@ -172,6 +173,7 @@ export function createViewer(canvas: HTMLCanvasElement): Viewer {
   }
 
   const viewer: Viewer = {
+    resize,
     setGeometry(result) {
       if (!result.ok || disposed) return;
       clearGeometry();

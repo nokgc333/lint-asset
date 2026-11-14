@@ -11,6 +11,16 @@ function setup(width: number, capabilities = { webgl2: true, webassembly: true, 
   const languageJa = Object.assign(new EventTarget(), { setAttribute: vi.fn() });
   const heading = { dataset: { i18n: "app.heading" }, textContent: "", setAttribute: vi.fn() };
   const elements = {
+    "screen-inspect-button": Object.assign(new EventTarget(), {
+      setAttribute: vi.fn(),
+      removeAttribute: vi.fn(),
+    }),
+    "screen-texture-button": Object.assign(new EventTarget(), {
+      setAttribute: vi.fn(),
+      removeAttribute: vi.fn(),
+    }),
+    "screen-inspect": { hidden: false },
+    "screen-texture": { hidden: true },
     app,
     unsupported,
     "unsupported-list": list,
@@ -18,6 +28,7 @@ function setup(width: number, capabilities = { webgl2: true, webassembly: true, 
     "language-ja": languageJa,
   };
   const document = {
+    dispatchEvent: vi.fn(),
     documentElement: { lang: "en" },
     title: "",
     querySelectorAll: () => [heading],
@@ -64,6 +75,7 @@ function setup(width: number, capabilities = { webgl2: true, webassembly: true, 
     document,
     window,
     heading,
+    elements,
   };
 }
 
@@ -144,4 +156,27 @@ describe("environment bootstrap", () => {
       expect(page.unsupported.hidden).toBe(false);
     },
   );
+});
+
+it("switches screens while retaining state and requests a viewer resize on return", async () => {
+  const page = setup(1280);
+  await import("./main");
+  const elements = page.elements;
+  elements["screen-texture-button"].dispatchEvent(new Event("click"));
+  expect(elements["screen-inspect"].hidden).toBe(true);
+  expect(elements["screen-texture"].hidden).toBe(false);
+  expect(elements["screen-texture-button"].setAttribute).toHaveBeenCalledWith(
+    "aria-current",
+    "page",
+  );
+  page.languageJa.dispatchEvent(new Event("click"));
+  expect(elements["screen-texture"].hidden).toBe(false);
+  elements["screen-inspect-button"].dispatchEvent(new Event("click"));
+  expect(elements["screen-inspect"].hidden).toBe(false);
+  expect(elements["screen-texture"].hidden).toBe(true);
+  await page.flushFrame();
+  expect(page.document.dispatchEvent).toHaveBeenCalledWith(
+    expect.objectContaining({ type: "screen-inspect-shown" }),
+  );
+  expect(startApp).toHaveBeenCalledOnce();
 });

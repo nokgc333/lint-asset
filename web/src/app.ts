@@ -11,6 +11,7 @@ import { downloadText } from "./report/download";
 import { exportFileName } from "./report/export-name";
 import { reportToJson } from "./report/to-json";
 import { reportToMarkdown } from "./report/to-markdown";
+import { createTextureBrowser } from "./texture/texture-browser";
 import { createModuleWorker } from "./trusted-worker";
 import { ORBIT_STEP, PAN_STEP, ZOOM_FACTOR } from "./viewer/controls";
 import type { Viewer } from "./viewer/viewer";
@@ -60,11 +61,15 @@ export function startApp(controller: LocaleController): void {
   let workerAvailable = true;
   const panel = createIssuePanel({ getLocale, onSelect: (issue) => viewer?.selectIssue(issue) });
 
+  const texture = createTextureBrowser({ getLocale, post });
+  document.addEventListener("screen-inspect-shown", () => viewer?.resize());
+
   output.set((locale) => createTranslator(locale).t("app.loading"));
   status.set((locale) => createTranslator(locale).t("status.preparing"));
   controller.subscribe(() => {
     for (const slot of [output, status, error]) slot.refresh();
     panel.refresh();
+    texture.refresh();
     refreshLimitText();
   });
 
@@ -102,6 +107,7 @@ export function startApp(controller: LocaleController): void {
       );
       return;
     }
+    texture.handleResponse(response);
     void loader.handleResponse(response);
   });
 
@@ -109,6 +115,7 @@ export function startApp(controller: LocaleController): void {
     workerAvailable = false;
     output.set((locale) => createTranslator(locale).t("app.unavailable"));
     loader.failWorker();
+    texture.failWorker();
     controls.disabled = true;
   });
 
