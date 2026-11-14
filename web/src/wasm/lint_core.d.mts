@@ -197,6 +197,27 @@ export interface LintCore {
     thresholds?: Thresholds,
   ): InspectResult;
   /**
+   * Loads a Wavefront OBJ and returns geometry and findings. Units are assumed to be metres.
+   * Groups and objects are merged into one primitive; mtl files and textures are never read.
+   * Thresholds follow the same rules as `analyze`.
+   */
+  analyzeObj(
+    bytes: Uint8Array,
+    maxFileBytes: number,
+    maxTriangles: number,
+    thresholds?: Thresholds,
+  ): AnalyzeResult;
+  /**
+   * Inspects an OBJ with units assumed to be metres and groups merged into one primitive.
+   * mtl files and textures are never read. Inputs and thresholds follow `analyzeObj`.
+   */
+  inspectObj(
+    bytes: Uint8Array,
+    maxFileBytes: number,
+    maxTriangles: number,
+    thresholds?: Thresholds,
+  ): InspectResult;
+  /**
    * Loads a split glTF using only the supplied files and embedded data, and returns geometry and
    * findings. GLB input is also accepted. Images are never decoded or required. Limits count the
    * JSON and each used supplied file once. Thresholds follow the same rules as `analyze`.

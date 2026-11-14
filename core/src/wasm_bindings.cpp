@@ -16,6 +16,7 @@
 #include "lint_asset/gltf_loader.hpp"
 #include "lint_asset/inspection.hpp"
 #include "lint_asset/normal_map.hpp"
+#include "lint_asset/obj_loader.hpp"
 #include "lint_asset/orm.hpp"
 #include "lint_asset/version.hpp"
 
@@ -313,12 +314,16 @@ lint_asset::GeometryResult gltf_geometry_from_js(const emscripten::val &json,
     return lint_asset::load_gltf_geometry(data, supplied, limits);
 }
 
-emscripten::val inspect_js(const emscripten::val &bytes, double max_file_bytes,
-                           double max_triangles, const emscripten::val &settings) {
-    const auto result = geometry_from_js(bytes, max_file_bytes, max_triangles);
+emscripten::val inspect_result_to_js(const lint_asset::GeometryResult &result,
+                                     const emscripten::val &settings) {
     auto out = load_result_to_js(result);
     add_issues(out, result, thresholds_from_js(settings));
     return out;
+}
+
+emscripten::val inspect_js(const emscripten::val &bytes, double max_file_bytes,
+                           double max_triangles, const emscripten::val &settings) {
+    return inspect_result_to_js(geometry_from_js(bytes, max_file_bytes, max_triangles), settings);
 }
 
 emscripten::val analyze_result_to_js(const lint_asset::GeometryResult &result,
@@ -351,15 +356,55 @@ emscripten::val analyze_gltf_js(const emscripten::val &json, const emscripten::v
 emscripten::val inspect_gltf_js(const emscripten::val &json, const emscripten::val &files,
                                 double max_file_bytes, double max_triangles,
                                 const emscripten::val &settings) {
-    const auto result = gltf_geometry_from_js(json, files, max_file_bytes, max_triangles);
-    auto out = load_result_to_js(result);
-    add_issues(out, result, thresholds_from_js(settings));
-    return out;
+    return inspect_result_to_js(gltf_geometry_from_js(json, files, max_file_bytes, max_triangles),
+                                settings);
+}
+
+lint_asset::GeometryResult obj_geometry_from_js(const emscripten::val &bytes, double max_file_bytes,
+                                                double max_triangles) {
+    const lint_asset::LoadLimits limits{limit_from_js(max_file_bytes),
+                                        limit_from_js(max_triangles)};
+    if (bytes["length"].as<double>() > static_cast<double>(limits.max_file_bytes)) {
+        lint_asset::GeometryResult result;
+        result.error = lint_asset::LoadError::limit_exceeded;
+        result.message = "the OBJ exceeds the size limit";
+        return result;
+    }
+    const auto data = bytes_from_js(bytes);
+    return lint_asset::load_obj_geometry(data, limits);
+}
+
+emscripten::val analyze_obj_js(const emscripten::val &bytes, double max_file_bytes,
+                               double max_triangles, const emscripten::val &settings) {
+    return analyze_result_to_js(obj_geometry_from_js(bytes, max_file_bytes, max_triangles),
+                                settings);
+}
+
+emscripten::val inspect_obj_js(const emscripten::val &bytes, double max_file_bytes,
+                               double max_triangles, const emscripten::val &settings) {
+    return inspect_result_to_js(obj_geometry_from_js(bytes, max_file_bytes, max_triangles),
+                                settings);
 }
 
 }  // namespace
 
 EMSCRIPTEN_BINDINGS(lint_core) {
+    emscripten::function("analyzeObj", &analyze_obj_js);
+    emscripten::function(
+        "analyzeObj",
+        emscripten::optional_override(
+            [](const emscripten::val &bytes, double max_file_bytes, double max_triangles) {
+                return analyze_obj_js(bytes, max_file_bytes, max_triangles,
+                                      emscripten::val::undefined());
+            }));
+    emscripten::function("inspectObj", &inspect_obj_js);
+    emscripten::function(
+        "inspectObj",
+        emscripten::optional_override(
+            [](const emscripten::val &bytes, double max_file_bytes, double max_triangles) {
+                return inspect_obj_js(bytes, max_file_bytes, max_triangles,
+                                      emscripten::val::undefined());
+            }));
     emscripten::function("analyzeGltf", &analyze_gltf_js);
     emscripten::function(
         "analyzeGltf",
