@@ -88,6 +88,7 @@ export type AnalyzeResult = GeometryResult & { issues: Issue[]; thresholds: Thre
 /** The reason a texture operation failed (§5.12). */
 export type TextureErrorCode =
   | "E-TEX-001" // the pixel buffer does not match the width and height
+  | "E-TEX-002" // the textures to combine do not have the same size
   | "E-TEX-003"; // more pixels than the limit
 
 export interface NormalMapSuccess {
@@ -107,6 +108,56 @@ export interface NormalMapFailure {
 }
 
 export type NormalMapResult = NormalMapSuccess | NormalMapFailure;
+
+/** A texture as pixels: width * height RGBA bytes, row by row, straight alpha. */
+export type Pixels = Uint8Array | Uint8ClampedArray;
+
+export interface PackOrmSuccess {
+  ok: true;
+  code: "";
+  message: "";
+  /** The packed texture: occlusion in red, roughness in green, metallic in blue, alpha 255. */
+  pixels: Uint8ClampedArray;
+  /** Per input (occlusion, roughness, metallic): pixels whose red, green, and blue differ. 0 for a missing input. */
+  non_gray_pixels: [number, number, number];
+  /** Pixels of the inputs with alpha below 255; the output is opaque, so this is dropped. */
+  translucent_pixels: number;
+}
+
+export interface PackOrmFailure {
+  ok: false;
+  code: TextureErrorCode;
+  message: string;
+  pixels: Uint8ClampedArray;
+  non_gray_pixels: [0, 0, 0];
+  translucent_pixels: 0;
+}
+
+export type PackOrmResult = PackOrmSuccess | PackOrmFailure;
+
+export interface UnpackOrmSuccess {
+  ok: true;
+  code: "";
+  message: "";
+  /** Each a gray, opaque image of width * height pixels. */
+  occlusion: Uint8ClampedArray;
+  roughness: Uint8ClampedArray;
+  metallic: Uint8ClampedArray;
+  /** Pixels of the input with alpha below 255; the outputs are opaque, so this is dropped. */
+  translucent_pixels: number;
+}
+
+export interface UnpackOrmFailure {
+  ok: false;
+  code: TextureErrorCode;
+  message: string;
+  occlusion: Uint8ClampedArray;
+  roughness: Uint8ClampedArray;
+  metallic: Uint8ClampedArray;
+  translucent_pixels: 0;
+}
+
+export type UnpackOrmResult = UnpackOrmSuccess | UnpackOrmFailure;
 
 export interface LintCore {
   version(): string;
@@ -149,6 +200,26 @@ export interface LintCore {
     height: number,
     maxPixels: number,
   ): NormalMapResult;
+  /**
+   * Packs up to three textures into one ORM texture (FR-009): occlusion in red, roughness in
+   * green, metallic in blue (the layout of glTF and Unreal). Only the red channel of each input is
+   * read. A missing texture (null or undefined) is filled with its default: occlusion 255,
+   * roughness 255, metallic 0. At least one must be given. Each given texture must hold exactly
+   * width * height pixels, or the result is E-TEX-002. The inputs are not changed.
+   */
+  packOrm(
+    width: number,
+    height: number,
+    occlusion: Pixels | null | undefined,
+    roughness: Pixels | null | undefined,
+    metallic: Pixels | null | undefined,
+    maxPixels: number,
+  ): PackOrmResult;
+  /**
+   * Splits an ORM texture into three gray, opaque images (occlusion, roughness, metallic).
+   * Packing them again gives back the red, green, and blue of the input exactly.
+   */
+  unpackOrm(rgba: Pixels, width: number, height: number, maxPixels: number): UnpackOrmResult;
 }
 
 export default function createLintCore(): Promise<LintCore>;

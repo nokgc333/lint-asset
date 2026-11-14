@@ -1,10 +1,13 @@
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
 
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -12,6 +15,7 @@
 #include "lint_asset/glb_loader.hpp"
 #include "lint_asset/inspection.hpp"
 #include "lint_asset/normal_map.hpp"
+#include "lint_asset/orm.hpp"
 #include "lint_asset/version.hpp"
 
 namespace {
@@ -99,6 +103,87 @@ template <typename Container>
 emscripten::val copy_array(const char *type, const Container &values) {
     return emscripten::val::global(type).new_(
         emscripten::val(emscripten::typed_memory_view(values.size(), values.data())));
+}
+
+bool valid_pixels_from_js(const emscripten::val &value) {
+    if (value.isNull() || value.isUndefined() || value.typeOf().as<std::string>() != "object") {
+        return false;
+    }
+    const auto length = value["length"];
+    if (length.typeOf().as<std::string>() != "number") {
+        return false;
+    }
+    const auto size = length.as<double>();
+    return std::isfinite(size) && size >= 0 && std::floor(size) == size &&
+           size <= static_cast<double>(std::numeric_limits<std::size_t>::max()) &&
+           (value.instanceof(emscripten::val::global("Uint8Array")) ||
+            value.instanceof(emscripten::val::global("Uint8ClampedArray")));
+}
+
+template <typename Result> emscripten::val texture_result_to_js(const Result &result) {
+    auto out = emscripten::val::object();
+    out.set("ok", result.ok());
+    out.set("code", std::string(lint_asset::texture_error_code(result.error)));
+    out.set("message", result.message);
+    out.set("translucent_pixels", static_cast<double>(result.translucent_pixels));
+    return out;
+}
+
+emscripten::val pack_orm_js(double width, double height, const emscripten::val &occlusion,
+                            const emscripten::val &roughness, const emscripten::val &metallic,
+                            double max_pixels) {
+    auto result = [&]() -> lint_asset::PackOrmResult {
+        const std::array values{occlusion, roughness, metallic};
+        for (const auto &value : values) {
+            if (!value.isNull() && !value.isUndefined() && !valid_pixels_from_js(value)) {
+                lint_asset::PackOrmResult invalid;
+                invalid.error = lint_asset::TextureError::invalid_pixels;
+                invalid.message = "Each texture must be an RGBA byte array.";
+                return invalid;
+            }
+        }
+        std::array<std::vector<std::uint8_t>, 3> data;
+        std::array<std::optional<std::span<const std::uint8_t>>, 3> inputs;
+        for (std::size_t channel = 0; channel < values.size(); ++channel) {
+            if (!values[channel].isNull() && !values[channel].isUndefined()) {
+                data[channel] = bytes_from_js(values[channel]);
+                inputs[channel] = std::span<const std::uint8_t>(data[channel]);
+            }
+        }
+        return lint_asset::pack_orm(inputs[0], inputs[1], inputs[2], dimension_from_js(width),
+                                    dimension_from_js(height), limit_from_js(max_pixels));
+    }();
+    auto out = texture_result_to_js(result);
+    out.set("pixels", copy_array("Uint8ClampedArray", result.pixels));
+    std::vector<std::uint8_t>().swap(result.pixels);
+    auto non_gray_pixels = emscripten::val::array();
+    for (const auto count : result.non_gray_pixels) {
+        non_gray_pixels.call<void>("push", static_cast<double>(count));
+    }
+    out.set("non_gray_pixels", non_gray_pixels);
+    return out;
+}
+
+emscripten::val unpack_orm_js(const emscripten::val &rgba, double width, double height,
+                              double max_pixels) {
+    auto result = [&]() -> lint_asset::UnpackOrmResult {
+        if (!valid_pixels_from_js(rgba)) {
+            lint_asset::UnpackOrmResult invalid;
+            invalid.error = lint_asset::TextureError::invalid_pixels;
+            invalid.message = "The texture must be an RGBA byte array.";
+            return invalid;
+        }
+        const auto data = bytes_from_js(rgba);
+        return lint_asset::unpack_orm(data, dimension_from_js(width), dimension_from_js(height),
+                                      limit_from_js(max_pixels));
+    }();
+    auto out = texture_result_to_js(result);
+    constexpr std::array names{"occlusion", "roughness", "metallic"};
+    for (std::size_t channel = 0; channel < names.size(); ++channel) {
+        out.set(names[channel], copy_array("Uint8ClampedArray", result.textures[channel]));
+        std::vector<std::uint8_t>().swap(result.textures[channel]);
+    }
+    return out;
 }
 
 lint_asset::GeometryResult geometry_from_js(const emscripten::val &bytes, double max_file_bytes,
@@ -219,6 +304,8 @@ emscripten::val analyze_js(const emscripten::val &bytes, double max_file_bytes,
 
 EMSCRIPTEN_BINDINGS(lint_core) {
     emscripten::function("flipNormalMapGreen", &flip_normal_map_green_js);
+    emscripten::function("packOrm", &pack_orm_js);
+    emscripten::function("unpackOrm", &unpack_orm_js);
     emscripten::function("version", &version_string);
     emscripten::function("loadGlb", &load_glb_js);
     emscripten::function("loadGlbGeometry", &load_glb_geometry_js);
