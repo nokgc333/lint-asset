@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cancelLimit, confirmLimit } from "./limit-dialog";
+import { cancelLimit, confirmLimit, refreshLimitText } from "./limit-dialog";
 import { RAISED_LIMITS } from "./load-plan";
 
 class Dialog extends EventTarget {
@@ -43,6 +43,16 @@ afterEach(() => {
 });
 
 describe("limit confirmation", () => {
+  it("refreshes the open request with the current locale", async () => {
+    let locale: "en" | "ja" = "en";
+    const pending = confirmLimit(request, () => locale);
+    locale = "ja";
+    refreshLimitText();
+    expect(text.textContent).toContain("三角形");
+    expect(dialog.showModal).toHaveBeenCalledOnce();
+    cancel.dispatchEvent(new Event("click"));
+    await expect(pending).resolves.toBe(false);
+  });
   it("uses plain text, English numbers and focuses Cancel", async () => {
     const pending = confirmLimit({
       reason: "size",

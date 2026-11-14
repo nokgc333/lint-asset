@@ -7,8 +7,20 @@ function setup(width: number, capabilities = { webgl2: true, webassembly: true, 
   const app = { hidden: true };
   const unsupported = { hidden: true };
   const list = { textContent: "", append: vi.fn() };
-  const elements = { app, unsupported, "unsupported-list": list };
+  const languageEn = Object.assign(new EventTarget(), { setAttribute: vi.fn() });
+  const languageJa = Object.assign(new EventTarget(), { setAttribute: vi.fn() });
+  const heading = { dataset: { i18n: "app.heading" }, textContent: "", setAttribute: vi.fn() };
+  const elements = {
+    app,
+    unsupported,
+    "unsupported-list": list,
+    "language-en": languageEn,
+    "language-ja": languageJa,
+  };
   const document = {
+    documentElement: { lang: "en" },
+    title: "",
+    querySelectorAll: () => [heading],
     getElementById: (id: keyof typeof elements) => elements[id],
     createElement: (tag: string) =>
       tag === "canvas"
@@ -24,6 +36,7 @@ function setup(width: number, capabilities = { webgl2: true, webassembly: true, 
   };
   const frames: FrameRequestCallback[] = [];
   const requestFrame = vi.fn((callback: FrameRequestCallback) => frames.push(callback));
+  vi.stubGlobal("navigator", { languages: ["en"], language: "en" });
   vi.stubGlobal("document", document);
   vi.stubGlobal("window", window);
   vi.stubGlobal("requestAnimationFrame", requestFrame);
@@ -39,7 +52,19 @@ function setup(width: number, capabilities = { webgl2: true, webassembly: true, 
     await vi.dynamicImportSettled();
   }
 
-  return { app, unsupported, list, resize, flushFrame, requestFrame };
+  return {
+    app,
+    unsupported,
+    list,
+    resize,
+    flushFrame,
+    requestFrame,
+    languageEn,
+    languageJa,
+    document,
+    window,
+    heading,
+  };
 }
 
 beforeEach(() => {
@@ -49,6 +74,31 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("environment bootstrap", () => {
+  it("translates before startup, survives blocked storage and refreshes the guide", async () => {
+    const page = setup(1280);
+    vi.stubGlobal("navigator", { languages: ["ja-JP"], language: "ja-JP" });
+    Object.defineProperty(page.window, "localStorage", {
+      get() {
+        throw new Error("blocked");
+      },
+    });
+    const startup = vi.fn();
+    startApp.mockImplementation((controller) => {
+      startup(controller.locale, page.document.documentElement.lang, page.heading.textContent);
+    });
+    await import("./main");
+    await vi.dynamicImportSettled();
+    expect(startApp).toHaveBeenCalledOnce();
+    expect(startup).toHaveBeenCalledWith("ja", "ja", "GLB ジオメトリ検査");
+    page.resize(800);
+    await page.flushFrame();
+    expect(page.list.append.mock.calls.at(-1)?.[0].textContent).toContain("ウィンドウ");
+    page.languageEn.dispatchEvent(new Event("click"));
+    expect(page.document.documentElement.lang).toBe("en");
+    expect(page.list.append.mock.calls.at(-1)?.[0].textContent).toContain("window");
+    expect(page.languageEn.setAttribute).toHaveBeenLastCalledWith("aria-pressed", "true");
+    expect(page.languageJa.setAttribute).toHaveBeenLastCalledWith("aria-pressed", "false");
+  });
   it("starts once, hides on narrowing, and resumes on widening", async () => {
     const page = setup(1024);
     await import("./main");

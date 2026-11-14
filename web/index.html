@@ -3,71 +3,78 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>lint-asset</title>
+    <title data-i18n="app.name">lint-asset</title>
   </head>
   <body>
     <div aria-live="polite">
       <section id="unsupported" hidden aria-labelledby="unsupported-title">
-        <h2 id="unsupported-title">This browser or window is not supported</h2>
-        <p>To use the geometry inspector, address the following problems:</p>
+        <h2 id="unsupported-title" data-i18n="environment.title">This browser or window is not supported</h2>
+        <p data-i18n="environment.guide">To use the geometry inspector, address the following problems:</p>
         <ul id="unsupported-list"></ul>
-        <p>Supported: the latest two versions of Chrome, Edge, Firefox, or Safari on a desktop computer, in a window at least 1024 px wide. Phones and tablets are not supported yet.</p>
+        <p data-i18n="environment.supported">Supported: the latest two versions of Chrome, Edge, Firefox, or Safari on a desktop computer, in a window at least 1024 px wide. Phones and tablets are not supported yet.</p>
       </section>
     </div>
     <main id="app" hidden>
-      <h1>GLB geometry inspector</h1>
-      <p>Engine version: <output id="engine-version">loading…</output></p>
+      <header class="page-header">
+        <h1 data-i18n="app.heading">GLB geometry inspector</h1>
+        <!-- biome-ignore lint/a11y/useSemanticElements: Keep the requested named group around native language buttons. -->
+        <div class="language-switch" role="group" aria-label="Language / 言語">
+          <button id="language-en" type="button" lang="en" aria-pressed="true">English</button>
+          <button id="language-ja" type="button" lang="ja" aria-pressed="false">日本語</button>
+        </div>
+      </header>
+      <p><span data-i18n="app.engineVersion">Engine version:</span> <output id="engine-version" data-i18n="app.loading">loading…</output></p>
       <fieldset id="controls" disabled>
-        <legend>Model controls</legend>
-        <label class="file-control" for="file">Open a GLB file</label>
+        <legend data-i18n="controls.model">Model controls</legend>
+        <label class="file-control" for="file" data-i18n="controls.open">Open a GLB file</label>
         <input id="file" type="file" accept=".glb" />
         <fieldset class="toolbar">
-          <legend>View controls</legend>
-          <button type="button" data-action="rotate-left">Rotate left</button>
-          <button type="button" data-action="rotate-right">Rotate right</button>
-          <button type="button" data-action="rotate-up">Rotate up</button>
-          <button type="button" data-action="rotate-down">Rotate down</button>
-          <button type="button" data-action="zoom-in">Zoom in</button>
-          <button type="button" data-action="zoom-out">Zoom out</button>
-          <button type="button" data-action="pan-left">Pan left</button>
-          <button type="button" data-action="pan-right">Pan right</button>
-          <button type="button" data-action="pan-up">Pan up</button>
-          <button type="button" data-action="pan-down">Pan down</button>
-          <button type="button" data-action="reset">Reset view</button>
-          <label class="toggle"><input id="wireframe" type="checkbox" />Wireframe</label>
-          <label class="toggle"><input id="normals" type="checkbox" />Show normals</label>
+          <legend data-i18n="controls.view">View controls</legend>
+          <button type="button" data-action="rotate-left" data-i18n="controls.rotateLeft">Rotate left</button>
+          <button type="button" data-action="rotate-right" data-i18n="controls.rotateRight">Rotate right</button>
+          <button type="button" data-action="rotate-up" data-i18n="controls.rotateUp">Rotate up</button>
+          <button type="button" data-action="rotate-down" data-i18n="controls.rotateDown">Rotate down</button>
+          <button type="button" data-action="zoom-in" data-i18n="controls.zoomIn">Zoom in</button>
+          <button type="button" data-action="zoom-out" data-i18n="controls.zoomOut">Zoom out</button>
+          <button type="button" data-action="pan-left" data-i18n="controls.panLeft">Pan left</button>
+          <button type="button" data-action="pan-right" data-i18n="controls.panRight">Pan right</button>
+          <button type="button" data-action="pan-up" data-i18n="controls.panUp">Pan up</button>
+          <button type="button" data-action="pan-down" data-i18n="controls.panDown">Pan down</button>
+          <button type="button" data-action="reset" data-i18n="controls.reset">Reset view</button>
+          <label class="toggle"><input id="wireframe" type="checkbox" /><span data-i18n="controls.wireframe">Wireframe</span></label>
+          <label class="toggle"><input id="normals" type="checkbox" /><span data-i18n="controls.normals">Show normals</span></label>
         </fieldset>
       </fieldset>
-      <p id="status" role="status" aria-live="polite">Preparing the viewer…</p>
+      <p data-i18n="status.preparing" id="status" role="status" aria-live="polite">Preparing the viewer…</p>
       <p id="error" role="alert"></p>
-      <p id="instructions">Drag to rotate. Right-drag or Shift+drag to pan. Scroll to zoom. Focus the viewer for keyboard controls.</p>
+      <p id="instructions" data-i18n="viewer.instructions">Drag to rotate. Right-drag or Shift+drag to pan. Scroll to zoom. Focus the viewer for keyboard controls.</p>
       <div class="workspace">
         <div id="drop-zone">
-          <p id="drop-hint">Drop a .glb file here, or use Open a GLB file.</p>
+          <p id="drop-hint" data-i18n="viewer.dropHint">Drop a .glb file here, or use Open a GLB file.</p>
           <div class="viewport">
-            <canvas id="viewer" tabindex="0" role="img" aria-label="3D model viewer. Arrow keys rotate; Shift and arrow keys pan; plus and minus zoom; 0 or Home resets the view." aria-describedby="instructions"></canvas>
+            <canvas data-i18n-attr="aria-label:viewer.label" id="viewer" tabindex="0" role="img" aria-label="3D model viewer. Arrow keys rotate; Shift and arrow keys pan; plus and minus zoom; 0 or Home resets the view." aria-describedby="instructions"></canvas>
           </div>
         </div>
         <aside id="issues-panel" aria-labelledby="issues-title">
-          <h2 id="issues-title">Problems</h2>
-          <p id="issues-summary" aria-live="polite">Open a GLB file to see problems.</p>
+          <h2 id="issues-title" data-i18n="panel.title">Problems</h2>
+          <p data-i18n="panel.empty" id="issues-summary" aria-live="polite">Open a GLB file to see problems.</p>
           <div class="export-actions">
-            <button id="export-json" type="button" aria-describedby="export-note" disabled>Download JSON</button>
-            <button id="export-markdown" type="button" aria-describedby="export-note" disabled>Download Markdown</button>
+            <button id="export-json" type="button" aria-describedby="export-note" disabled data-i18n="export.json">Download JSON</button>
+            <button id="export-markdown" type="button" aria-describedby="export-note" disabled data-i18n="export.markdown">Download Markdown</button>
           </div>
-          <p id="export-note">Reports contain the file name and the results only. Nothing is sent anywhere.</p>
-          <button id="issues-toggle" type="button" aria-expanded="false" aria-controls="issues-list-region">Show problems</button>
+          <p id="export-note" data-i18n="export.note">Reports contain the file name and the results only. Nothing is sent anywhere.</p>
+          <button data-i18n="panel.show" id="issues-toggle" type="button" aria-expanded="false" aria-controls="issues-list-region">Show problems</button>
           <div id="issues-list-region" hidden>
-            <ol id="issues-list" aria-label="Problems"></ol>
+            <ol data-i18n-attr="aria-label:panel.title" id="issues-list" aria-label="Problems"></ol>
           </div>
         </aside>
       </div>
       <dialog id="limit-dialog" aria-labelledby="limit-dialog-title" aria-describedby="limit-dialog-text">
-        <h2 id="limit-dialog-title">This file is large</h2>
+        <h2 id="limit-dialog-title" data-i18n="dialog.title">This file is large</h2>
         <p id="limit-dialog-text"></p>
         <div class="dialog-actions">
-          <button id="limit-continue" type="button">Continue</button>
-          <button id="limit-cancel" type="button" autofocus>Cancel</button>
+          <button id="limit-continue" type="button" data-i18n="dialog.continue">Continue</button>
+          <button id="limit-cancel" type="button" autofocus data-i18n="dialog.cancel">Cancel</button>
         </div>
       </dialog>
     </main>

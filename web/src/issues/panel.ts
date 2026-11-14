@@ -1,8 +1,17 @@
+import type { Locale } from "../i18n/locale";
+import { createTextSlot } from "../i18n/text-slot";
+import { createTranslator } from "../i18n/translate";
 import type { Issue } from "../wasm/lint_core.mjs";
 import { describeIssue, describeSummary, severityMark, summarizeIssues } from "./describe";
 import { nextIndex } from "./list-navigation";
 
-export function createIssuePanel({ onSelect }: { onSelect: (issue: Issue | null) => void }) {
+export function createIssuePanel({
+  onSelect,
+  getLocale = () => "en",
+}: {
+  onSelect: (issue: Issue | null) => void;
+  getLocale?: () => Locale;
+}) {
   function required<T extends HTMLElement>(selector: string): T {
     const element = document.querySelector<T>(selector);
     if (!element) throw new Error(`Missing element: ${selector}`);
@@ -10,15 +19,18 @@ export function createIssuePanel({ onSelect }: { onSelect: (issue: Issue | null)
   }
 
   const list = required<HTMLOListElement>("#issues-list");
-  const summary = required<HTMLParagraphElement>("#issues-summary");
+  const summary = createTextSlot(required<HTMLParagraphElement>("#issues-summary"), getLocale);
   const toggle = required<HTMLButtonElement>("#issues-toggle");
   const region = required<HTMLDivElement>("#issues-list-region");
   let expanded = window.innerWidth >= 1280;
   let rows: HTMLButtonElement[] = [];
+  let currentIssues: readonly Issue[] = [];
+  let selected: number | null = null;
+  let tabStop = 0;
 
   function updateExpanded(): void {
     toggle.setAttribute("aria-expanded", String(expanded));
-    toggle.textContent = expanded ? "Hide problems" : "Show problems";
+    toggle.textContent = createTranslator(getLocale()).t(expanded ? "panel.hide" : "panel.show");
     region.hidden = !expanded;
   }
   toggle.addEventListener("click", () => {
@@ -28,12 +40,14 @@ export function createIssuePanel({ onSelect }: { onSelect: (issue: Issue | null)
   updateExpanded();
 
   function setTabStop(index: number): void {
+    tabStop = index;
     rows.forEach((row, position) => {
       row.tabIndex = index === position ? 0 : -1;
     });
   }
 
   function select(index: number | null): void {
+    selected = index;
     rows.forEach((row, position) => {
       if (index === position) row.setAttribute("aria-current", "true");
       else row.removeAttribute("aria-current");
@@ -48,12 +62,19 @@ export function createIssuePanel({ onSelect }: { onSelect: (issue: Issue | null)
   });
 
   function setIssues(issues: readonly Issue[]): void {
+    currentIssues = issues;
+    selected = null;
+    tabStop = 0;
+    summary.set((locale) => describeSummary(summarizeIssues(issues), locale));
+    renderRows();
+  }
+
+  function renderRows(): void {
     rows = [];
     list.replaceChildren();
-    summary.textContent = describeSummary(summarizeIssues(issues));
-    issues.forEach((issue, index) => {
-      const description = describeIssue(issue);
-      const mark = severityMark(issue.severity);
+    currentIssues.forEach((issue, index) => {
+      const description = describeIssue(issue, getLocale());
+      const mark = severityMark(issue.severity, getLocale());
       const item = document.createElement("li");
       const row = document.createElement("button");
       row.type = "button";
@@ -114,9 +135,21 @@ export function createIssuePanel({ onSelect }: { onSelect: (issue: Issue | null)
 
   function clear(): void {
     setIssues([]);
-    summary.textContent = "Open a GLB file to see problems.";
+    summary.set((locale) => createTranslator(locale).t("panel.empty"));
+  }
+
+  function refresh(): void {
+    const focused = rows.indexOf(document.activeElement as HTMLButtonElement);
+    const previousSelected = selected;
+    const previousTabStop = tabStop;
+    renderRows();
+    select(previousSelected);
+    setTabStop(previousTabStop);
+    if (focused >= 0) rows[focused]?.focus();
+    updateExpanded();
+    summary.refresh();
   }
 
   clear();
-  return { setIssues, clear, select };
+  return { setIssues, clear, select, refresh };
 }

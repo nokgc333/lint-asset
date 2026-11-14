@@ -1,25 +1,33 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createFileLoader } from "./file-loader";
+import { createTextSlot } from "./i18n/text-slot";
 import { cancelLimit, confirmLimit } from "./limit-dialog";
 import { DEFAULT_LIMITS, RAISED_LIMITS } from "./load-plan";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
 
 vi.mock("./limit-dialog", () => ({ confirmLimit: vi.fn(), cancelLimit: vi.fn() }));
 
-function setup() {
+function setup(getLocale: () => "en" | "ja" = () => "en") {
   const status = { textContent: "" };
   const error = { textContent: "" };
   const post = vi.fn<(request: Extract<WorkerRequest, { type: "load" }>) => void>();
   const showGeometry = vi.fn();
+  const statusSlot = createTextSlot(status, getLocale);
+  const errorSlot = createTextSlot(error, getLocale);
+  const refresh = () => {
+    statusSlot.refresh();
+    errorSlot.refresh();
+  };
   const loader = createFileLoader({
-    status,
-    error,
+    status: statusSlot,
+    error: errorSlot,
+    getLocale,
     post,
     showGeometry,
     isReady: () => true,
     firstRequestId: 1,
   });
-  return { ...loader, status, error, post, showGeometry };
+  return { ...loader, status, error, post, showGeometry, refresh };
 }
 
 function fileOfSize(size: number, name = "model.glb") {
@@ -51,6 +59,26 @@ function failure(id: number, code = "E-LOAD-003"): WorkerResponse {
 beforeEach(() => vi.resetAllMocks());
 
 describe("file loading", () => {
+  it("refreshes loading, size rejection and worker errors without losing untrusted file text", async () => {
+    let locale: "en" | "ja" = "en";
+    const loader = setup(() => locale);
+    await loader.openFile(fileOfSize(1, "<img>.glb").file);
+    locale = "ja";
+    loader.refresh();
+    expect(loader.status.textContent).toContain("<img>.glb");
+    expect(loader.status.textContent).not.toContain("Loading");
+    await loader.openFile(fileOfSize(RAISED_LIMITS.maxFileBytes + 1, "<img>.glb").file);
+    expect(loader.error.textContent).toContain("<img>.glb");
+    expect(loader.error.textContent).not.toContain("is larger than");
+    locale = "en";
+    loader.refresh();
+    expect(loader.error.textContent).toContain("<img>.glb is larger than 200 MiB");
+    loader.failWorker();
+    expect(loader.error.textContent).toContain("The geometry worker is unavailable.");
+    locale = "ja";
+    loader.refresh();
+    expect(loader.error.textContent).not.toContain("The geometry worker is unavailable.");
+  });
   it("rejects oversized files before reading and treats names as text", async () => {
     const loader = setup();
     const { file, read } = fileOfSize(RAISED_LIMITS.maxFileBytes + 1, "<img>.glb");
@@ -75,7 +103,10 @@ describe("file loading", () => {
     const { file } = fileOfSize(DEFAULT_LIMITS.maxFileBytes + 1);
     await loader.openFile(file);
     expect(loader.post).toHaveBeenCalledWith(expect.objectContaining(RAISED_LIMITS));
-    expect(confirmLimit).toHaveBeenCalledWith(expect.objectContaining({ reason: "size" }));
+    expect(confirmLimit).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: "size" }),
+      expect.any(Function),
+    );
   });
 
   it("re-reads and retries a triangle failure once with a new id and raised limits", async () => {
