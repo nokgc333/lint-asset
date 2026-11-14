@@ -24,7 +24,7 @@ does the normal map conversion in one screen, without uploading anything.
 
 - Change inspection thresholds in Settings; values are remembered in this browser.
 
-- **Inspect a GLB.** Normals (flipped, missing, not unit length), non-manifold edges and open
+- **Inspect GLB or glTF.** Normals (flipped, missing, not unit length), non-manifold edges and open
   edges (holes), degenerate triangles, UVs (missing, outside 0-1, overlapping), the number of
   drawn triangles, the scale, and image references stored outside the file.
 - **See the problem.** A 3D viewer (rotate, pan, zoom, wireframe, show normals) draws the
@@ -55,7 +55,8 @@ does the normal map conversion in one screen, without uploading anything.
 ## Usage
 
 1. Start it (see [Build](#build)) and open the page in a desktop browser.
-2. Press "Try a sample", or drop a `.glb` file on the page, or use "Open a GLB file".
+2. Press "Try a sample", or drop a GLB or glTF model on the page, or use "Open GLB or glTF".
+   Select a `.gltf` together with all its `.bin` and image files, or drop its folder.
 3. Read the summary and the list of problems. Choose a problem to jump to it in the viewer.
 4. Download the JSON or Markdown report if you need it.
 5. For a normal map, switch to "Texture" in the header, drop a PNG or JPEG, pick the direction,
@@ -90,14 +91,16 @@ layout is often intended.
 
 Input:
 
-- Only a single binary glTF 2.x file (`.glb`) is read. Split glTF (`.gltf` with `.bin` and
-  images) and OBJ are not supported yet; a file that needs an external buffer is rejected.
+- Select exactly one glTF 2.x model: `.glb`, or `.gltf` together with all its `.bin` and image
+  files. Folders can be dropped recursively. Images are not read. Missing buffer files are
+  reported by name; select the `.gltf` and all its files together again, or drop its folder.
+  Other files selected with a GLB are ignored. OBJ is not supported yet.
 - A file that requires an extension this tool cannot read, such as Draco or meshopt
   compression, is rejected. The supported required extensions are `KHR_mesh_quantization`,
   `KHR_texture_transform`, `KHR_materials_unlit`, and `KHR_texture_basisu`.
 - Sparse accessors are not supported yet.
-- Size: up to 100 MiB and 2,000,000 triangles; larger files up to twice that ask for
-  confirmation. Textures: up to 8192 x 8192 pixels, up to twice that after confirmation
+- Size counts the model and all selected non-image companions that are read: up to 100 MiB
+  and 2,000,000 triangles; larger files up to twice that ask for confirmation. Textures: up to 8192 x 8192 pixels, up to twice that after confirmation
   (and at most 16384 pixels on a side).
 
 Inspection:
@@ -137,14 +140,14 @@ Environment:
   problem. Reading the page with a screen reader has not been checked yet.
 - So far it has been checked in a Chromium-based browser. Firefox and Safari are not checked yet.
 
-Planned, not implemented: split glTF and OBJ input,
+Planned, not implemented: OBJ input,
 and a command-line version.
 
 ## How it works
 
 ```mermaid
 flowchart LR
-  G[GLB file] --> W["Web Worker: C++ core as WebAssembly"]
+  G[GLB or glTF files] --> W["Web Worker: C++ core as WebAssembly"]
   W --> I[Issues and geometry]
   I --> V[3D viewer and problem list]
   I --> R[JSON and Markdown report]
@@ -154,7 +157,7 @@ flowchart LR
   C --> P[PNG download]
 ```
 
-- `core/`: the C++20 core. It reads the GLB (tinygltf with the file system and image decoding
+- `core/`: the C++20 core. It reads GLB or glTF (tinygltf with the file system and image decoding
   turned off), extracts the geometry, runs the checks, and flips the normal map. The same code is
   built natively for tests (with AddressSanitizer and UBSan) and to WebAssembly with Emscripten
   and Embind. Every check depends only on its input, so the same file always gives the same

@@ -207,6 +207,7 @@ describe("file loading", () => {
     expect(loader.showGeometry).toHaveBeenCalledWith(expect.objectContaining({ ok: true }), {
       name: "model.glb",
       size: 1,
+      format: "glb",
     });
     await loader.openFile(fileOfSize(2, "failed.glb").file);
     await loader.handleResponse(failure(loader.post.mock.calls.at(-1)?.[0].id ?? 0, "E-LOAD-004"));
@@ -270,4 +271,113 @@ it("ignores stale reruns and reports rerun failure without offering raised limit
   await loader.handleResponse(failure(loader.post.mock.calls[2]?.[0].id ?? 0));
   expect(loader.error.textContent).toContain("E-LOAD-003");
   expect(confirmLimit).not.toHaveBeenCalled();
+});
+
+describe("split glTF intake", () => {
+  const entryOfSize = (path: string, size = 1) => {
+    const file = new File([new Uint8Array(1)], path.split("/").pop() ?? path);
+    Object.defineProperty(file, "size", { value: size });
+    return { entry: { file, path }, read: vi.spyOn(file, "arrayBuffer") };
+  };
+  const missing = (id: number, names: string[]): WorkerResponse => ({
+    ...(failure(id, "E-LOAD-005") as Extract<WorkerResponse, { type: "loaded" }>),
+    result: {
+      ...(failure(id, "E-LOAD-005") as Extract<WorkerResponse, { type: "loaded" }>).result,
+      missing_files: names,
+    } as never,
+  });
+
+  it("sends the .gltf and the files that are not images, named by their paths", async () => {
+    const loader = setup();
+    const gltf = entryOfSize("scene.gltf");
+    const bin = entryOfSize("buffers/scene.bin");
+    const png = entryOfSize("textures/a.png");
+    await loader.openModel(gltf.entry, [bin.entry, png.entry]);
+    const request = loader.post.mock.calls[0]?.[0];
+    expect(request?.files?.map((f) => f.name)).toEqual(["buffers/scene.bin"]);
+    expect(request?.files?.[0]?.bytes).toBeInstanceOf(ArrayBuffer);
+    expect(png.read).not.toHaveBeenCalled();
+  });
+
+  it("does not send files for a GLB, and does not read the others", async () => {
+    const loader = setup();
+    const glb = entryOfSize("a.glb");
+    const bin = entryOfSize("a.bin");
+    await loader.openModel(glb.entry, [bin.entry]);
+    expect(loader.post.mock.calls[0]?.[0]).not.toHaveProperty("files");
+    expect(bin.read).not.toHaveBeenCalled();
+  });
+
+  it("counts the .gltf and the files that are read against the size limit", async () => {
+    const loader = setup();
+    const gltf = entryOfSize("scene.gltf", 10);
+    const bin = entryOfSize("scene.bin", RAISED_LIMITS.maxFileBytes);
+    const big = entryOfSize("textures/a.png", RAISED_LIMITS.maxFileBytes * 3);
+    await loader.openModel(gltf.entry, [bin.entry, big.entry]);
+    expect(bin.read).not.toHaveBeenCalled();
+    expect(loader.post).not.toHaveBeenCalled();
+    expect(loader.error.textContent).toContain("scene.gltf is larger than 200 MiB");
+  });
+
+  it("asks before reading when the total is over the default limit", async () => {
+    vi.mocked(confirmLimit).mockResolvedValue(false);
+    const loader = setup();
+    const gltf = entryOfSize("scene.gltf", 10);
+    const bin = entryOfSize("scene.bin", DEFAULT_LIMITS.maxFileBytes);
+    await loader.openModel(gltf.entry, [bin.entry]);
+    expect(confirmLimit).toHaveBeenCalledTimes(1);
+    expect(bin.read).not.toHaveBeenCalled();
+  });
+
+  it("names the missing files when the worker reports E-LOAD-005, in both languages", async () => {
+    let locale: "en" | "ja" = "en";
+    const loader = setup(() => locale);
+    await loader.openModel(entryOfSize("scene.gltf").entry, []);
+    await loader.handleResponse(
+      missing(loader.post.mock.calls[0]?.[0].id ?? 0, ["a.bin", "t/b.png"]),
+    );
+    expect(loader.error.textContent).toContain("E-LOAD-005");
+    expect(loader.error.textContent).toContain("a.bin");
+    expect(loader.error.textContent).toContain("t/b.png");
+    expect(loader.error.textContent).not.toContain("Technical detail");
+    expect(loader.showGeometry).not.toHaveBeenCalled();
+    expect(confirmLimit).not.toHaveBeenCalled();
+    locale = "ja";
+    loader.refresh();
+    expect(loader.error.textContent).toContain("a.bin");
+    expect(loader.error.textContent).not.toMatch(/Missing|Select/);
+  });
+
+  it("shows a loaded .gltf with its format and the total size of what was read", async () => {
+    const loader = setup();
+    await loader.openModel(entryOfSize("scene.gltf", 100).entry, [
+      entryOfSize("scene.bin", 900).entry,
+      entryOfSize("a.png", 5000).entry,
+    ]);
+    const id = loader.post.mock.calls[0]?.[0].id ?? 0;
+    const ok = { ...(failure(id) as Extract<WorkerResponse, { type: "loaded" }>) };
+    await loader.handleResponse({
+      ...ok,
+      result: { ...ok.result, ok: true, code: "", message: "" } as never,
+    });
+    expect(loader.showGeometry).toHaveBeenCalledWith(expect.anything(), {
+      name: "scene.gltf",
+      size: 1000,
+      format: "gltf",
+    });
+  });
+
+  it("re-runs with the same files", async () => {
+    const loader = setup();
+    await loader.openModel(entryOfSize("scene.gltf").entry, [entryOfSize("scene.bin").entry]);
+    const id = loader.post.mock.calls[0]?.[0].id ?? 0;
+    const ok = { ...(failure(id) as Extract<WorkerResponse, { type: "loaded" }>) };
+    await loader.handleResponse({
+      ...ok,
+      result: { ...ok.result, ok: true, code: "", message: "" } as never,
+    });
+    loader.rerun();
+    await vi.waitFor(() => expect(loader.post).toHaveBeenCalledTimes(2));
+    expect(loader.post.mock.calls[1]?.[0].files?.map((f) => f.name)).toEqual(["scene.bin"]);
+  });
 });

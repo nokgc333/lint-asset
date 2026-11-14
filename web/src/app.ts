@@ -1,9 +1,10 @@
+import { readDroppedEntries } from "./drop-entries";
 import { createFileLoader } from "./file-loader";
 import type { Locale } from "./i18n/locale";
 import type { LocaleController } from "./i18n/locale-controller";
 import { createTextSlot } from "./i18n/text-slot";
 import { createTranslator } from "./i18n/translate";
-import { pickSingleFile } from "./intake";
+import { entriesFromFileList, type IntakeEntry, planSelection } from "./intake";
 import { createDetailPanel } from "./issues/detail-panel";
 import { issueKey } from "./issues/filter-sort";
 import { createIssuePanel } from "./issues/panel";
@@ -46,12 +47,18 @@ export function startApp(
   const jsonButton = required<HTMLButtonElement>("#export-json");
   const markdownButton = required<HTMLButtonElement>("#export-markdown");
   let engineVersion = "";
-  let displayed: { name: string; size: number; result: AnalyzeResult } | null = null;
+  let displayed: {
+    name: string;
+    size: number;
+    format: "glb" | "gltf";
+    result: AnalyzeResult;
+  } | null = null;
   function exportReport(kind: "json" | "md"): void {
     if (!displayed) return;
     const report = buildReport({
       fileName: displayed.name,
       fileSize: displayed.size,
+      format: displayed.format,
       toolVersion: engineVersion,
       generatedAt: new Date(),
       result: displayed.result,
@@ -125,7 +132,8 @@ export function startApp(
     status,
     error,
     getLocale,
-    post: (request) => post(request, [request.bytes]),
+    post: (request) =>
+      post(request, [request.bytes, ...(request.files ?? []).map((file) => file.bytes)]),
     showGeometry: (result, file) => {
       loadingGeometry = true;
       panel.setIssues(result.issues);
@@ -141,11 +149,15 @@ export function startApp(
     firstRequestId: VERSION_REQUEST_ID,
   });
   function openFile(file: File): Promise<void> {
+    return openModel({ file, path: file.name }, []);
+  }
+
+  function openModel(model: IntakeEntry, companions: readonly IntakeEntry[]): Promise<void> {
     selectedIssue = null;
     panel.select(null);
     viewer?.selectIssue(null);
     detail.show(null);
-    return loader.openFile(file);
+    return loader.openModel(model, companions);
   }
 
   const sampleButton = required<HTMLButtonElement>("#sample-button");
@@ -188,10 +200,23 @@ export function startApp(
 
   post({ id: VERSION_REQUEST_ID, type: "version" });
 
+  let selectionId = 0;
+  function selectEntries(entries: readonly IntakeEntry[]): void {
+    const selection = planSelection(entries);
+    if (selection.kind === "none") return;
+    if (selection.kind === "model") {
+      void openModel(selection.model, selection.companions);
+      return;
+    }
+    const key = selection.kind === "noModel" ? "load.noModel" : "load.manyModels";
+    error.set((locale) => createTranslator(locale).t(key));
+  }
+
   input.addEventListener("change", () => {
-    const selection = pickSingleFile(input.files);
+    selectionId += 1;
+    const entries = entriesFromFileList(input.files);
     input.value = "";
-    if (selection.kind === "file") void openFile(selection.file);
+    selectEntries(entries);
   });
 
   for (const type of ["dragenter", "dragover"] as const) {
@@ -208,12 +233,11 @@ export function startApp(
   dropZone.addEventListener("drop", (event) => {
     event.preventDefault();
     dropZone.classList.remove("is-dragging");
-    const selection = pickSingleFile(event.dataTransfer?.files);
-    if (selection.kind === "many") {
-      error.set((locale) => createTranslator(locale).t("load.dropError"));
-    } else if (selection.kind === "file") {
-      void openFile(selection.file);
-    }
+    const id = ++selectionId;
+    if (!event.dataTransfer) return;
+    void readDroppedEntries(event.dataTransfer).then((entries) => {
+      if (id === selectionId) selectEntries(entries);
+    });
   });
   for (const type of ["dragover", "drop"] as const) {
     window.addEventListener(type, (event) => event.preventDefault());

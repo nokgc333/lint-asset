@@ -3,6 +3,7 @@ import { formatMiB } from "./file-size";
 import type { Locale } from "./i18n/locale";
 import type { Text, TextSlot } from "./i18n/text-slot";
 import { createTranslator } from "./i18n/translate";
+import { type IntakeEntry, isImageName } from "./intake";
 import { cancelLimit, confirmLimit } from "./limit-dialog";
 import { type Limits, planAfterLimitError, planIntake, RAISED_LIMITS } from "./load-plan";
 import { formatLoadError } from "./messages";
@@ -13,6 +14,9 @@ type LoadRequest = Extract<WorkerRequest, { type: "load" }>;
 interface Load {
   id: number;
   file: File;
+  companions: readonly IntakeEntry[];
+  format: "glb" | "gltf";
+  size: number;
   limits: Limits;
   rerun: boolean;
   phase: "confirming" | "reading" | "loading" | "done";
@@ -21,7 +25,10 @@ interface LoaderOptions {
   status: Pick<TextSlot, "set">;
   error: Pick<TextSlot, "set">;
   post: (request: LoadRequest) => void;
-  showGeometry: (result: AnalyzeResult, file: { name: string; size: number }) => void;
+  showGeometry: (
+    result: AnalyzeResult,
+    file: { name: string; size: number; format: "glb" | "gltf" },
+  ) => void;
   isReady: () => boolean;
   firstRequestId: number;
   getThresholds: () => Thresholds;
@@ -31,7 +38,7 @@ interface LoaderOptions {
 export function createFileLoader(options: LoaderOptions) {
   let nextId = options.firstRequestId;
   let active: Load | null = null;
-  let displayed: { file: File; limits: Limits } | null = null;
+  let displayed: Pick<Load, "file" | "companions" | "format" | "size" | "limits"> | null = null;
 
   function showError(code: string, detail: string | Text): void {
     const message: Text = (locale) =>
@@ -56,11 +63,22 @@ export function createFileLoader(options: LoaderOptions) {
     try {
       const bytes = await load.file.arrayBuffer();
       if (active !== load) return;
+      const files =
+        load.format === "gltf"
+          ? await Promise.all(
+              load.companions.map(async ({ file, path }) => ({
+                name: path,
+                bytes: await file.arrayBuffer(),
+              })),
+            )
+          : undefined;
+      if (active !== load) return;
       load.phase = "loading";
       options.post({
         id: load.id,
         type: "load",
         bytes,
+        ...(files === undefined ? {} : { files }),
         ...load.limits,
         thresholds: options.getThresholds(),
       });
@@ -71,13 +89,21 @@ export function createFileLoader(options: LoaderOptions) {
     }
   }
 
-  async function openFile(file: File): Promise<void> {
+  function openFile(file: File): Promise<void> {
+    return openModel({ file, path: file.name }, []);
+  }
+
+  async function openModel(model: IntakeEntry, entries: readonly IntakeEntry[]): Promise<void> {
+    const file = model.file;
+    const format = /\.gltf$/i.test(model.path) ? "gltf" : "glb";
+    const companions = format === "gltf" ? entries.filter((entry) => !isImageName(entry.path)) : [];
+    const size = companions.reduce((total, entry) => total + entry.file.size, file.size);
     if (!options.isReady()) return;
     active = null;
     cancelLimit();
     options.error.set(null);
     const id = ++nextId;
-    const plan = planIntake(file.size);
+    const plan = planIntake(size);
     if (plan.kind === "reject") {
       showError("E-LOAD-003", (locale) =>
         createTranslator(locale).t("load.tooLarge", {
@@ -87,14 +113,23 @@ export function createFileLoader(options: LoaderOptions) {
       );
       return;
     }
-    const load: Load = { id, file, limits: plan.limits, rerun: false, phase: "confirming" };
+    const load: Load = {
+      id,
+      file,
+      companions,
+      format,
+      size,
+      limits: plan.limits,
+      rerun: false,
+      phase: "confirming",
+    };
     active = load;
     if (plan.kind === "confirm") {
       const accepted = await confirmLimit(
         {
           reason: "size",
           fileName: file.name,
-          fileBytes: file.size,
+          fileBytes: size,
           limits: plan.limits,
         },
         options.getLocale ?? (() => "en"),
@@ -119,8 +154,18 @@ export function createFileLoader(options: LoaderOptions) {
       const result = response.result;
       load.phase = "done";
       if (result.ok) {
-        displayed = { file: load.file, limits: load.limits };
-        options.showGeometry(result, { name: load.file.name, size: load.file.size });
+        displayed = {
+          file: load.file,
+          companions: load.companions,
+          format: load.format,
+          size: load.size,
+          limits: load.limits,
+        };
+        options.showGeometry(result, {
+          name: load.file.name,
+          size: load.size,
+          format: load.format,
+        });
         options.error.set(null);
         options.status.set((locale) =>
           createTranslator(locale).t("status.loaded", {
@@ -130,7 +175,10 @@ export function createFileLoader(options: LoaderOptions) {
         );
         return;
       }
-      showError(result.code, result.message);
+      showError(
+        result.code,
+        result.code === "E-LOAD-005" ? result.missing_files.join(", ") : result.message,
+      );
       if (load.rerun || result.code !== "E-LOAD-003") return;
       const plan = planAfterLimitError(load.limits);
       if (plan.kind === "final") return;
@@ -165,5 +213,5 @@ export function createFileLoader(options: LoaderOptions) {
     void send(load);
   }
 
-  return { openFile, handleResponse, failWorker, rerun };
+  return { openModel, openFile, handleResponse, failWorker, rerun };
 }

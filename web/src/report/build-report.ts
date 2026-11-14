@@ -15,6 +15,7 @@ export interface Report {
 
 export interface ReportInput {
   fileName: string;
+  format?: "glb" | "gltf";
   fileSize: number;
   toolVersion: string;
   generatedAt: Date;
@@ -30,7 +31,11 @@ export function buildReport(input: ReportInput): Report {
     schema_version: "1.0",
     tool: { name: "lint-asset", version: input.toolVersion },
     generated_at: input.generatedAt.toISOString().replace(/\.\d{3}Z$/, "Z"),
-    asset: { name: safeFileName(input.fileName), format: "glb", size_bytes: input.fileSize },
+    asset: {
+      name: safeFileName(input.fileName),
+      format: input.format ?? "glb",
+      size_bytes: input.fileSize,
+    },
     thresholds: {
       max_triangles: result.thresholds.max_triangles,
       min_extent_m: result.thresholds.min_extent_m,

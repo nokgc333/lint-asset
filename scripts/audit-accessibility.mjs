@@ -332,6 +332,29 @@ for (const locale of ["en", "ja"]) {
   await runAxe(`[${locale}] error message`, page);
 
   await page.evaluate(() => {
+    const model = {
+      asset: { version: "2.0" },
+      buffers: [{ uri: "missing.bin", byteLength: 36 }],
+      bufferViews: [{ buffer: 0, byteLength: 36 }],
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: "VEC3" }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0 }],
+      scenes: [{ nodes: [0] }],
+      scene: 0,
+    };
+    const data = new DataTransfer();
+    data.items.add(new File([JSON.stringify(model)], "missing.gltf"));
+    const input = document.querySelector("#file");
+    input.files = data.files;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await page.waitForFunction(() => {
+    const error = document.querySelector("#error").textContent;
+    return error.includes("E-LOAD-005") && error.includes("missing.bin");
+  });
+  await runAxe(`[${locale}] missing buffer files`, page);
+
+  await page.evaluate(() => {
     const data = new DataTransfer();
     data.items.add(new File([new Uint8Array(105 * 1024 * 1024)], "big.glb"));
     const input = document.querySelector("#file");

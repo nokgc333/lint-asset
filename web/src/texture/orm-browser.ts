@@ -1,9 +1,9 @@
 import type { Locale } from "../i18n/locale";
 import { createTextSlot } from "../i18n/text-slot";
-import { pickSingleFile } from "../intake";
 import { cancelLimit, confirmLimit } from "../limit-dialog";
 import type { WorkerRequest } from "../protocol";
 import { downloadBlob } from "../report/download";
+import { selectTextureFile } from "./file-selection";
 import { ORM_CHANNELS } from "./orm-plan";
 import { createOrmScreen } from "./orm-screen";
 import { HEADER_READ_BYTES } from "./texture-plan";
@@ -122,7 +122,7 @@ export function createOrmBrowser(
   }
   inputs.forEach((input, index) => {
     input.addEventListener("change", () => {
-      const selected = pickSingleFile(input.files);
+      const selected = selectTextureFile(input.files);
       input.value = "";
       if (selected.kind === "file") setInput(index, selected.file);
       else if (selected.kind === "many") screen.dropError();
@@ -141,7 +141,7 @@ export function createOrmBrowser(
     drop.addEventListener("drop", (event) => {
       event.preventDefault();
       drop.classList.remove("is-dragging");
-      const selected = pickSingleFile(event.dataTransfer?.files);
+      const selected = selectTextureFile(event.dataTransfer?.files);
       if (selected.kind === "file") setInput(index, selected.file);
       else if (selected.kind === "many") screen.dropError();
     });

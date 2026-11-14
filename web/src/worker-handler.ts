@@ -56,12 +56,21 @@ export function createRequestHandler(corePromise: Promise<LintCore>, reply: Repl
         ]);
         return;
       }
-      const result = core.analyze(
-        new Uint8Array(request.bytes),
-        request.maxFileBytes,
-        request.maxTriangles,
-        request.thresholds,
-      );
+      const result =
+        request.files !== undefined
+          ? core.analyzeGltf(
+              new Uint8Array(request.bytes),
+              request.files.map((file) => ({ name: file.name, bytes: new Uint8Array(file.bytes) })),
+              request.maxFileBytes,
+              request.maxTriangles,
+              request.thresholds,
+            )
+          : core.analyze(
+              new Uint8Array(request.bytes),
+              request.maxFileBytes,
+              request.maxTriangles,
+              request.thresholds,
+            );
       const buffers = new Set<ArrayBuffer>();
       for (const part of result.parts) {
         buffers.add(part.positions.buffer as ArrayBuffer);
