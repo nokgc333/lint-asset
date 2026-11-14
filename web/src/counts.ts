@@ -1,4 +1,5 @@
-// The counts line shown after a file loads. English plurals follow Intl.PluralRules (§7.9).
+import type { Locale } from "./i18n/locale";
+import { createTranslator } from "./i18n/translate";
 
 export interface Counts {
   readonly meshes: number;
@@ -6,17 +7,9 @@ export interface Counts {
   readonly triangles: number;
 }
 
-const numbers = new Intl.NumberFormat("en");
-const plurals = new Intl.PluralRules("en");
-
-function noun(count: number, singular: string, plural: string): string {
-  return `${numbers.format(count)} ${plurals.select(count) === "one" ? singular : plural}`;
-}
-
-export function describeCounts(counts: Counts): string {
-  return [
-    noun(counts.meshes, "mesh", "meshes"),
-    noun(counts.primitives, "primitive", "primitives"),
-    noun(counts.triangles, "triangle", "triangles"),
-  ].join(", ");
+export function describeCounts(counts: Counts, locale: Locale = "en"): string {
+  const { plural } = createTranslator(locale);
+  return (["meshes", "primitives", "triangles"] as const)
+    .map((kind) => plural(`counts.${kind}`, counts[kind]))
+    .join(locale === "ja" ? "、" : ", ");
 }

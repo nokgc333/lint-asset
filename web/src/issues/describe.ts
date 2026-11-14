@@ -1,57 +1,65 @@
+import { catalogs } from "../i18n/catalog";
+import type { Locale } from "../i18n/locale";
+import { createTranslator } from "../i18n/translate";
 import type { Issue } from "../wasm/lint_core.mjs";
+import { localizeIssueMessage } from "./localize";
 
 export type Severity = Issue["severity"];
 export const SEVERITIES = ["error", "warning", "info"] as const;
 export const MAX_LISTED_TRIANGLES = 1000;
 export type IssueCounts = Record<Severity, number>;
 
-const numberFormat = new Intl.NumberFormat("en");
-const RULE_TITLES: Record<string, string> = {
-  "normal.flipped": "Flipped normals",
-  "normal.missing": "Missing normals",
-  "normal.unnormalized": "Normals not unit length",
-  "mesh.nonmanifold_edge": "Non-manifold edges",
-  "mesh.boundary_edge": "Open edges (holes)",
-  "mesh.degenerate_triangle": "Degenerate triangles",
-  "uv.missing": "Missing UVs",
-  "uv.out_of_range": "UVs outside 0 to 1",
-  "uv.overlap": "Overlapping UVs",
-  "asset.triangle_count_exceeded": "Too many triangles",
-  "asset.scale_too_small": "Model too small",
-  "asset.scale_too_large": "Model too large",
-};
-const SEVERITY_MARKS = {
-  error: { label: "Error", shape: "circle" },
-  warning: { label: "Warning", shape: "triangle" },
-  info: { label: "Info", shape: "square" },
+const SEVERITY_SHAPES = {
+  error: "circle",
+  warning: "triangle",
+  info: "square",
 } as const;
 
 export function severityRank(severity: Severity): number {
   return SEVERITIES.indexOf(severity);
 }
 
-export function severityMark(severity: Severity): {
-  label: "Error" | "Warning" | "Info";
+export function severityMark(
+  severity: Severity,
+  locale: Locale = "en",
+): {
+  label: string;
   shape: "circle" | "triangle" | "square";
 } {
-  return SEVERITY_MARKS[severity];
+  return {
+    label: createTranslator(locale).t(`severity.${severity}`),
+    shape: SEVERITY_SHAPES[severity],
+  };
 }
 
-export function describeIssue(issue: Issue) {
-  const title = Object.hasOwn(RULE_TITLES, issue.rule) ? RULE_TITLES[issue.rule] : issue.rule;
+export function describeIssue(issue: Issue, locale: Locale = "en") {
+  const { t, plural } = createTranslator(locale);
+  const numbers = new Intl.NumberFormat(locale);
+  const titleKey = `rules.${issue.rule}.title`;
+  const title = Object.hasOwn(catalogs.en, titleKey) ? t(titleKey) : issue.rule;
   const target =
     issue.element_kind === "triangle"
-      ? `Mesh ${numberFormat.format(issue.target.mesh)}, primitive ${numberFormat.format(issue.target.primitive)}`
-      : "Whole asset";
+      ? t("issues.target", {
+          mesh: numbers.format(issue.target.mesh),
+          primitive: numbers.format(issue.target.primitive),
+        })
+      : t("issues.wholeAsset");
   let countText = "";
   if (issue.element_kind === "triangle") {
-    countText = `${numberFormat.format(issue.count)} ${issue.count === 1 ? "triangle" : "triangles"}`;
+    countText = plural("issues.triangles", issue.count);
     if (issue.truncated) {
-      countText += ` (first ${numberFormat.format(MAX_LISTED_TRIANGLES)} listed)`;
+      countText = t("issues.truncated", {
+        triangles: countText,
+        limit: numbers.format(MAX_LISTED_TRIANGLES),
+      });
     }
   }
-  const label = `${severityMark(issue.severity).label}: ${title}. ${target}.${countText ? ` ${countText}.` : ""}`;
-  return { title, target, countText, severity: issue.severity, message: issue.message, label };
+  const sentences = [`${severityMark(issue.severity, locale).label}: ${title}`, target];
+  if (countText) sentences.push(countText);
+  const separator = locale === "ja" ? "。" : ". ";
+  const label = sentences.join(separator) + (locale === "ja" ? "。" : ".");
+  const message = localizeIssueMessage(issue.rule, issue.message, locale);
+  return { title, target, countText, severity: issue.severity, message, label };
 }
 
 export function summarizeIssues(issues: readonly Issue[]): IssueCounts {
@@ -60,10 +68,10 @@ export function summarizeIssues(issues: readonly Issue[]): IssueCounts {
   return counts;
 }
 
-export function describeSummary(counts: IssueCounts): string {
-  if (SEVERITIES.every((severity) => counts[severity] === 0)) return "No problems found";
-  return SEVERITIES.map(
-    (severity) =>
-      `${numberFormat.format(counts[severity])} ${severity}${severity !== "info" && counts[severity] !== 1 ? "s" : ""}`,
-  ).join(", ");
+export function describeSummary(counts: IssueCounts, locale: Locale = "en"): string {
+  const { t, plural } = createTranslator(locale);
+  if (SEVERITIES.every((severity) => counts[severity] === 0)) return t("issues.none");
+  return SEVERITIES.map((severity) => plural(`issues.summary.${severity}`, counts[severity])).join(
+    locale === "ja" ? "、" : ", ",
+  );
 }
