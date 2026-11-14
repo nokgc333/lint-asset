@@ -2,6 +2,26 @@ import type { Locale } from "./locale";
 
 export const catalogs: Record<Locale, Record<string, string>> = {
   en: {
+    "footer.github": "GitHub",
+    "footer.about": "About",
+    "footer.donate": "Support the project",
+    "about.title": "About this tool",
+    "about.description": "Inspect GLB geometry and convert normal maps in your browser.",
+    "about.heading": "About",
+    "about.details":
+      "This tool helps you find geometry problems and convert normal maps between DirectX and OpenGL.",
+    "about.privacyHeading": "Privacy",
+    "about.privacy":
+      "Your files and images are processed in your browser and are never uploaded. This tool sends no data to any server, sets no cookies, and does not use analytics. If this changes, this section will be updated and dated.",
+    "about.privacyDate": "Last updated:",
+    "about.disclaimer":
+      "Provided as is under the MIT License, without warranty. The results are a guide, not a guarantee.",
+    "about.links": "Links",
+    "about.github": "GitHub repository",
+    "about.license": "MIT License",
+    "about.notices": "Third-party license notices",
+    "about.thirdParty": "Third-party software",
+    "about.close": "Close",
     "nav.label": "Screens",
     "nav.inspect": "Inspect",
     "nav.texture": "Texture",
@@ -210,6 +230,26 @@ export const catalogs: Record<Locale, Record<string, string>> = {
       "The longest side of the bounding box is {extent} m (limit {limit} m).",
   },
   ja: {
+    "footer.github": "GitHub リポジトリ",
+    "footer.about": "このツールについて",
+    "footer.donate": "開発を支援する",
+    "about.title": "このツールについて",
+    "about.description": "ブラウザで GLB のジオメトリを検査し、法線マップを変換できます。",
+    "about.heading": "概要",
+    "about.details":
+      "ジオメトリの問題を見つけ、法線マップを DirectX と OpenGL の形式間で変換するためのツールです。",
+    "about.privacyHeading": "プライバシー",
+    "about.privacy":
+      "ファイルや画像はお使いのブラウザ内で処理され、アップロードされることはありません。このツールはサーバーへのデータ送信、Cookie の設定、アクセス解析を行いません。変更がある場合は、この欄を更新し、更新日を記載します。",
+    "about.privacyDate": "最終更新日:",
+    "about.disclaimer":
+      "MIT License に基づき、現状のまま、無保証で提供しています。結果は参考情報であり、保証するものではありません。",
+    "about.links": "リンク",
+    "about.github": "GitHub リポジトリ",
+    "about.license": "MIT License（ライセンス）",
+    "about.notices": "第三者ソフトウェアのライセンス表記",
+    "about.thirdParty": "第三者ソフトウェア",
+    "about.close": "閉じる",
     "nav.label": "画面",
     "nav.inspect": "検査",
     "nav.texture": "テクスチャ",

@@ -1,4 +1,5 @@
 import "./style.css";
+import { setupAboutDialog } from "./about/about-dialog";
 import { describeProblem, detectCapabilities, findProblems } from "./environment";
 import { applyDocument, applyStaticTranslations } from "./i18n/apply";
 import { LOCALES } from "./i18n/locale";
@@ -32,6 +33,7 @@ function translatePage(): void {
 for (const locale of LOCALES)
   required(`language-${locale}`).addEventListener("click", () => controller.set(locale));
 translatePage();
+setupAboutDialog(document);
 const app = required("app");
 const unsupported = required("unsupported");
 const list = required("unsupported-list");
