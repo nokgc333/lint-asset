@@ -108,7 +108,9 @@ describe("problem panel", () => {
       "polygon",
       "rect",
     ]);
-    expect(rows()[0]?.attributes.get("aria-label")).toContain("<img src=x>");
+    // The name of a row is its visible text (WCAG 2.5.3): there is no separate aria-label.
+    expect(rows()[0]?.attributes.has("aria-label")).toBe(false);
+    expect(rows()[0]?.children.map((child) => child.textContent)).toContain("<img src=x>");
     expect(rows()[0]?.children.at(-1)?.textContent).toBe("<script>untrusted</script>");
     expect(elements.get("#issues-list-region")?.hidden).toBe(false);
     panel.select(1);

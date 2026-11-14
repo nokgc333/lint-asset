@@ -79,7 +79,6 @@ export function createIssuePanel({
       const row = document.createElement("button");
       row.type = "button";
       row.className = `issue-row severity-${issue.severity}`;
-      row.setAttribute("aria-label", description.label);
       row.tabIndex = index === 0 ? 0 : -1;
       const namespace = "http://www.w3.org/2000/svg";
       const icon = document.createElementNS(namespace, "svg");
