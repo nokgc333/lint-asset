@@ -114,8 +114,12 @@ lint-asset は、モデルをブラウザで検査し、問題のある三角形
 
 環境:
 
-- デスクトップのブラウザだけで、幅 1024 px 以上のウィンドウと、WebGL2・WebAssembly・Web Worker
-  が必要です。スマートフォンとタブレットにはまだ対応していません。
+- WebGL2・WebAssembly・Web Worker のあるデスクトップのブラウザで使えます。狭いウィンドウや、
+  ページを拡大した場合（幅 320 px まで）でも動きます。マウスやトラックパッドのないスマートフォンと
+  タブレットには、まだ対応していません。
+- アクセシビリティ: 目標は WCAG 2.2 の AA です。`npm run audit:a11y` が、ビルドしたアプリを、
+  すべての画面と状態、英日の両方で axe にかけ、キーボードだけの操作も確かめます。問題は
+  見つかっていません。スクリーンリーダーでの読み上げは、まだ確認していません。
 - 今のところ、Chromium 系のブラウザで確認しています。Firefox と Safari は、まだ確認していません。
 
 予定していて未実装のもの: ORM のパッキング、分割形式の glTF と OBJ の読み込み、
@@ -217,6 +221,14 @@ git config core.hooksPath .githooks
 ```sh
 python3 tests/tools/make_perf_models.py build/perf
 node scripts/measure-inspection.mjs build/wasm-node/dist build/perf --enforce
+```
+
+アクセシビリティを確かめるには、アプリをビルドして監査を実行します（Chrome か Chromium が必要で、
+いつもの場所になければ `CHROME_PATH` を設定します）。
+
+```sh
+npm run build
+npm run audit:a11y
 ```
 
 ## サンプル

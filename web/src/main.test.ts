@@ -133,7 +133,7 @@ describe("environment bootstrap", () => {
     await vi.dynamicImportSettled();
     expect(startApp).toHaveBeenCalledOnce();
     expect(startup).toHaveBeenCalledWith("ja", "ja", "GLB ジオメトリ検査");
-    page.resize(800);
+    page.resize(300);
     await page.flushFrame();
     expect(page.list.append.mock.calls.at(-1)?.[0].textContent).toContain("ウィンドウ");
     page.languageEn.dispatchEvent(new Event("click"));
@@ -149,11 +149,11 @@ describe("environment bootstrap", () => {
     expect(startApp).toHaveBeenCalledOnce();
     expect(page.app.hidden).toBe(false);
     expect(page.unsupported.hidden).toBe(true);
-    page.resize(800);
+    page.resize(300);
     await page.flushFrame();
     expect(page.app.hidden).toBe(true);
     expect(page.unsupported.hidden).toBe(false);
-    expect(page.list.append.mock.calls.at(-1)?.[0].textContent).toContain("1024 px");
+    expect(page.list.append.mock.calls.at(-1)?.[0].textContent).toContain("320 px");
     page.resize(1400);
     await page.flushFrame();
     expect(page.app.hidden).toBe(false);
@@ -162,7 +162,7 @@ describe("environment bootstrap", () => {
   });
 
   it("defers startup until widening and coalesces resize events", async () => {
-    const page = setup(800);
+    const page = setup(300);
     await import("./main");
     expect(startApp).not.toHaveBeenCalled();
     expect(page.app.hidden).toBe(true);
@@ -178,7 +178,7 @@ describe("environment bootstrap", () => {
   it.each(["webgl2", "webassembly", "worker"] as const)(
     "never starts when %s is unavailable, even after widening",
     async (missing) => {
-      const page = setup(800, { webgl2: true, webassembly: true, worker: true, [missing]: false });
+      const page = setup(300, { webgl2: true, webassembly: true, worker: true, [missing]: false });
       await import("./main");
       page.resize(1920);
       await page.flushFrame();

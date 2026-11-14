@@ -31,7 +31,7 @@ describe("WebGL2 probe cleanup", () => {
           WebAssembly,
           Worker: {},
         }),
-      ).toEqual({ webgl2: false, webassembly: false, worker: false });
+      ).toEqual({ webgl2: false, webassembly: false, worker: false, touchOnly: false });
     }
   });
 });

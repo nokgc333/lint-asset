@@ -115,8 +115,12 @@ Textures:
 
 Environment:
 
-- Desktop browsers only, in a window at least 1024 px wide, with WebGL2, WebAssembly, and Web
-  Workers. Phones and tablets are not supported yet.
+- Desktop browsers with WebGL2, WebAssembly, and Web Workers. The page works in a narrow window
+  and when you zoom in (down to 320 px wide). Phones and tablets, which have no mouse or
+  trackpad, are not supported yet.
+- Accessibility: the aim is WCAG 2.2 level AA. `npm run audit:a11y` checks the built app with axe
+  on every screen and state, in both languages, and with a keyboard-only run; it finds no
+  problem. Reading the page with a screen reader has not been checked yet.
 - So far it has been checked in a Chromium-based browser. Firefox and Safari are not checked yet.
 
 Planned, not implemented: ORM packing, split glTF and OBJ input,
@@ -221,6 +225,14 @@ time is over its budget:
 ```sh
 python3 tests/tools/make_perf_models.py build/perf
 node scripts/measure-inspection.mjs build/wasm-node/dist build/perf --enforce
+```
+
+To check accessibility, build the app and run the audit (it needs a Chrome or Chromium; set
+`CHROME_PATH` if it is not in the usual place):
+
+```sh
+npm run build
+npm run audit:a11y
 ```
 
 ## Samples
