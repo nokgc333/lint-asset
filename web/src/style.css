@@ -201,6 +201,13 @@ canvas {
   gap: 1rem;
 }
 
+/* In a narrow window or a zoomed page, the problem panel goes under the viewer. */
+@media (max-width: 40rem) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 #issues-panel {
   min-width: 0;
   padding: 1rem;

@@ -8,14 +8,12 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
-    <div aria-live="polite">
-      <section id="unsupported" hidden aria-labelledby="unsupported-title">
-        <h2 id="unsupported-title" data-i18n="environment.title">This browser or window is not supported</h2>
-        <p data-i18n="environment.guide">To use the geometry inspector, address the following problems:</p>
-        <ul id="unsupported-list"></ul>
-        <p data-i18n="environment.supported">Supported: the latest two versions of Chrome, Edge, Firefox, or Safari on a desktop computer, in a window at least 1024 px wide. Phones and tablets are not supported yet.</p>
-      </section>
-    </div>
+    <main id="unsupported" hidden aria-labelledby="unsupported-title" aria-live="polite">
+      <h1 id="unsupported-title" data-i18n="environment.title">This browser or window is not supported</h1>
+      <p data-i18n="environment.guide">To use the geometry inspector, address the following problems:</p>
+      <ul id="unsupported-list"></ul>
+      <p data-i18n="environment.supported">Supported: the latest two versions of Chrome, Edge, Firefox, or Safari on a desktop computer. The page also works when you zoom in and in a narrow window (down to 320 px wide). Phones and tablets are not supported yet.</p>
+    </main>
     <main id="app" hidden>
       <header class="page-header">
         <h1 data-i18n="app.heading">GLB geometry inspector</h1>

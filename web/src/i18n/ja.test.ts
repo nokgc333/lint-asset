@@ -77,10 +77,15 @@ describe("the unsupported-environment guide in Japanese", () => {
     expect(describeProblem("worker", "ja").cause).toBe(
       "このブラウザでは Web Worker を利用できません。",
     );
-    expect(describeProblem("narrow", "ja").cause).toBe("ウィンドウの幅が 1024 px 未満です。");
+    expect(describeProblem("narrow", "ja").cause).toBe("ウィンドウの幅が 320 px 未満です。");
     expect(describeProblem("narrow", "ja").action).toBe(
-      "ウィンドウを広げるか、デスクトップのコンピューターでこのページを開いてください。" +
-        "スマートフォンとタブレットにはまだ対応していません。",
+      "ウィンドウを広げるか、表示を縮小してください。",
+    );
+    expect(describeProblem("touch", "ja").cause).toBe(
+      "スマートフォンまたはタブレットのようです。これらにはまだ対応していません。",
+    );
+    expect(describeProblem("touch", "ja").action).toBe(
+      "デスクトップのコンピューターでこのページを開いてください。",
     );
   });
 });

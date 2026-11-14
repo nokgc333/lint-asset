@@ -117,8 +117,9 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "environment.worker.action":
       "Use the latest Chrome, Edge, Firefox, or Safari on a desktop computer.",
     "environment.narrow.cause": "The window is narrower than {width} px.",
-    "environment.narrow.action":
-      "Make the window wider, or open this page on a desktop computer. Phones and tablets are not supported yet.",
+    "environment.narrow.action": "Make the window wider, or zoom out.",
+    "environment.touch.cause": "This looks like a phone or a tablet, which is not supported yet.",
+    "environment.touch.action": "Open this page on a desktop computer.",
     "counts.meshes.one": "{count} mesh",
     "counts.meshes.other": "{count} meshes",
     "counts.primitives.one": "{count} primitive",
@@ -182,7 +183,7 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "environment.title": "This browser or window is not supported",
     "environment.guide": "To use the geometry inspector, address the following problems:",
     "environment.supported":
-      "Supported: the latest two versions of Chrome, Edge, Firefox, or Safari on a desktop computer, in a window at least 1024 px wide. Phones and tablets are not supported yet.",
+      "Supported: the latest two versions of Chrome, Edge, Firefox, or Safari on a desktop computer. The page also works when you zoom in and in a narrow window (down to 320 px wide). Phones and tablets are not supported yet.",
     "controls.model": "Model controls",
     "controls.open": "Open a GLB file",
     "controls.sample": "Try a sample",
@@ -378,8 +379,10 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "environment.worker.action":
       "デスクトップのコンピューターで、最新版の Chrome、Edge、Firefox、Safari のいずれかをお使いください。",
     "environment.narrow.cause": "ウィンドウの幅が {width} px 未満です。",
-    "environment.narrow.action":
-      "ウィンドウを広げるか、デスクトップのコンピューターでこのページを開いてください。スマートフォンとタブレットにはまだ対応していません。",
+    "environment.narrow.action": "ウィンドウを広げるか、表示を縮小してください。",
+    "environment.touch.cause":
+      "スマートフォンまたはタブレットのようです。これらにはまだ対応していません。",
+    "environment.touch.action": "デスクトップのコンピューターでこのページを開いてください。",
     "counts.meshes.other": "メッシュ {count} 個",
     "counts.primitives.other": "プリミティブ {count} 個",
     "counts.triangles.other": "三角形 {count} 個",
@@ -436,7 +439,7 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "environment.title": "このブラウザまたはウィンドウには対応していません",
     "environment.guide": "ジオメトリ検査を使うには、次の問題を解決してください。",
     "environment.supported":
-      "対応環境: デスクトップのコンピューターで、Chrome、Edge、Firefox、Safari の最新 2 バージョン、幅 1024 px 以上のウィンドウ。スマートフォンとタブレットにはまだ対応していません。",
+      "対応環境: デスクトップのコンピューターで、Chrome、Edge、Firefox、Safari の最新 2 バージョン。ページを拡大した場合や、狭いウィンドウ（幅 320 px まで）でも使えます。スマートフォンとタブレットにはまだ対応していません。",
     "controls.model": "モデルの操作",
     "controls.open": "GLB ファイルを開く",
     "controls.sample": "サンプルを試す",
