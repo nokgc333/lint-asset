@@ -1,6 +1,7 @@
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -10,6 +11,7 @@
 #include "lint_asset/glb_geometry.hpp"
 #include "lint_asset/glb_loader.hpp"
 #include "lint_asset/inspection.hpp"
+#include "lint_asset/normal_map.hpp"
 #include "lint_asset/version.hpp"
 
 namespace {
@@ -38,6 +40,35 @@ std::vector<std::uint8_t> bytes_from_js(const emscripten::val &bytes) {
     emscripten::val view(emscripten::typed_memory_view(length, data.data()));
     view.call<void>("set", bytes);
     return data;
+}
+
+std::uint32_t dimension_from_js(double value) {
+    if (!std::isfinite(value) || value < 0 || std::floor(value) != value) {
+        return 0;
+    }
+    constexpr auto MAX = std::numeric_limits<std::uint32_t>::max();
+    if (value > static_cast<double>(MAX)) {
+        // Preserve oversized dimensions for the pixel-limit check instead of wrapping to zero.
+        return MAX;
+    }
+    return static_cast<std::uint32_t>(value);
+}
+
+emscripten::val flip_normal_map_green_js(const emscripten::val &rgba, double width, double height,
+                                         double max_pixels) {
+    auto data = bytes_from_js(rgba);
+    const auto result = lint_asset::flip_normal_map_green(
+        data, dimension_from_js(width), dimension_from_js(height), limit_from_js(max_pixels));
+    if (result.ok()) {
+        const emscripten::val view(emscripten::typed_memory_view(data.size(), data.data()));
+        rgba.call<void>("set", view);
+    }
+    auto out = emscripten::val::object();
+    out.set("ok", result.ok());
+    out.set("code", std::string(lint_asset::texture_error_code(result.error)));
+    out.set("message", result.message);
+    out.set("translucent_pixels", static_cast<double>(result.translucent_pixels));
+    return out;
 }
 
 template <typename Result> emscripten::val load_result_to_js(const Result &result) {
@@ -164,6 +195,7 @@ emscripten::val analyze_js(const emscripten::val &bytes, double max_file_bytes,
 }  // namespace
 
 EMSCRIPTEN_BINDINGS(lint_core) {
+    emscripten::function("flipNormalMapGreen", &flip_normal_map_green_js);
     emscripten::function("version", &version_string);
     emscripten::function("loadGlb", &load_glb_js);
     emscripten::function("loadGlbGeometry", &load_glb_geometry_js);
