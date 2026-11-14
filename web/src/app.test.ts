@@ -1,18 +1,34 @@
 import { afterEach, expect, it, vi } from "vitest";
 import type { WorkerResponse } from "./protocol";
-import type { AnalyzeResult } from "./wasm/lint_core.mjs";
+import type { AnalyzeResult, Issue } from "./wasm/lint_core.mjs";
 
-const { worker, downloadText, setGeometry, textureScreens } = vi.hoisted(() => ({
-  worker: { addEventListener: vi.fn(), postMessage: vi.fn() },
-  downloadText: vi.fn(),
-  setGeometry: vi.fn(),
-  textureScreens: Array.from({ length: 3 }, () => ({
-    clear: vi.fn(),
-    refresh: vi.fn(),
-    handleResponse: vi.fn(),
-    failWorker: vi.fn(),
-  })),
-}));
+const {
+  worker,
+  downloadText,
+  setGeometry,
+  selectIssue,
+  detail,
+  issuePanel,
+  createIssuePanel,
+  textureScreens,
+} = vi.hoisted(() => {
+  const issuePanel = { setIssues: vi.fn(), refresh: vi.fn(), select: vi.fn() };
+  return {
+    worker: { addEventListener: vi.fn(), postMessage: vi.fn() },
+    downloadText: vi.fn(),
+    setGeometry: vi.fn(),
+    selectIssue: vi.fn(),
+    detail: { show: vi.fn(), refresh: vi.fn() },
+    issuePanel,
+    createIssuePanel: vi.fn((_options: { onSelect: (issue: Issue | null) => void }) => issuePanel),
+    textureScreens: Array.from({ length: 3 }, () => ({
+      clear: vi.fn(),
+      refresh: vi.fn(),
+      handleResponse: vi.fn(),
+      failWorker: vi.fn(),
+    })),
+  };
+});
 vi.mock("./texture/texture-browser", () => ({
   createTextureBrowser: () => textureScreens[0],
 }));
@@ -22,9 +38,10 @@ vi.mock("./texture/orm-browser", () => ({
 vi.mock("./trusted-worker", () => ({ createModuleWorker: () => worker }));
 vi.mock("./report/download", () => ({ downloadText }));
 vi.mock("./issues/panel", () => ({
-  createIssuePanel: () => ({ setIssues: vi.fn(), refresh: vi.fn() }),
+  createIssuePanel,
 }));
-vi.mock("./viewer/viewer", () => ({ createViewer: () => ({ setGeometry }) }));
+vi.mock("./issues/detail-panel", () => ({ createDetailPanel: () => detail }));
+vi.mock("./viewer/viewer", () => ({ createViewer: () => ({ setGeometry, selectIssue }) }));
 vi.mock("./worker.ts?worker&url", () => ({ default: "/worker.js" }));
 
 import { startApp } from "./app";
@@ -95,9 +112,30 @@ it("exports the displayed model with the engine version and retains it after a f
   receive({ id: 1, type: "version", version: "1.2.3" });
   expect(element("export-json").disabled).toBe(true);
   expect(element("export-markdown").disabled).toBe(true);
+  const selected: Issue = {
+    rule: "uv.missing",
+    severity: "warning",
+    message: "The primitive has no UV coordinates.",
+    element_kind: "triangle",
+    target: { mesh: 0, primitive: 0 },
+    count: 1,
+    elements: [0],
+    truncated: false,
+  };
+  const onSelect = createIssuePanel.mock.calls[0]?.[0].onSelect;
+  onSelect?.(selected);
+  expect(selectIssue).toHaveBeenLastCalledWith(selected);
+  expect(detail.show).toHaveBeenLastCalledWith(selected);
+  onSelect?.(null);
+  expect(selectIssue).toHaveBeenLastCalledWith(null);
+  expect(detail.show).toHaveBeenLastCalledWith(null);
+  onSelect?.(selected);
   const input = element("file");
   input.files = [new File(["data"], "<crate>.glb")];
   input.dispatchEvent(new Event("change"));
+  expect(issuePanel.select).toHaveBeenLastCalledWith(null);
+  expect(selectIssue).toHaveBeenLastCalledWith(null);
+  expect(detail.show).toHaveBeenLastCalledWith(null);
   await vi.dynamicImportSettled();
   const result: AnalyzeResult = {
     ok: true,
@@ -113,6 +151,7 @@ it("exports the displayed model with the engine version and retains it after a f
   };
   receive({ id: 2, type: "loaded", result });
   expect(setGeometry).toHaveBeenCalledWith(result);
+  expect(detail.show).toHaveBeenLastCalledWith(null);
   expect(element("export-json").disabled).toBe(false);
   expect(element("export-markdown").disabled).toBe(false);
   element("export-json").dispatchEvent(new Event("click"));
@@ -141,6 +180,7 @@ it("exports the displayed model with the engine version and retains it after a f
     expect.stringContaining("# lint-asset report: \\<crate\\>.glb"),
   );
   controller.set("ja");
+  expect(detail.refresh).toHaveBeenCalledOnce();
   expect(element("status").textContent).toContain("GLB");
   expect(element("error").textContent).toContain("壊れている");
   element("export-markdown").dispatchEvent(new Event("click"));

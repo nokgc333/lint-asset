@@ -1,7 +1,25 @@
+import { FIX_HINT_TEXTS_EN } from "../issues/fix-hints-en";
+import { FIX_HINT_TEXTS_JA } from "../issues/fix-hints-ja";
 import type { Locale } from "./locale";
 
 export const catalogs: Record<Locale, Record<string, string>> = {
   en: {
+    ...FIX_HINT_TEXTS_EN,
+    "detail.title": "Details",
+    "detail.empty": "Select a problem in the list to see what it means and how to fix it.",
+    "detail.where": "Where",
+    "detail.message": "Message",
+    "detail.triangles": "Triangles",
+    "detail.moreTriangles": "and {count} more",
+    "detail.truncated": "The report lists at most {limit} of {total} triangles.",
+    "detail.triangleNote":
+      "These are the file’s own triangle numbers (the first triangle is 0). They may differ from face numbers in a modelling tool.",
+    "detail.meaning": "What it means",
+    "detail.why": "Why it matters",
+    "detail.fix": "How to fix",
+    "detail.tools": "In your tool",
+    "detail.toolNote": "These are guides; menu names can differ between versions.",
+
     "texture.mode.legend": "Conversion type",
     "texture.mode.normal": "Normal map: DirectX / OpenGL",
     "texture.mode.ormPack": "ORM: pack three textures into one",
@@ -311,6 +329,23 @@ export const catalogs: Record<Locale, Record<string, string>> = {
       "The longest side of the bounding box is {extent} m (limit {limit} m).",
   },
   ja: {
+    ...FIX_HINT_TEXTS_JA,
+    "detail.title": "詳細",
+    "detail.empty": "一覧で問題を選ぶと、意味と修正方法を確認できます。",
+    "detail.where": "場所",
+    "detail.message": "メッセージ",
+    "detail.triangles": "三角形の番号",
+    "detail.moreTriangles": "ほか {count} 個あります",
+    "detail.truncated":
+      "レポートには全 {total} 個の三角形のうち、最大 {limit} 個の番号を記載しています。",
+    "detail.triangleNote":
+      "この番号はファイル内の三角形の番号です（最初は 0）。モデリングツールの面番号とは異なる場合があります。",
+    "detail.meaning": "問題の意味",
+    "detail.why": "影響について",
+    "detail.fix": "修正方法",
+    "detail.tools": "お使いのツールでの操作",
+    "detail.toolNote": "操作の目安です。バージョンによってメニュー名が異なる場合があります。",
+
     "texture.mode.legend": "変換の種類",
     "texture.mode.normal": "法線マップ: DirectX / OpenGL",
     "texture.mode.ormPack": "ORM: 3 枚のテクスチャを 1 枚に合成",
