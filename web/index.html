@@ -70,8 +70,28 @@
             <button id="export-markdown" type="button" aria-describedby="export-note" disabled data-i18n="export.markdown">Download Markdown</button>
           </div>
           <p id="export-note" data-i18n="export.note">Reports contain the file name and the results only. Nothing is sent anywhere.</p>
+          <div id="issues-filters" hidden>
+            <fieldset>
+              <legend id="issues-severity-legend" data-i18n="issues.filter.severity">Show</legend>
+              <div class="issues-severities">
+                <label for="issues-error"><input id="issues-error" type="checkbox" checked><span id="issues-error-label" data-i18n="severity.error">Error</span></label>
+                <label for="issues-warning"><input id="issues-warning" type="checkbox" checked><span id="issues-warning-label" data-i18n="severity.warning">Warning</span></label>
+                <label for="issues-info"><input id="issues-info" type="checkbox" checked><span id="issues-info-label" data-i18n="severity.info">Info</span></label>
+              </div>
+            </fieldset>
+            <label id="issues-rule-label" for="issues-rule" data-i18n="issues.filter.rule">Rule</label>
+            <select id="issues-rule"></select>
+            <label id="issues-sort-label" for="issues-sort" data-i18n="issues.sort.label">Sort by</label>
+            <select id="issues-sort"></select>
+            <button id="issues-clear" type="button" data-i18n="issues.filter.clear" disabled>Clear filters</button>
+          </div>
+          <p id="issues-shown" aria-live="polite" hidden></p>
           <button data-i18n="panel.show" id="issues-toggle" type="button" aria-expanded="false" aria-controls="issues-list-region">Show problems</button>
           <div id="issues-list-region" hidden>
+            <div id="issues-none" hidden>
+              <p id="issues-none-text" data-i18n="issues.none.filtered">No problems match the filters.</p>
+              <button id="issues-none-clear" type="button" data-i18n="issues.filter.clear">Clear filters</button>
+            </div>
             <ol data-i18n-attr="aria-label:panel.title" id="issues-list" aria-label="Problems"></ol>
           </div>
         </aside>

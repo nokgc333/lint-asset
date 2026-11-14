@@ -5,6 +5,7 @@ import { createTextSlot } from "./i18n/text-slot";
 import { createTranslator } from "./i18n/translate";
 import { pickSingleFile } from "./intake";
 import { createDetailPanel } from "./issues/detail-panel";
+import { issueKey } from "./issues/filter-sort";
 import { createIssuePanel } from "./issues/panel";
 import { refreshLimitText } from "./limit-dialog";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
@@ -19,7 +20,7 @@ import { createTextureBrowser } from "./texture/texture-browser";
 import { createModuleWorker } from "./trusted-worker";
 import { ORBIT_STEP, PAN_STEP, ZOOM_FACTOR } from "./viewer/controls";
 import type { Viewer } from "./viewer/viewer";
-import type { AnalyzeResult, Thresholds } from "./wasm/lint_core.mjs";
+import type { AnalyzeResult, Issue, Thresholds } from "./wasm/lint_core.mjs";
 import workerUrl from "./worker.ts?worker&url";
 
 export function startApp(
@@ -67,11 +68,27 @@ export function startApp(
   let viewer: Viewer | null = null;
   let workerAvailable = true;
   const detail = createDetailPanel({ getLocale });
+  let selectedIssue: Issue | null = null;
+  let loadingGeometry = false;
+  let visibleIssues: readonly Issue[] = [];
   const panel = createIssuePanel({
     getLocale,
     onSelect: (issue) => {
+      selectedIssue = issue;
       viewer?.selectIssue(issue);
       detail.show(issue);
+    },
+    onVisibleChange: (visible) => {
+      const previous = new Set(visibleIssues);
+      const changed =
+        visible.length !== visibleIssues.length || visible.some((issue) => !previous.has(issue));
+      visibleIssues = visible;
+      if (!loadingGeometry && changed) viewer?.setVisibleIssues(visible);
+      const selectedKey = selectedIssue ? issueKey(selectedIssue) : null;
+      if (selectedKey !== null && !visible.some((issue) => issueKey(issue) === selectedKey)) {
+        selectedIssue = null;
+        detail.show(null);
+      }
     },
   });
 
@@ -110,8 +127,11 @@ export function startApp(
     getLocale,
     post: (request) => post(request, [request.bytes]),
     showGeometry: (result, file) => {
-      viewer?.setGeometry(result);
+      loadingGeometry = true;
       panel.setIssues(result.issues);
+      loadingGeometry = false;
+      viewer?.setGeometry(result, visibleIssues);
+      selectedIssue = null;
       detail.show(null);
       displayed = { ...file, result };
       jsonButton.disabled = false;
@@ -121,6 +141,7 @@ export function startApp(
     firstRequestId: VERSION_REQUEST_ID,
   });
   function openFile(file: File): Promise<void> {
+    selectedIssue = null;
     panel.select(null);
     viewer?.selectIssue(null);
     detail.show(null);

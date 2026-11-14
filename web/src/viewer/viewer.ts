@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { SEVERITIES, type Severity } from "../issues/describe";
+import { issueKey } from "../issues/filter-sort";
 import { issueBounds, triangleSeverities } from "../issues/geometry";
 import { buildOverlay } from "../issues/overlay";
 import {
@@ -16,7 +17,8 @@ import { ORBIT_STEP, PAN_STEP, POINTER_ORBIT_STEP, WHEEL_ZOOM_STEP, ZOOM_FACTOR 
 import { normalLines } from "./normals";
 
 export interface Viewer {
-  setGeometry(result: AnalyzeResult): void;
+  setGeometry(result: AnalyzeResult, visibleIssues?: readonly Issue[]): void;
+  setVisibleIssues(issues: readonly Issue[]): void;
   selectIssue(issue: Issue | null): void;
   setWireframe(on: boolean): void;
   setNormals(on: boolean): void;
@@ -53,6 +55,8 @@ export function createViewer(canvas: HTMLCanvasElement): Viewer {
   const geometries: THREE.BufferGeometry[] = [];
   const materials: THREE.Material[] = [];
   const meshMaterials: THREE.MeshStandardMaterial[] = [];
+  const overlayGeometries: THREE.BufferGeometry[] = [];
+  let selectedIssue: Issue | null = null;
   const selectionGeometries: THREE.BufferGeometry[] = [];
   let currentResult: AnalyzeResult | null = null;
   let overlayMaterial: THREE.ShaderMaterial | null = null;
@@ -125,6 +129,7 @@ export function createViewer(canvas: HTMLCanvasElement): Viewer {
   }
 
   function clearSelection(): void {
+    selectedIssue = null;
     selectionGroup.clear();
     for (const geometry of selectionGeometries) geometry.dispose();
     selectionGeometries.length = 0;
@@ -158,10 +163,34 @@ export function createViewer(canvas: HTMLCanvasElement): Viewer {
     requestRender();
   }
 
+  function clearOverlay(): void {
+    overlayGroup.clear();
+    for (const geometry of overlayGeometries) geometry.dispose();
+    overlayGeometries.length = 0;
+    overlayMaterial?.dispose();
+    overlayMaterial = null;
+  }
+
+  function setVisibleIssues(issues: readonly Issue[]): void {
+    if (disposed || !currentResult) return;
+    clearOverlay();
+    const selectedKey = selectedIssue ? issueKey(selectedIssue) : null;
+    if (selectedKey !== null && !issues.some((issue) => issueKey(issue) === selectedKey))
+      clearSelection();
+    const flagged = triangleSeverities(issues);
+    if (flagged.size > 0) {
+      overlayMaterial = createOverlayMaterial(
+        selectedIssue?.element_kind === "triangle" ? 0.35 : 0.8,
+        0,
+      );
+      addOverlay(flagged, overlayGroup, overlayMaterial, overlayGeometries, 1);
+    }
+    requestRender();
+  }
+
   function clearGeometry(): void {
     clearSelection();
-    overlayGroup.clear();
-    overlayMaterial = null;
+    clearOverlay();
     currentResult = null;
     model.clear();
     normalGroup.clear();
@@ -174,7 +203,8 @@ export function createViewer(canvas: HTMLCanvasElement): Viewer {
 
   const viewer: Viewer = {
     resize,
-    setGeometry(result) {
+    setVisibleIssues,
+    setGeometry(result, visibleIssues = result.issues) {
       if (!result.ok || disposed) return;
       clearGeometry();
       currentResult = result;
@@ -225,17 +255,13 @@ export function createViewer(canvas: HTMLCanvasElement): Viewer {
           normalGroup.add(lines);
         }
       }
-      const flagged = triangleSeverities(result.issues);
-      if (flagged.size > 0) {
-        overlayMaterial = createOverlayMaterial(0.8, 0);
-        materials.push(overlayMaterial);
-        addOverlay(flagged, overlayGroup, overlayMaterial, geometries, 1);
-      }
+      setVisibleIssues(visibleIssues);
       requestRender();
     },
     selectIssue(issue) {
       if (disposed) return;
       clearSelection();
+      selectedIssue = issue;
       if (issue && currentResult) {
         if (issue.element_kind === "triangle") {
           selectionMaterial = createOverlayMaterial(1, 0.25);

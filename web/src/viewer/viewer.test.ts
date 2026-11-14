@@ -192,3 +192,55 @@ describe("problem overlays", () => {
     viewer.dispose();
   });
 });
+
+it("filters only the overlay, retains visible selection, and releases replaced GPU resources", () => {
+  const { viewer, result, flush } = setup();
+  viewer.setGeometry(result);
+  const scene = flush();
+  const shaders = () => {
+    const meshes: THREE.Mesh[] = [];
+    scene.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.material instanceof THREE.ShaderMaterial)
+        meshes.push(object);
+    });
+    return meshes;
+  };
+  const old = shaders()[0] as THREE.Mesh;
+  const disposeGeometry = vi.spyOn(old.geometry, "dispose");
+  const disposeMaterial = vi.spyOn(old.material as THREE.Material, "dispose");
+  viewer.selectIssue(issue);
+  flush();
+  const selection = shaders().find((mesh) => mesh.renderOrder === 2) as THREE.Mesh;
+  const disposeSelection = vi.spyOn(selection.geometry, "dispose");
+  viewer.setVisibleIssues([issue]);
+  flush();
+  expect(disposeGeometry).toHaveBeenCalledOnce();
+  expect(disposeMaterial).toHaveBeenCalledOnce();
+  expect(shaders().filter((mesh) => mesh.renderOrder === 2)[0]).toBe(selection);
+  const material = shaders().find((mesh) => mesh.renderOrder === 1)
+    ?.material as THREE.ShaderMaterial;
+  expect(material.uniforms.uOpacity?.value).toBe(0.35);
+  viewer.setVisibleIssues([]);
+  flush();
+  expect(shaders()).toHaveLength(0);
+  expect(disposeSelection).toHaveBeenCalledOnce();
+  const bases: THREE.Mesh[] = [];
+  scene.traverse((object) => {
+    if (object instanceof THREE.Mesh) bases.push(object);
+  });
+  const baseMaterial = bases[0]?.material as THREE.MeshStandardMaterial;
+  expect(baseMaterial.color.getHexString()).toBe(MODEL_COLOR_WITH_ISSUES.slice(1));
+  viewer.dispose();
+});
+
+it("builds a new model with only the initially visible overlay", () => {
+  const { viewer, result, flush } = setup();
+  viewer.setGeometry(result, []);
+  const shaders: THREE.Mesh[] = [];
+  flush().traverse((object) => {
+    if (object instanceof THREE.Mesh && object.material instanceof THREE.ShaderMaterial)
+      shaders.push(object);
+  });
+  expect(shaders).toHaveLength(0);
+  viewer.dispose();
+});

@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import Ajv2020 from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
+import { applyFilterAndSort, DEFAULT_FILTER } from "../issues/filter-sort";
 import type { Issue } from "../wasm/lint_core.mjs";
 import { buildReport, safeFileName } from "./build-report";
 import { reportToJson } from "./to-json";
@@ -255,4 +256,20 @@ it("exports the custom thresholds used by analyze in JSON and Markdown", () => {
   expect(JSON.parse(reportToJson(report)).thresholds).toEqual(thresholds);
   const markdown = reportToMarkdown(report, "en");
   for (const value of ["54321", "0.125", "321"]) expect(markdown).toContain(value);
+});
+
+it("keeps every issue in both reports when the displayed issues are filtered", () => {
+  const source = input();
+  const visible = applyFilterAndSort(
+    source.result.issues,
+    { ...DEFAULT_FILTER, rule: "normal.flipped" },
+    "severity",
+  );
+  expect(visible).toEqual([flipped]);
+  const report = buildReport(source);
+  expect(JSON.parse(reportToJson(report)).issues).toEqual([flipped, tooLarge]);
+  const markdown = reportToMarkdown(report, "en");
+  expect(markdown).toContain(flipped.rule);
+  expect(markdown).toContain(tooLarge.rule);
+  expect(report.summary.issues).toEqual({ error: 1, warning: 1, info: 0 });
 });
