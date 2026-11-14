@@ -125,6 +125,7 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "rules.asset.triangle_count_exceeded.title": "Too many triangles",
     "rules.asset.scale_too_small.title": "Model too small",
     "rules.asset.scale_too_large.title": "Model too large",
+    "rules.asset.external_uri.title": "External image references",
     "issues.target": "Mesh {mesh}, primitive {primitive}",
     "issues.wholeAsset": "Whole asset",
     "issues.triangles.one": "{count} triangle",
@@ -226,6 +227,8 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "checks.asset.triangle_count_exceeded": "The scene draws {count} triangles (limit {limit}).",
     "checks.asset.scale_too_small":
       "The longest side of the bounding box is {extent} m (minimum {limit} m).",
+    "checks.asset.external_uri":
+      "External image references: {total} (web addresses: {web}, other: {other}).",
     "checks.asset.scale_too_large":
       "The longest side of the bounding box is {extent} m (limit {limit} m).",
   },
@@ -353,6 +356,7 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "rules.asset.triangle_count_exceeded.title": "三角形が多すぎます",
     "rules.asset.scale_too_small.title": "モデルが小さすぎます",
     "rules.asset.scale_too_large.title": "モデルが大きすぎます",
+    "rules.asset.external_uri.title": "外部の画像参照",
     "issues.target": "メッシュ {mesh}・プリミティブ {primitive}",
     "issues.wholeAsset": "アセット全体",
     "issues.triangles.other": "三角形 {count} 個",
@@ -450,6 +454,8 @@ export const catalogs: Record<Locale, Record<string, string>> = {
     "checks.asset.triangle_count_exceeded":
       "シーンは {count} 個の三角形を描画します（上限 {limit}）。",
     "checks.asset.scale_too_small": "外接箱の最長辺は {extent} m です（最小 {limit} m）。",
+    "checks.asset.external_uri":
+      "外部の画像参照: {total} 件（Web アドレス {web} 件、その他 {other} 件）。",
     "checks.asset.scale_too_large": "外接箱の最長辺は {extent} m です（上限 {limit} m）。",
   },
 };
