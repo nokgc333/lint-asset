@@ -19,7 +19,7 @@ def build_glb(json_obj, bin_bytes, version=2):
 
 def add_accessor(document, data, values, component_type, accessor_type, byte_stride=None, normalized=False):
     formats = {5120: "b", 5121: "B", 5122: "h", 5123: "H", 5125: "I", 5126: "f"}
-    widths = {"SCALAR": 1, "VEC3": 3}
+    widths = {"SCALAR": 1, "VEC2": 2, "VEC3": 3}
     data.extend(b"\0" * (-len(data) % 4))
     packed = struct.pack("<" + formats[component_type] * len(values), *values)
     if byte_stride is not None:
@@ -122,7 +122,7 @@ def cube_open_top():
     return build_glb(*cube_document(open_top=True))
 
 
-def flat_cube(normal_scales):
+def flat_cube(normal_scales, uv_offset_face=None):
     faces = [
         ((0, 0, -1), [(0, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 0)]),
         ((0, 0, 1), [(0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)]),
@@ -131,7 +131,7 @@ def flat_cube(normal_scales):
         ((0, -1, 0), [(0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1)]),
         ((0, 1, 0), [(0, 1, 0), (0, 1, 1), (1, 1, 1), (1, 1, 0)]),
     ]
-    positions, normals, indices = [], [], []
+    positions, normals, indices, uvs = [], [], [], []
     for face, (outward, vertices) in enumerate(faces):
         for triangle in [(0, 1, 2), (0, 2, 3)]:
             v0, v1, v2 = [vertices[index] for index in triangle]
@@ -141,6 +141,12 @@ def flat_cube(normal_scales):
                      a[2] * b[0] - a[0] * b[2],
                      a[0] * b[1] - a[1] * b[0]]
             assert cross == list(outward)
+        col, row = face % 3, face // 3
+        u0, u1 = col / 3 + 0.01, (col + 1) / 3 - 0.01
+        v0, v1 = row / 2 + 0.01, (row + 1) / 2 - 0.01
+        offset = 2.0 if face == uv_offset_face else 0.0
+        uvs.extend([u0 + offset, v0, u1 + offset, v0,
+                    u1 + offset, v1, u0 + offset, v1])
         positions.extend(value for vertex in vertices for value in vertex)
         normals.extend(value * normal_scales[face] for _ in vertices for value in outward)
         indices.extend(face * len(vertices) + index for index in (0, 1, 2, 0, 2, 3))
@@ -148,15 +154,24 @@ def flat_cube(normal_scales):
     data = bytearray()
     position = add_accessor(document, data, positions, 5126, "VEC3")
     normal = add_accessor(document, data, normals, 5126, "VEC3")
+    uv = add_accessor(document, data, uvs, 5126, "VEC2")
     index = add_accessor(document, data, indices, 5123, "SCALAR")
     document["meshes"] = [{"primitives": [{
-        "attributes": {"POSITION": position, "NORMAL": normal},
+        "attributes": {"POSITION": position, "NORMAL": normal, "TEXCOORD_0": uv},
         "indices": index, "mode": 4,
     }]}]
     document["nodes"] = [{"mesh": 0}]
     document["scenes"] = [{"nodes": [0]}]
     document["scene"] = 0
     return build_glb(document, bytes(data))
+
+
+def cube_flat():
+    return flat_cube([1] * 6)
+
+
+def cube_uv_out_of_range():
+    return flat_cube([1] * 6, uv_offset_face=3)
 
 
 def cube_faces_flipped():
@@ -294,6 +309,28 @@ def triangle_document():
     return document, data
 
 
+def uv_ushort_normalized():
+    document, data = triangle_document()
+    uv = add_accessor(document, data, [0, 0, 65535, 0, 32768, 65535],
+                      5123, "VEC2", normalized=True)
+    document["meshes"][0]["primitives"][0]["attributes"]["TEXCOORD_0"] = uv
+    return build_glb(document, data)
+
+
+def uv_count_mismatch():
+    document, data = triangle_document()
+    uv = add_accessor(document, data, [0, 0, 1, 0], 5126, "VEC2")
+    document["meshes"][0]["primitives"][0]["attributes"]["TEXCOORD_0"] = uv
+    return build_glb(document, data)
+
+
+def uv_wrong_type():
+    document, data = triangle_document()
+    uv = add_accessor(document, data, [0, 0, 0, 1, 0, 0, 0, 1, 0], 5126, "VEC3")
+    document["meshes"][0]["primitives"][0]["attributes"]["TEXCOORD_0"] = uv
+    return build_glb(document, data)
+
+
 def node_transforms():
     document, data = triangle_document()
     document["nodes"] = [{"translation": [10, 0, 0], "children": [1]},
@@ -358,6 +395,7 @@ def main():
     output = Path(sys.argv[1])
     output.mkdir(parents=True, exist_ok=True)
     builders = [
+        cube_flat, cube_uv_out_of_range, uv_ushort_normalized, uv_count_mismatch, uv_wrong_type,
         node_transforms, quantized_strided, index_out_of_vertex_range, sparse_accessor,
         node_cycle, node_instance_explosion,
         cube_small, cube_huge, cube_cm_export, cube_with_degenerate,

@@ -24,12 +24,32 @@ std::vector<lint_asset::Issue> inspect_fixture(const std::string &name) {
 }  // namespace
 
 TEST_CASE("inspection golden: cube") {
-    const std::vector<lint_asset::Issue> expected = {};
+    const std::vector<lint_asset::Issue> expected = {
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
+         0,
+         0,
+         12,
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
+         false,
+         lint_asset::ElementKind::triangle},
+    };
     CHECK(inspect_fixture("cube") == expected);
 }
 
 TEST_CASE("inspection golden: cube_cm_export") {
-    const std::vector<lint_asset::Issue> expected = {};
+    const std::vector<lint_asset::Issue> expected = {
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
+         0,
+         0,
+         12,
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
+         false,
+         lint_asset::ElementKind::triangle},
+    };
     CHECK(inspect_fixture("cube_cm_export") == expected);
 }
 
@@ -48,11 +68,25 @@ TEST_CASE("inspection golden: cube_faces_flipped") {
     CHECK(inspect_fixture("cube_faces_flipped") == expected);
 }
 
+TEST_CASE("inspection golden: cube_flat") {
+    const std::vector<lint_asset::Issue> expected = {};
+    CHECK(inspect_fixture("cube_flat") == expected);
+}
+
 TEST_CASE("inspection golden: cube_flipped_normals") {
     const std::vector<lint_asset::Issue> expected = {
         {lint_asset::RuleId::normal_flipped,
          lint_asset::Severity::error,
          "Vertex normals point opposite to the face winding.",
+         0,
+         0,
+         12,
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
+         false,
+         lint_asset::ElementKind::triangle},
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
          0,
          0,
          12,
@@ -74,6 +108,15 @@ TEST_CASE("inspection golden: cube_huge") {
          {},
          false,
          lint_asset::ElementKind::asset},
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
+         0,
+         0,
+         12,
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
+         false,
+         lint_asset::ElementKind::triangle},
     };
     CHECK(inspect_fixture("cube_huge") == expected);
 }
@@ -87,6 +130,15 @@ TEST_CASE("inspection golden: cube_open_top") {
          0,
          4,
          {1, 3, 6, 9},
+         false,
+         lint_asset::ElementKind::triangle},
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
+         0,
+         0,
+         10,
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
          false,
          lint_asset::ElementKind::triangle},
     };
@@ -104,6 +156,15 @@ TEST_CASE("inspection golden: cube_small") {
          {},
          false,
          lint_asset::ElementKind::asset},
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
+         0,
+         0,
+         12,
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
+         false,
+         lint_asset::ElementKind::triangle},
     };
     CHECK(inspect_fixture("cube_small") == expected);
 }
@@ -123,6 +184,21 @@ TEST_CASE("inspection golden: cube_unnormalized") {
     CHECK(inspect_fixture("cube_unnormalized") == expected);
 }
 
+TEST_CASE("inspection golden: cube_uv_out_of_range") {
+    const std::vector<lint_asset::Issue> expected = {
+        {lint_asset::RuleId::uv_out_of_range,
+         lint_asset::Severity::info,
+         "UV coordinates are outside the 0 to 1 range.",
+         0,
+         0,
+         2,
+         {6, 7},
+         false,
+         lint_asset::ElementKind::triangle},
+    };
+    CHECK(inspect_fixture("cube_uv_out_of_range") == expected);
+}
+
 TEST_CASE("inspection golden: cube_with_degenerate") {
     const std::vector<lint_asset::Issue> expected = {
         {lint_asset::RuleId::mesh_degenerate_triangle,
@@ -132,6 +208,15 @@ TEST_CASE("inspection golden: cube_with_degenerate") {
          0,
          1,
          {12},
+         false,
+         lint_asset::ElementKind::triangle},
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
+         0,
+         0,
+         13,
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
          false,
          lint_asset::ElementKind::triangle},
     };
@@ -152,6 +237,15 @@ TEST_CASE("inspection golden: primitive_modes") {
         {lint_asset::RuleId::mesh_nonmanifold_edge,
          lint_asset::Severity::error,
          "1 edge is shared by three or more triangles.",
+         0,
+         0,
+         1,
+         {0},
+         false,
+         lint_asset::ElementKind::triangle},
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
          0,
          0,
          1,
@@ -185,6 +279,15 @@ TEST_CASE("inspection golden: primitive_modes") {
          {1},
          false,
          lint_asset::ElementKind::triangle},
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
+         0,
+         1,
+         2,
+         {0, 1},
+         false,
+         lint_asset::ElementKind::triangle},
         {lint_asset::RuleId::normal_missing,
          lint_asset::Severity::warning,
          "The primitive has no vertex normals.",
@@ -197,6 +300,15 @@ TEST_CASE("inspection golden: primitive_modes") {
         {lint_asset::RuleId::mesh_boundary_edge,
          lint_asset::Severity::warning,
          "5 boundary edges are each used by only one triangle.",
+         1,
+         0,
+         3,
+         {0, 1, 2},
+         false,
+         lint_asset::ElementKind::triangle},
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
          1,
          0,
          3,
@@ -230,6 +342,15 @@ TEST_CASE("inspection golden: three_pages") {
         {lint_asset::RuleId::mesh_boundary_edge,
          lint_asset::Severity::warning,
          "6 boundary edges are each used by only one triangle.",
+         0,
+         0,
+         3,
+         {0, 1, 2},
+         false,
+         lint_asset::ElementKind::triangle},
+        {lint_asset::RuleId::uv_missing,
+         lint_asset::Severity::warning,
+         "The primitive has no UV coordinates.",
          0,
          0,
          3,

@@ -16,6 +16,10 @@ std::string_view rule_name(RuleId rule) noexcept {
         return "mesh.boundary_edge";
     case RuleId::mesh_degenerate_triangle:
         return "mesh.degenerate_triangle";
+    case RuleId::uv_missing:
+        return "uv.missing";
+    case RuleId::uv_out_of_range:
+        return "uv.out_of_range";
     case RuleId::asset_triangle_count_exceeded:
         return "asset.triangle_count_exceeded";
     case RuleId::asset_scale_too_small:

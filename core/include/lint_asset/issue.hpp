@@ -18,6 +18,8 @@ enum class RuleId : std::uint8_t {
     mesh_nonmanifold_edge,          // "mesh.nonmanifold_edge"
     mesh_boundary_edge,             // "mesh.boundary_edge"
     mesh_degenerate_triangle,       // "mesh.degenerate_triangle"
+    uv_missing,                     // "uv.missing"
+    uv_out_of_range,                // "uv.out_of_range"
     asset_triangle_count_exceeded,  // "asset.triangle_count_exceeded"
     asset_scale_too_small,          // "asset.scale_too_small"
     asset_scale_too_large,          // "asset.scale_too_large"
