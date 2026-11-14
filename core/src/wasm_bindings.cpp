@@ -9,6 +9,7 @@
 
 #include "lint_asset/glb_geometry.hpp"
 #include "lint_asset/glb_loader.hpp"
+#include "lint_asset/normal_inspection.hpp"
 #include "lint_asset/version.hpp"
 
 namespace {
@@ -100,10 +101,50 @@ emscripten::val load_glb_geometry_js(const emscripten::val &bytes, double max_fi
     return out;
 }
 
+emscripten::val inspect_js(const emscripten::val &bytes, double max_file_bytes,
+                           double max_triangles) {
+    const lint_asset::LoadLimits limits{limit_from_js(max_file_bytes),
+                                        limit_from_js(max_triangles)};
+    const auto data = bytes_from_js(bytes);
+    const auto result = lint_asset::load_glb_geometry(data, limits);
+    auto out = emscripten::val::object();
+    out.set("ok", result.ok());
+    out.set("code", std::string(lint_asset::load_error_code(result.error)));
+    out.set("message", result.message);
+    out.set("meshes", result.stats.meshes);
+    out.set("primitives", result.stats.primitives);
+    out.set("triangles", static_cast<double>(result.stats.triangles));
+    auto issues = emscripten::val::array();
+    if (result.ok()) {
+        for (const auto &issue : lint_asset::inspect_normals(result.geometry)) {
+            auto item = emscripten::val::object();
+            item.set("rule", std::string(lint_asset::rule_name(issue.rule)));
+            item.set("severity", std::string(lint_asset::severity_name(issue.severity)));
+            item.set("message", issue.message);
+            item.set("element_kind", std::string("triangle"));
+            auto target = emscripten::val::object();
+            target.set("mesh", issue.mesh);
+            target.set("primitive", issue.primitive);
+            item.set("target", target);
+            item.set("count", static_cast<double>(issue.count));
+            auto elements = emscripten::val::array();
+            for (const auto element : issue.elements) {
+                elements.call<void>("push", element);
+            }
+            item.set("elements", elements);
+            item.set("truncated", issue.truncated);
+            issues.call<void>("push", item);
+        }
+    }
+    out.set("issues", issues);
+    return out;
+}
+
 }  // namespace
 
 EMSCRIPTEN_BINDINGS(lint_core) {
     emscripten::function("version", &version_string);
     emscripten::function("loadGlb", &load_glb_js);
     emscripten::function("loadGlbGeometry", &load_glb_geometry_js);
+    emscripten::function("inspect", &inspect_js);
 }

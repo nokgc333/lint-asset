@@ -7,11 +7,14 @@ import Ajv2020 from "ajv/dist/2020.js";
 const SCHEMA_DIR = "schemas";
 const EXAMPLES_DIR = join(SCHEMA_DIR, "examples");
 const MAX_ELEMENTS = 1000;
+const GOLDEN_DIR = join("tests", "golden");
 
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 
 const ajv = new Ajv2020({ strict: true, allErrors: true });
-const validate = ajv.compile(readJson(join(SCHEMA_DIR, "report.schema.json")));
+const schema = readJson(join(SCHEMA_DIR, "report.schema.json"));
+const validate = ajv.compile(schema);
+const validateIssue = ajv.compile({ $ref: `${schema.$id}#/$defs/issue` });
 
 let failures = 0;
 
@@ -85,6 +88,25 @@ for (const [label, applyBreakage] of Object.entries(brokenCases)) {
   const document = structuredClone(base);
   applyBreakage(document);
   expect(label, document, false);
+}
+
+for (const name of readdirSync(GOLDEN_DIR)
+  .filter((name) => name.endsWith(".json"))
+  .sort()) {
+  const issues = readJson(join(GOLDEN_DIR, name));
+  if (!Array.isArray(issues)) {
+    console.log(`FAIL ${name}: golden file must contain an issue array`);
+    failures += 1;
+    continue;
+  }
+  for (const [index, issue] of issues.entries()) {
+    const valid = validateIssue(issue);
+    console.log(`${valid ? "ok  " : "FAIL"} ${name} issue ${index} matches #/$defs/issue`);
+    if (!valid) {
+      failures += 1;
+      console.log(JSON.stringify(validateIssue.errors, null, 2));
+    }
+  }
 }
 
 console.log(failures === 0 ? "\nAll schema checks passed." : `\n${failures} check(s) failed.`);

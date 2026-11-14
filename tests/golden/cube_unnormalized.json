@@ -1,0 +1,15 @@
+[
+  {
+    "rule": "normal.unnormalized",
+    "severity": "warning",
+    "message": "Vertex normals are not unit length (outside 1 +/- 0.01).",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 0
+    },
+    "count": 6,
+    "elements": [0, 1, 4, 5, 8, 9],
+    "truncated": false
+  }
+]

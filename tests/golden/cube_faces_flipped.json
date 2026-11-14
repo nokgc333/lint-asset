@@ -1,0 +1,15 @@
+[
+  {
+    "rule": "normal.flipped",
+    "severity": "error",
+    "message": "Vertex normals point opposite to the face winding.",
+    "element_kind": "triangle",
+    "target": {
+      "mesh": 0,
+      "primitive": 0
+    },
+    "count": 4,
+    "elements": [2, 3, 8, 9],
+    "truncated": false
+  }
+]
